@@ -152,3 +152,21 @@ type ToolRegistration = {
 - Cross-device sync behavior details
 - Push subscription lifecycle details
 - Authentication / accounts
+
+## 9. Widget Settings
+
+### Default Container
+- Settings open in a slide-in side panel anchored to the right on desktop and bottom sheet on mobile.
+- Widgets MAY override the container when a standalone page is active; in that mode, settings overlay within the page bounds (modal-style) to avoid leaving the context.
+- Read-only or confirmation-only flows (e.g., destructive actions) MAY present a lightweight popover if the change is single-action and requires no form fields.
+
+### Open/Close Triggers and Transitions
+- Primary trigger: top-right header button labeled "Settings" (or icon) within each widget card.
+- Secondary trigger: context menu entry "Configure" available from widget overflow menu.
+- Trigger behavior MUST debounce to prevent multiple panels; re-clicking the header button while open toggles close.
+- Transitions: slide-in/out matching container direction (right-to-left for side panel, bottom-to-top for sheet). Fade overlay for modal/popover variants.
+
+### Save, Reset, Close Behavior
+- Save commits the current form state to the widget config and closes the container only after a successful write; on failure, keep open and surface inline errors.
+- Reset restores persisted config to the tool’s defaultConfig via the migrateConfig function to ensure safe restoration and stays open to let users review changes.
+- Close discards unsaved changes, returning to the last saved config snapshot; prompt only if dirty state exists.
