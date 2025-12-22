@@ -153,9 +153,36 @@ type ToolRegistration = {
 - Push subscription lifecycle details
 - Authentication / accounts
 
-## 9. Keyboard Shortcuts
+## 9. Advanced Editing Features
 
-### 9.1 Default Assignments
+### Widget Lock
+- UX flow: toggle lock on a widget from its context menu; locked state shows a lock badge and disables drag/resize handles.
+- Operation restrictions: locked widgets cannot be moved, resized, grouped, or edited; unlock via the same menu.
+- Error handling: attempts to move/resize a locked widget should show a non-blocking toast explaining the lock.
+
+### Multi-Select Grouping
+- UX flow: shift+click or drag-selection to pick multiple widgets, then choose “Group” in the toolbar; group shows a bounding box with a group label.
+- Group creation/removal: group creates a parent container id; ungroup via toolbar action restores individual widget controls and layout records.
+- Error handling: grouping should fail gracefully if any selected widget is locked (toast explaining failure; no partial groups created).
+
+### Snap Guides
+- UX flow: while dragging/resizing, snap guides appear on alignment to sibling edges and grid columns.
+- Precision: snap tolerance defaults to 8px offset from guide; snapping can be disabled per session via a toolbar toggle.
+- Error handling: if snap calculation fails (e.g., missing layout data), fall back to free-move and hide guides to avoid jitter.
+
+### JSON Export/Import
+- UX flow: export downloads the current board state as JSON; import opens a file picker and previews validation results before applying.
+- Schema versioning: exported payload includes `version`; imports must migrate or reject older versions with clear messaging.
+- Validation: validate required fields (pages, instances, layouts); on failure, show an error summary and do not mutate existing state.
+
+### Z-Index Management
+- UX flow: context menu actions for “Bring to Front”, “Send to Back”, “Bring Forward”, and “Send Backward” adjust stacking; preview outlines show target layer before commit.
+- Defaults: widgets start at z-index 0; upper bound is clamped at 999 to avoid CSS overflow issues.
+- Error handling: if z-index updates cause conflicts (e.g., duplicate values), rebalance by re-assigning unique, sequential z-index values to all widgets based on their relative order and show a warning toast.
+
+## 10. Keyboard Shortcuts
+
+### 10.1 Default Assignments
 
 | Action | Windows/Linux | macOS | Notes |
 | --- | --- | --- | --- |
@@ -171,18 +198,18 @@ type ToolRegistration = {
 | Resize selection (4 grid units) | `Ctrl` + `Shift` + Arrow keys | `Cmd` + `Shift` + Arrow keys | Fast resize; clamps to grid and min/max size. |
 | Clear selection | `Esc` | `Esc` | Leaves edit mode unchanged; also closes inline menus. |
 
-### 9.2 Scope & Activation Rules
+### 10.2 Scope & Activation Rules
 - Shortcuts are active only when the board canvas or a widget frame has focus; they MUST NOT intercept events originating from form fields, modals, or global navigation.
 - Global navigation shortcuts (e.g., browser tab controls, OS-level screenshot keys) take precedence. If a conflict is detected, the app SHOULD log and skip the shortcut rather than preventing default behavior.
 - Edit-mode-only shortcuts (selection, move/resize, duplicate, delete) MUST no-op outside edit mode and MUST surface a subtle toast or status message when blocked.
 
-### 9.3 Accessibility Prerequisites
+### 10.3 Accessibility Prerequisites
 - Every focusable widget frame MUST render a visible focus ring with sufficient contrast and a minimum 2px outline; do not rely solely on color.
 - Use `aria-keyshortcuts` to expose the bindings on the toggle, board container, and widget frames; keep strings platform-aware (e.g., `Meta Shift E` on macOS).
 - Manage focus with roving tabindex on the board so that `Tab`/`Shift+Tab` move predictably; selection state SHOULD be announced via `aria-selected` and `aria-multiselectable` on the container.
 - Provide live-region feedback (polite) for actions that alter layout (move, resize, duplicate, delete) to keep screen reader users informed.
 
-## 10. Widget Settings
+## 11. Widget Settings
 
 ### Default Container
 - Settings open in a slide-in side panel anchored to the right on desktop and bottom sheet on mobile.
@@ -199,4 +226,3 @@ type ToolRegistration = {
 - Save commits the current form state to the widget config and closes the container only after a successful write; on failure, keep open and surface inline errors.
 - Reset restores persisted config to the tool’s defaultConfig via the migrateConfig function to ensure safe restoration and stays open to let users review changes.
 - Close discards unsaved changes, returning to the last saved config snapshot; prompt only if dirty state exists.
-
