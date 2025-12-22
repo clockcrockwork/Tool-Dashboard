@@ -53,8 +53,8 @@ apps/web/
   - First, fall back to the nearest **smaller** breakpoint that defines a `minSize`.
   - If no smaller breakpoint defines one, fall back to the nearest larger breakpoint's value, but **clamp** it so it does not exceed the active breakpoint's column/row limits.
 
-#### Degeneration Handling
-- When an item cannot fit its `minSize` within the available columns, it MUST automatically degrade:
+#### Layout Fallback Handling
+- When an item cannot fit its `minSize` within the available columns, it MUST automatically apply layout fallbacks:
   1. Fold to a minimized/collapsed state that hides content but keeps the widget chrome visible.
   2. If collapsing still cannot fit, it MAY be fully hidden (visibility toggle) as a last resort.
 - Collapse/minimize is preferred over hiding; follow this priority order: normal layout → collapsed → hidden.
