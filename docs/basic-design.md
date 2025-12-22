@@ -69,6 +69,15 @@ type WidgetBoardPage = {
 - Resize handles: bottom-right only
 - Layout is stored per breakpoint
 
+### Widget Picker
+- Entry points: dedicated "Add widget" button (visible on the board header/tool tray) and keyboard shortcut (e.g., `A` while focus is on the board) open the picker.
+- Discovery: filter by category, filter by tags/text search, and show a thumbnail/description preview for each widget option.
+- Placement rules:
+  - A new widget is placed in the first available open space on the grid (e.g., by scanning from the top-left).
+  - The placement uses the widget's default size from metadata and follows the same collision-resolution rules as the grid.
+- Cancellation/closing: ESC key, clicking an explicit close button, or defocusing the dialog closes the picker without adding a widget.
+- Accessibility: picker is fully keyboard-operable (focus trap, arrow/tab navigation, enter/space to add) and provides screen-reader labels/roles for list items, preview, and action controls.
+
 ### Breakpoint Fallback (Required)
 - If a breakpoint layout is missing, generate it by degrading from the nearest larger layout:
   - sm <- md <- lg
