@@ -159,5 +159,5 @@ type ToolRegistration = {
 
 ### Save, Reset, Close Behavior
 - Save commits the current form state to the widget config and closes the container only after a successful write; on failure, keep open and surface inline errors.
-- Reset restores persisted config to the tool’s defaultConfig via migrateConfig-safe path and stays open to let users review changes.
+- Reset restores persisted config to the tool’s defaultConfig via the migrateConfig function to ensure safe restoration and stays open to let users review changes.
 - Close discards unsaved changes, returning to the last saved config snapshot; prompt only if dirty state exists.
