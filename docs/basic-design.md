@@ -42,6 +42,21 @@ apps/web/
 - md: 8 columns
 - sm: 4 columns
 
+#### Responsive Observation
+- Use a `ResizeObserver` on the board container to switch breakpoints in real time.
+- Breakpoint calculation MUST update as soon as the observed width crosses the breakpoint threshold (no debouncing that causes visible lag).
+
+#### Minimum Size Declaration
+- `minSize` (width/height in grid units) MUST be definable per breakpoint.
+- When generating layouts for a smaller breakpoint, clamp each item's size to that breakpoint's `minSize` before auto-packing.
+- If a `minSize` is missing for the active breakpoint, fall back to the nearest larger breakpoint's value.
+
+#### Degeneration Handling
+- When an item cannot fit its `minSize` within the available columns, it MUST automatically degrade:
+  1. Fold to a minimized/collapsed state that hides content but keeps the widget chrome visible.
+  2. If collapsing still cannot fit, it MAY be fully hidden (visibility toggle) as a last resort.
+- Collapse/minimize is preferred over hiding; follow this priority order: normal layout → collapsed → hidden.
+
 ### State (Persisted)
 ```ts
 type WidgetBoardState = {
@@ -68,11 +83,15 @@ type WidgetBoardPage = {
 - Collision resolution: auto-pack downward
 - Resize handles: bottom-right only
 - Layout is stored per breakpoint
+- Size enforcement: width/height MUST respect the current breakpoint's `minSize` when rendering or restoring a layout.
 
 ### Breakpoint Fallback (Required)
 - If a breakpoint layout is missing, generate it by degrading from the nearest larger layout:
   - sm <- md <- lg
 - Generation MUST clamp widths to the target column count and then auto-pack.
+- When generating or restoring a layout, also persist and restore the collapse state using a stable key (e.g., `collapsed:<instanceId>:<breakpoint>`).
+- Stored size constraints use per-breakpoint keys (e.g., `size:<instanceId>:<breakpoint>`); these MUST be applied before evaluating degeneration rules.
+- Degeneration rules run after size constraints are applied and take priority over any existing ad-hoc shrink rules so the priority order is: stored size → apply `minSize` → degeneration (collapse/minimize) → existing shrink heuristics.
 
 ## 4. Widget Instance Model
 
