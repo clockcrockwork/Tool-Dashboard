@@ -42,6 +42,23 @@ apps/web/
 - md: 8 columns
 - sm: 4 columns
 
+#### Responsive Observation
+- Use a `ResizeObserver` on the board container to switch breakpoints in real time.
+- Breakpoint calculation MUST update as soon as the observed width crosses the breakpoint threshold (no debouncing that causes visible lag).
+
+#### Minimum Size Declaration
+- `minSize` (width/height in grid units) MUST be definable per breakpoint.
+- When generating layouts for a smaller breakpoint, clamp each item's size to that breakpoint's `minSize` before auto-packing.
+- If a `minSize` is missing for the active breakpoint:
+  - First, fall back to the nearest **smaller** breakpoint that defines a `minSize`.
+  - If no smaller breakpoint defines one, fall back to the nearest larger breakpoint's value, but **clamp** it so it does not exceed the active breakpoint's column/row limits.
+
+#### Layout Fallback Handling
+- When an item cannot fit its `minSize` within the available columns, it MUST automatically apply layout fallbacks:
+  1. Fold to a minimized/collapsed state that hides content but keeps the widget chrome (the widget frame/header controls) visible.
+  2. If collapsing still cannot fit, it MAY be fully hidden (visibility toggle) as a last resort.
+- Collapse/minimize is preferred over hiding; follow this priority order: normal layout → collapsed → hidden.
+
 ### State (Persisted)
 ```ts
 type WidgetBoardState = {
@@ -68,6 +85,7 @@ type WidgetBoardPage = {
 - Collision resolution: auto-pack downward
 - Resize handles: bottom-right only
 - Layout is stored per breakpoint
+- Size enforcement: width/height MUST respect the current breakpoint's `minSize` when rendering or restoring a layout.
 
 ### Widget Picker
 - Entry points: dedicated "Add widget" button (visible on the board header/tool tray) and keyboard shortcut (e.g., `A` while focus is on the board) open the picker.
@@ -82,6 +100,9 @@ type WidgetBoardPage = {
 - If a breakpoint layout is missing, generate it by degrading from the nearest larger layout:
   - sm <- md <- lg
 - Generation MUST clamp widths to the target column count and then auto-pack.
+- When generating or restoring a layout, also persist and restore the collapse state using a stable key (e.g., `collapsed:<instanceId>:<breakpoint>`).
+- Stored size constraints use per-breakpoint keys (e.g., `size:<instanceId>:<breakpoint>`); these MUST be applied before evaluating degeneration rules.
+- Degeneration rules run after size constraints are applied and take priority over any existing ad-hoc shrink rules. The priority order is: stored size → apply `minSize` → degeneration (collapse/minimize) → existing shrink heuristics.
 
 ## 4. Widget Instance Model
 
