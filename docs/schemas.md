@@ -82,7 +82,7 @@ type WidgetBoardState = {
 - 保存時：`globalSettings` を持たない旧バージョンは保存時に未設定のままとし、復元時にデフォルト外観（例：プレーン背景 + デフォルトテーマ）を適用する。
 - 適用時の優先順位は以下とする：
   1. `globalSettings.themePreset` が存在する場合はプリセットを適用。
-  2. `globalSettings.accentColor` が存在する場合、テーマプリセットのアクセントを上書き。
+  2. `globalSettings.accentColor` が存在する場合、`themePreset` の有無に関わらずアクセントカラーとして適用する（`themePreset` がある場合はそのプリセットのアクセントを上書きし、`themePreset` がない場合は実装側のデフォルトテーマ上のアクセントとして用いる）。
   3. `globalSettings.backgroundType` / `backgroundValue` を組み合わせて背景を決定。
 - `globalSettings` が未設定の場合は、実装側のデフォルト背景・テーマを使用する（各ページやツールで個別設定がある場合はそちらが優先される）。
 
