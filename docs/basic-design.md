@@ -49,7 +49,9 @@ apps/web/
 #### Minimum Size Declaration
 - `minSize` (width/height in grid units) MUST be definable per breakpoint.
 - When generating layouts for a smaller breakpoint, clamp each item's size to that breakpoint's `minSize` before auto-packing.
-- If a `minSize` is missing for the active breakpoint, fall back to the nearest larger breakpoint's value.
+- If a `minSize` is missing for the active breakpoint:
+  - First, fall back to the nearest **smaller** breakpoint that defines a `minSize`.
+  - If no smaller breakpoint defines one, fall back to the nearest larger breakpoint's value, but **clamp** it so it does not exceed the active breakpoint's column/row limits.
 
 #### Degeneration Handling
 - When an item cannot fit its `minSize` within the available columns, it MUST automatically degrade:
