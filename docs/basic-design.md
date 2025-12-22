@@ -93,7 +93,7 @@ type WidgetBoardPage = {
 - Generation MUST clamp widths to the target column count and then auto-pack.
 - When generating or restoring a layout, also persist and restore the collapse state using a stable key (e.g., `collapsed:<instanceId>:<breakpoint>`).
 - Stored size constraints use per-breakpoint keys (e.g., `size:<instanceId>:<breakpoint>`); these MUST be applied before evaluating degeneration rules.
-- Degeneration rules run after size constraints are applied and take priority over any existing ad-hoc shrink rules so the priority order is: stored size → apply `minSize` → degeneration (collapse/minimize) → existing shrink heuristics.
+- Degeneration rules run after size constraints are applied and take priority over any existing ad-hoc shrink rules. The priority order is: stored size → apply `minSize` → degeneration (collapse/minimize) → existing shrink heuristics.
 
 ## 4. Widget Instance Model
 
