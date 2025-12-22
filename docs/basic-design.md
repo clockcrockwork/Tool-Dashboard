@@ -69,6 +69,15 @@ type WidgetBoardPage = {
 - Resize handles: bottom-right only
 - Layout is stored per breakpoint
 
+### Widget Picker
+- Entry points: dedicated "Add widget" button (visible on the board header/tool tray) and keyboard shortcut (e.g., `A` while focus is on the board) open the picker.
+- Discovery: filter by category, filter by tags/text search, and show a thumbnail/description preview for each widget option.
+- Placement rules:
+  - A new widget is placed in the first available open space on the grid (e.g., by scanning from the top-left).
+  - The placement uses the widget's default size from metadata and follows the same collision-resolution rules as the grid.
+- Cancellation/closing: ESC key, clicking an explicit close button, or defocusing the dialog closes the picker without adding a widget.
+- Accessibility: picker is fully keyboard-operable (focus trap, arrow/tab navigation, enter/space to add) and provides screen-reader labels/roles for list items, preview, and action controls.
+
 ### Breakpoint Fallback (Required)
 - If a breakpoint layout is missing, generate it by degrading from the nearest larger layout:
   - sm <- md <- lg
@@ -172,3 +181,22 @@ type ToolRegistration = {
 - Use `aria-keyshortcuts` to expose the bindings on the toggle, board container, and widget frames; keep strings platform-aware (e.g., `Meta Shift E` on macOS).
 - Manage focus with roving tabindex on the board so that `Tab`/`Shift+Tab` move predictably; selection state SHOULD be announced via `aria-selected` and `aria-multiselectable` on the container.
 - Provide live-region feedback (polite) for actions that alter layout (move, resize, duplicate, delete) to keep screen reader users informed.
+
+## 10. Widget Settings
+
+### Default Container
+- Settings open in a slide-in side panel anchored to the right on desktop and bottom sheet on mobile.
+- Widgets MAY override the container when a standalone page is active; in that mode, settings overlay within the page bounds (modal-style) to avoid leaving the context.
+- Read-only or confirmation-only flows (e.g., destructive actions) MAY present a lightweight popover if the change is single-action and requires no form fields.
+
+### Open/Close Triggers and Transitions
+- Primary trigger: top-right header button labeled "Settings" (or icon) within each widget card.
+- Secondary trigger: context menu entry "Configure" available from widget overflow menu.
+- Trigger behavior MUST debounce to prevent multiple panels; re-clicking the header button while open toggles close.
+- Transitions: slide-in/out matching container direction (right-to-left for side panel, bottom-to-top for sheet). Fade overlay for modal/popover variants.
+
+### Save, Reset, Close Behavior
+- Save commits the current form state to the widget config and closes the container only after a successful write; on failure, keep open and surface inline errors.
+- Reset restores persisted config to the tool’s defaultConfig via the migrateConfig function to ensure safe restoration and stays open to let users review changes.
+- Close discards unsaved changes, returning to the last saved config snapshot; prompt only if dirty state exists.
+
