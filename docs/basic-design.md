@@ -153,7 +153,7 @@ type ToolRegistration = {
 | Toggle edit mode | `Ctrl` + `Shift` + `E` | `Cmd` + `Shift` + `E` | Avoids conflicting with browser bookmarking; no-op when a text input or textarea is focused. |
 | Focus next/previous widget | `Tab` / `Shift` + `Tab` | `Tab` / `Shift` + `Tab` | Roving tabindex within the board; wrap around to the first/last widget. |
 | Add/remove widget to selection | `Ctrl` + Click | `Cmd` + Click | Only in edit mode; toggles selection state without blurring the active widget. |
-| Range-select adjacent widgets | `Shift` + Click | `Shift` + Click | Uses visual order in the current viewport; does nothing on non-grid areas. |
+| Select range of widgets | `Shift` + Click | `Shift` + Click | Uses visual order in the current viewport; does nothing on non-grid areas. |
 | Delete selection | `Delete` or `Backspace` | `Delete` or `Backspace` | Ignored while a form field is focused; requires edit mode and at least one selected widget. |
 | Duplicate selection | `Ctrl` + `Alt` + `D` | `Cmd` + `Alt` + `D` | Skips browser bookmark shortcuts; duplicates layouts for all breakpoints. |
 | Move selection (1 grid unit) | Arrow keys | Arrow keys | Applies to focused widget or multi-selection; blocked when an input is focused; auto-clamps to grid boundaries. |
