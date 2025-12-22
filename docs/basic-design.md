@@ -169,4 +169,4 @@ type ToolRegistration = {
 ### Z-Index Management
 - UX flow: context menu actions for “Bring to Front”, “Send to Back”, “Bring Forward”, and “Send Backward” adjust stacking; preview outlines show target layer before commit.
 - Defaults: widgets start at z-index 0; upper bound is clamped at 999 to avoid CSS overflow issues.
-- Error handling: if z-index updates clash (e.g., duplicate max), rebalance by normalizing the stack order and log a warning toast.
+- Error handling: if z-index updates cause conflicts (e.g., duplicate values), rebalance by re-assigning unique, sequential z-index values to all widgets based on their relative order and show a warning toast.
