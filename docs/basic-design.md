@@ -143,3 +143,30 @@ type ToolRegistration = {
 - Cross-device sync behavior details
 - Push subscription lifecycle details
 - Authentication / accounts
+
+## 9. Advanced Editing Features
+
+### Widget Lock
+- UX flow: toggle lock on a widget from its context menu; locked state shows a lock badge and disables drag/resize handles.
+- Operation restrictions: locked widgets cannot be moved, resized, grouped, or edited; unlock via the same menu.
+- Error handling: attempts to move/resize a locked widget should show a non-blocking toast explaining the lock.
+
+### Multi-Select Grouping
+- UX flow: shift+click or drag-selection to pick multiple widgets, then choose “Group” in the toolbar; group shows a bounding box with a group label.
+- Group creation/removal: group creates a parent container id; ungroup via toolbar action restores individual widget controls and layout records.
+- Error handling: grouping should fail gracefully if any selected widget is locked (toast explaining failure; no partial groups created).
+
+### Snap Guides
+- UX flow: while dragging/resizing, snap guides appear on alignment to sibling edges and grid columns.
+- Precision: snap tolerance defaults to 8px offset from guide; snapping can be disabled per session via a toolbar toggle.
+- Error handling: if snap calculation fails (e.g., missing layout data), fall back to free-move and hide guides to avoid jitter.
+
+### JSON Export/Import
+- UX flow: export downloads the current board state as JSON; import opens a file picker and previews validation results before applying.
+- Schema versioning: exported payload includes `schemaVersion`; imports must migrate or reject older versions with clear messaging.
+- Validation: validate required fields (pages, instances, layouts); on failure, show an error summary and do not mutate existing state.
+
+### Z-Index Management
+- UX flow: context menu actions for “Bring to Front/Back” adjust stacking; preview outlines show target layer before commit.
+- Defaults: widgets start at z-index 0; upper bound is clamped at 999 to avoid CSS overflow issues.
+- Error handling: if z-index updates clash (e.g., duplicate max), rebalance by normalizing the stack order and log a warning toast.
