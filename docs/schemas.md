@@ -118,7 +118,7 @@ type WidgetInstance = {
 
   // Board-level control flags
   locked?: boolean; // default: false (ユーザー操作で移動・リサイズ可能)
-  zIndex?: number; // default: 自動決定（layouts順・追加順に準拠）
+  zIndex?: number; // default: 自動決定（現在のブレークポイントの layouts[currentBreakpoint] 内の並び順・追加順に準拠）
   groupId?: string; // default: 未所属（グループ化されない）
 
   // Persisted user configuration only (Tool Extension Schema)
