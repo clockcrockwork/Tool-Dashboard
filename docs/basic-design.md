@@ -152,7 +152,7 @@ type ToolRegistration = {
 - Read-only or confirmation-only flows (e.g., destructive actions) MAY present a lightweight popover if the change is single-action and requires no form fields.
 
 ### Open/Close Triggers and Transitions
-- Primary trigger: top-right header button labelled "Settings" (or icon) within each widget card.
+- Primary trigger: top-right header button labeled "Settings" (or icon) within each widget card.
 - Secondary trigger: context menu entry "Configure" available from widget overflow menu.
 - Trigger behavior MUST debounce to prevent multiple panels; re-clicking the header button while open toggles close.
 - Transitions: slide-in/out matching container direction (right-to-left for side panel, bottom-to-top for sheet). Fade overlay for modal/popover variants.
