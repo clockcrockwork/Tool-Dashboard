@@ -143,3 +143,32 @@ type ToolRegistration = {
 - Cross-device sync behavior details
 - Push subscription lifecycle details
 - Authentication / accounts
+
+## 9. Keyboard Shortcuts
+
+### 9.1 Default Assignments
+
+| Action | Windows/Linux | macOS | Notes |
+| --- | --- | --- | --- |
+| Toggle edit mode | `Ctrl` + `Shift` + `E` | `Cmd` + `Shift` + `E` | Avoids conflicting with browser bookmarking; no-op when a text input or textarea is focused. |
+| Focus next/previous widget | `Tab` / `Shift` + `Tab` | `Tab` / `Shift` + `Tab` | Roving tabindex within the board; wrap around to the first/last widget. |
+| Add/remove widget to selection | `Ctrl` + Click | `Cmd` + Click | Only in edit mode; toggles selection state without blurring the active widget. |
+| Range-select adjacent widgets | `Shift` + Click | `Shift` + Click | Uses visual order in the current viewport; does nothing on non-grid areas. |
+| Delete selection | `Delete` or `Backspace` | `Delete` or `Backspace` | Ignored while a form field is focused; requires edit mode and at least one selected widget. |
+| Duplicate selection | `Ctrl` + `Alt` + `D` | `Cmd` + `Alt` + `D` | Skips browser bookmark shortcuts; duplicates layouts for all breakpoints. |
+| Move selection (1 grid unit) | Arrow keys | Arrow keys | Applies to focused widget or multi-selection; blocked when an input is focused; auto-clamps to grid boundaries. |
+| Move selection (4 grid units) | `Shift` + Arrow keys | `Shift` + Arrow keys | Accelerated movement for large adjustments; still clamped to grid. |
+| Resize selection (1 grid unit) | `Ctrl` + Arrow keys | `Cmd` + Arrow keys | Only when resize handles are available; respects min/max size per widget. |
+| Resize selection (4 grid units) | `Ctrl` + `Shift` + Arrow keys | `Cmd` + `Shift` + Arrow keys | Fast resize; clamps to grid and min/max size. |
+| Clear selection | `Esc` | `Esc` | Leaves edit mode unchanged; also closes inline menus. |
+
+### 9.2 Scope & Activation Rules
+- Shortcuts are active only when the board canvas or a widget frame has focus; they MUST NOT intercept events originating from form fields, modals, or global navigation.
+- Global navigation shortcuts (e.g., browser tab controls, OS-level screenshot keys) take precedence. If a conflict is detected, the app SHOULD log and skip the shortcut rather than preventing default behavior.
+- Edit-mode-only shortcuts (selection, move/resize, duplicate, delete) MUST no-op outside edit mode and MUST surface a subtle toast or status message when blocked.
+
+### 9.3 Accessibility Prerequisites
+- Every focusable widget frame MUST render a visible focus ring with sufficient contrast and a minimum 2px outline; do not rely solely on color.
+- Use `aria-keyshortcuts` to expose the bindings on the toggle, board container, and widget frames; keep strings platform-aware (e.g., `Meta+Shift+E` on macOS).
+- Manage focus with roving tabindex on the board so that `Tab`/`Shift+Tab` move predictably; selection state SHOULD be announced via `aria-selected` and `aria-multiselectable` on the container.
+- Provide live-region feedback (polite) for actions that alter layout (move, resize, duplicate, delete) to keep screen reader users informed.
