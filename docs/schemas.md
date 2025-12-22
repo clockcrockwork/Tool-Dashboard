@@ -67,8 +67,24 @@ type WidgetBoardState = {
   version: number;
   activePageId: string;
   pages: WidgetBoardPage[];
+
+  // Board 全体で共通の外観設定
+  globalSettings?: {
+    backgroundType: "color" | "image" | "preset";
+    backgroundValue: string; // color: hex/RGBA, image: URL or asset key, preset: preset name
+    themePreset?: string; // UIテーマプリセット名
+    accentColor?: string; // アクセントカラー（テーマプリセットを上書き）
+  };
 };
 ```
+
+#### globalSettings の保存/適用優先順位
+- 保存時：`globalSettings` を持たない旧バージョンは保存時に未設定のままとし、復元時にデフォルト外観（例：プレーン背景 + デフォルトテーマ）を適用する。
+- 適用時の優先順位は以下とする：
+  1. `globalSettings.themePreset` が存在する場合はプリセットを適用。
+  2. `globalSettings.accentColor` が存在する場合、`themePreset` の有無に関わらずアクセントカラーとして適用する（`themePreset` がある場合はそのプリセットのアクセントを上書きし、`themePreset` がない場合は実装側のデフォルトテーマ上のアクセントとして用いる）。
+  3. `globalSettings.backgroundType` / `backgroundValue` を組み合わせて背景を決定。
+- `globalSettings` が未設定の場合は、実装側のデフォルト背景・テーマを使用する（各ページやツールで個別設定がある場合はそちらが優先される）。
 
 #### 参照整合性ルール（必須）
 - `layouts[*].instanceId` は、同一 `WidgetBoardPage.instances[].instanceId` に存在しなければならない
@@ -100,6 +116,11 @@ type WidgetInstance = {
 
   isVisible: boolean;
 
+  // Board-level control flags
+  locked?: boolean; // default: false (ユーザー操作で移動・リサイズ可能)
+  zIndex?: number; // default: 自動決定（現在のブレークポイントの layouts[currentBreakpoint] 内の並び順・追加順に準拠）
+  groupId?: string; // default: 未所属（グループ化されない）
+
   // Persisted user configuration only (Tool Extension Schema)
   config?: ToolConfig;
 };
@@ -108,8 +129,14 @@ type WidgetInstance = {
 #### ルール
 - 同じ kind を複数置ける前提
 - Board は config の「意味」を解釈しない（単に保持・移送する）
-- ランタイム状態（例：タイマー残り秒、UI一時値）は原則として永続化しない  
+- ランタイム状態（例：タイマー残り秒、UI一時値）は原則として永続化しない
   （必要なツールのみ、別途“明示的に”永続化戦略を定義する）
+
+#### デフォルト挙動・マイグレーション（WidgetInstance）
+- `locked` が未設定の場合は `false` とみなし、既存データは全て操作可能として扱う。
+- `zIndex` が未設定の場合は layout 定義の並びや追加順による自動スタッキングを採用する（古いデータに値を埋めない）。
+- `groupId` が未設定の場合はグループ非所属とし、グループ機能がない旧データはそのまま動作する。
+- マイグレーションでは既存データに新規フィールドの値を書き戻さず、読み取り時に未設定フィールドを上記デフォルトとして解釈するのみとし、値の自動付与や再計算は行わないこと。
 
 ---
 
