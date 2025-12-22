@@ -169,6 +169,6 @@ type ToolRegistration = {
 
 ### 9.3 Accessibility Prerequisites
 - Every focusable widget frame MUST render a visible focus ring with sufficient contrast and a minimum 2px outline; do not rely solely on color.
-- Use `aria-keyshortcuts` to expose the bindings on the toggle, board container, and widget frames; keep strings platform-aware (e.g., `Meta+Shift+E` on macOS).
+- Use `aria-keyshortcuts` to expose the bindings on the toggle, board container, and widget frames; keep strings platform-aware (e.g., `Meta Shift E` on macOS).
 - Manage focus with roving tabindex on the board so that `Tab`/`Shift+Tab` move predictably; selection state SHOULD be announced via `aria-selected` and `aria-multiselectable` on the container.
 - Provide live-region feedback (polite) for actions that alter layout (move, resize, duplicate, delete) to keep screen reader users informed.
