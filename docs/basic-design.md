@@ -163,7 +163,7 @@ type ToolRegistration = {
 
 ### JSON Export/Import
 - UX flow: export downloads the current board state as JSON; import opens a file picker and previews validation results before applying.
-- Schema versioning: exported payload includes `schemaVersion`; imports must migrate or reject older versions with clear messaging.
+- Schema versioning: exported payload includes `version`; imports must migrate or reject older versions with clear messaging.
 - Validation: validate required fields (pages, instances, layouts); on failure, show an error summary and do not mutate existing state.
 
 ### Z-Index Management
