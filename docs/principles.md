@@ -65,5 +65,9 @@ User Settings (localStorage)
   3. Wasm + JS (for CPU-heavy local compute)
   4. Web APIs + Wasm + JS (when both external I/O and heavy compute are required)
   5. Server-side processing (only when client-only is impractical)
-- Exceptions where Wasm may be preferred over Web APIs: offline-first needs, avoiding API key storage, large I/O where local compute beats API round-trips, or compute-heavy tasks with minimal I/O/UI.
+- Exceptions where Wasm may be preferred over Web APIs:
+  - Offline-first needs.
+  - Avoiding API key storage.
+  - Large I/O where local compute beats API round-trips.
+  - Compute-heavy tasks with minimal I/O/UI.
 - Wasm boundary rules: treat Wasm as pure functions (no DOM/Storage/Network), batch data in/out to avoid chatter, and lazily load Wasm per tool to keep initial load light.
