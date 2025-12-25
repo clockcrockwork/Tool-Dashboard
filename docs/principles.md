@@ -69,7 +69,7 @@ User Settings (localStorage)
   - Offline-first needs.
   - Avoiding API key storage.
   - Large I/O where local compute beats API round-trips.
-  - Compute-heavy tasks with minimal I/O/UI.
+  - Compute-heavy tasks with minimal I/O and minimal UI interaction.
 - Wasm boundary rules:
   - Treat Wasm as pure functions (no DOM/Storage/Network).
   - Batch data in/out to avoid chatter.
