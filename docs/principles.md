@@ -70,4 +70,7 @@ User Settings (localStorage)
   - Avoiding API key storage.
   - Large I/O where local compute beats API round-trips.
   - Compute-heavy tasks with minimal I/O/UI.
-- Wasm boundary rules: treat Wasm as pure functions (no DOM/Storage/Network), batch data in/out to avoid chatter, and lazily load Wasm per tool to keep initial load light.
+- Wasm boundary rules:
+  - Treat Wasm as pure functions (no DOM/Storage/Network).
+  - Batch data in/out to avoid chatter.
+  - Lazily load Wasm per tool to keep initial load light.
