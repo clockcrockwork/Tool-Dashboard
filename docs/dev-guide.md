@@ -20,6 +20,10 @@
 - Timeout must be short.
 - Failure must not block UI.
 
+### Client vs Server Processing
+- Default to the client-first priority order in [Project Principles §9](./principles.md#9-client-vs-server-processing-priorities).
+- Tools should avoid secrets and keep work in-browser when possible; justify any escalation to Web APIs, Wasm, or server-side.
+
 ## 2. Persistence Rules
 
 ### localStorage key naming

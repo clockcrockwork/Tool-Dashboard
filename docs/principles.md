@@ -56,3 +56,14 @@ User Settings (localStorage)
 - External providers are treated as optional modules, enabled only when configured by the user.
 - Provider selection SHOULD be explicit (e.g. `PUBLIC_SYNC_PROVIDER=none|supabase|convex`, default `none`).
 - When providers are enabled, required environment variables MAY be introduced, but MUST NOT be required for local-only usage.
+
+## 9. Client vs Server Processing Priorities
+- Default stance: serverless and client-first; prefer completing work in the browser without secret material.
+- Priority order (highest to lowest):
+  1. Pure client-side JS (UI, state, light work)
+  2. JS + Web APIs (external API / serverless functions / webhooks; no secrets stored)
+  3. Wasm + JS (for CPU-heavy local compute)
+  4. Web APIs + Wasm + JS (when both external I/O and heavy compute are required)
+  5. Server-side processing (only when client-only is impractical)
+- Exceptions where Wasm may be preferred over Web APIs: offline-first needs, avoiding API key storage, large I/O where local compute beats API round-trips, or compute-heavy tasks with minimal I/O/UI.
+- Wasm boundary rules: treat Wasm as pure functions (no DOM/Storage/Network), batch data in/out to avoid chatter, and lazily load Wasm per tool to keep initial load light.
