@@ -215,6 +215,6 @@ In addition to the original fixtures below: each operation's `exposeTo` and MCP 
 ## 9. What is deliberately not decided here
 
 - Final widget backlog and MVP priorities: earlier clock, task/loop task, image/file tools, color picker, cross-device transfer, and existing bulk-text-replacement-tool are **candidates**, not all committed deliverables.
-- Optional sync provider, sign-in experience, long-term storage and transfer retention: require their own feature specification.
+- **General** sync provider, account UX beyond the required per-target AI connection, long-term retention and temporary file transfer: require their own feature specification. Narrow authenticated remote target access for AI is **mandatory** for the Stage 1e integration, not an optional enhancement.
 - Exact schema library/SDK versions and repo packaging: pin after a minimal compiling tool and supported-host connection test.
 - Whether MCP App view is visually the same as a website view: UX-per-host tests decide; only business logic reuse is mandatory.
