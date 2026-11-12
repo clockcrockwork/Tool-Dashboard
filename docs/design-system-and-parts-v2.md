@@ -1,6 +1,6 @@
 # Tool-Dashboard v2: design system and UI parts contract
 
-Status: **Draft design proposal**, 2026-11-12. The old monolithic React prototype is a reference, **not an accepted visual specification**. This document defines the boundary between utility behavior and human-facing views, including constrained MCP Apps embedded views.
+Status: **Accepted separation of concerns** (2026-11-12); visual look and implementation are not yet verified. The canonical four-layer data types and version rules are in [four-layer-contracts-v2.md](./four-layer-contracts-v2.md), and mandatory lint/typecheck/schema tests are in [quality-gates-v2.md](./quality-gates-v2.md). The old monolithic React prototype is a reference, **not an accepted visual specification**. This document describes UI use of the fixed contracts across Web and MCP Apps.
 
 ## 1. The separation that actually matters
 
@@ -26,40 +26,30 @@ Keep four independent contracts:
 
 A "parts schema" is helpful, but **a full JSON-to-any-UI renderer is not required**. Keep it deliberately small, declarative and first-party; use a handwritten Vue view for image editors, complex calendars, canvases and advanced interactions. Parts are semantic composition contracts, not arbitrary DOM and CSS serialization.
 
-## 2. Minimal part system (candidate)
+## 2. Minimal part system (accepted v1)
 
-Use static TypeScript manifests, one registration per utility. Example shape (illustrative; validate with running code):
+Use static TypeScript manifests, one registration per utility. The **canonical** union is `field | action | result | feedback | custom` in [four-layer-contracts-v2.md](./four-layer-contracts-v2.md). Do not introduce alternative `button/value/preview` enum names or an arbitrary `dataKey: string` that cannot be checked against a ViewModel.
 
 ~~~ts
+// The generic Part<TData, TActionId> type is defined canonically
+// in four-layer-contracts-v2.md.
 type HostSurface = "widget" | "standalone" | "mcp-app";
-type Region = "heading" | "input" | "controls" | "result" | "status" | "settings";
-type PartType = "field" | "button" | "value" | "preview" | "feedback" | "custom";
-
-type PartRef = {
-  id: string;                  // stable identifier for testing/accessibility
-  type: PartType;
-  region: Region;
-  dataKey?: string;            // lookup in typed ViewModel, never eval or raw expression
-  actionId?: string;           // maps to declared intent; authorization occurs in operation layer
-  priority?: number;
-  visibility?: Partial<Record<HostSurface, "show" | "compact" | "hide">>;
-};
-
-type PresentationSpec = {
-  version: 1;
-  kind: string;                // utility ID, not board instance ID
-  parts: readonly PartRef[];
-  visualPreset?: string;       // semantic visual style; no arbitrary script/style injection
-  defaultDensity?: "comfortable" | "compact";
+type PresentationSpec<TData extends object, TActionId extends string> = {
+  schemaVersion: 1;
+  kind: string;
+  parts: readonly Part<TData, TActionId>[];
+  variants?: Partial<Record<HostSurface, "compact" | "detailed">>;
 };
 ~~~
 
-- Parts must have stable IDs and semantic roles; no arbitrary event-handler JavaScript, URLs, HTML, class string allowlists, or secret-bearing props in persisted schema.
-- ViewModel contains concrete structured values and action state, not a string encoding of code.
-- The schema is **not** the persistence schema of a tool's substantive data, and is **not** the JSON schema for MCP tools.
-- Host surfaces decide layout/breakpoint/safe area. Visibility rules cannot hide required feedback or destructive-action confirmation; use deliberate host overrides.
-- Widget frame supports size and resize constraints from the **existing** board metadata/schema; don't duplicate grid x/y/w/h in tool parts.
-- MCP Apps may get host-supplied theme, locale, dimensions and display mode; the host may not supply all of them, so every style variable needs a fallback.
+`PresentationSpec` is an illustrative **shape**; the exact compiled type will import `Part` from the one canonical source. Avoid duplicating this contract in production packages.
+
+- Parts must have stable, unique IDs and semantic roles; no arbitrary event-handler JavaScript, HTML, inline CSS or secret-bearing props in persisted schema.
+- Each `dataKey` and `actionId` is checked against the utility's typed ViewModel/intent union. Referenced custom components are checked against a local first-party registry.
+- The Parts contract is **not** the persistence schema of tool data, and is **not** the input/output JSON Schema for MCP tools.
+- Host surfaces decide layout/breakpoint/safe area. Visibility overrides cannot hide required feedback, consent or destructive-action confirmation.
+- Widget frame uses size/resize constraints from Board metadata/schema; no grid x/y/w/h in tool Parts.
+- MCP Apps may get theme, locale and dimensions from their host; if unavailable, all styles have accessible fallback values.
 
 ### Example
 
