@@ -24,10 +24,10 @@ Do not merge/implement unconfirmed product scope as if all requested widgets wer
 - ChatGPT is the first external AI host to test.
 
 **Proposals requiring validation by runnable vertical slice, not blanket adoption:**
-- Astro + Vue remains the expected production Web stack; keep the React file strictly as a reference.
+- Web framework selection is **reopened**: Vue 3 + Vite is the leading candidate, React + Vite is a fallback; Astro + Vue is no longer a mandatory default. Keep the React file as a visual/interaction reference only, not production code to port wholesale.
 - A TypeScript workspace with one static first-party utility catalog, and optional per-tool Vue views.
 - Stateless Cloudflare Workers createMcpHandler for /mcp, no DB/DO initially.
-- Small instance config embedded in board state as the canonical storage, plus standalone config keys and distinct tool-data stores.
+- IndexedDB-based local repository (Dexie candidate) for board/config/tool-data is preferred for validation. **Choose and prove one canonical per-instance + standalone config store** before migration; do not assume embedded-board config is accepted. Keep runtime state separate.
 - MCP Apps UI built from the shared Vue view when ergonomically suitable; otherwise host-specific shell/view.
 
 **Explicit nondecisions:**
@@ -50,19 +50,20 @@ Do not merge/implement unconfirmed product scope as if all requested widgets wer
 
 ### Stage 1 — cross-surface vertical slice (thin proof, no big board yet)
 
-1. Scaffold minimal Astro + Vue app with local-only zero-env mode; compile one pure TypeScript operation with a JSON schema and fixtures. Prefer a synthetic, bounded text normalization operation for architectural proof; do not duplicate the full existing bulk-text-replacement-tool.
+1. Scaffold minimal **Vue 3 + Vite** app with local-only zero-env mode; evaluate cf + cloudflare.config.ts + Vite plugin v2 beta as a pinned and reversible deployment experiment. Compile one pure TypeScript operation with a JSON schema and fixtures. Prefer bounded synthetic text normalization for architecture proof, without duplicating the full existing bulk-text-replacement-tool.
 2. Expose the operation via a minimal standalone UI and a single stateless remote MCP Worker. Verify tools/list, tools/call, invalid input handling, structured output and no stateful binding.
 3. Create **one** small MCP Apps iframe view from the same reusable Vue presentation when possible. Use mutually compatible MCP SDK v2 / MCP Apps ext-apps 2.x packages and a Worker-safe prebundled HTML resource (not Node fs at request time). Verify ui:// discovery, resource loading, host bridge, interactive value updates, text-only fallback and sandbox/CSP constraints.
 4. Implement a feature-detected WebMCP adapter over the same operation. Test in an environment with a supported API; lack of API in production browsers must not prevent the Web page from functioning.
 5. Use MCP Inspector/SDK integration tests before any client connection. Verify actual ChatGPT connection and UI if the account's app-development controls permit it; connection may require an explicit human setup step.
 6. Validate that server build contains no Web DOM/Vue board or secret browser config. Capture build sizes/cold path and free-tier resource usage when measurements become possible; do not assume zero hosting cost.
+7. Prove one IndexedDB schema upgrade, two-tab behavior, storage error/backup, and one optional Dedicated Web Worker with cancellation/transferable payloads. Also verify cf's beta commands do not skip type-checks in CI.
 
 **Gate:** one operation produces comparable validated results directly, from the Web, from /mcp, and through WebMCP where available. MCP Apps UI is a distinct test, not assumed to be automatically compatible with every client.
 
 ### Stage 2 — usable local widget board
 
 1. Implement a clock as first **human-facing** widget/standalone tool (the original accepted v1 example), with optional network time fallback and versioned config.
-2. Build one board page, add/remove widgets, edit-mode-gated drag/resize, persistence/recovery and breakpoint-specific layouts. Test keyboard and touch flows.
+2. Build one board page, add/remove widgets, edit-mode-gated drag/resize, IndexedDB persistence/recovery and breakpoint-specific layouts. Test keyboard and touch flows. Include an isolated design-token/semantic-parts contract so visual redesign does not change domain logic.
 3. Keep advanced grouping, layering, multiple layouts and elaborate widget picker features as documented future capabilities; no need to implement everything before the first usable board.
 4. Support a "shortcut/link to independent utility" entry, so mature external tool repos can be reached without copying code.
 5. Ship the installable PWA/offline shell and verify standalone/tool assets are cached appropriately without requiring /mcp. Verify desktop Chrome/Firefox and mobile Safari/WebKit layouts are intentionally adapted.
@@ -138,3 +139,5 @@ CI should include types, lint, unit tests for schema/operations/migrations, Work
 - [Current development guide](./dev-guide.md)
 - [New v2 architecture](./architecture-v2.md)
 - [New v2 module contract](./tool-module-contract-v2.md)
+- [Platform and browser-local data decision](./platform-and-data-v2.md)
+- [Design system and UI parts contract](./design-system-and-parts-v2.md)
