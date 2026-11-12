@@ -86,7 +86,9 @@ type UtilityDefinition<Config> = {
 };
 ~~~
 
-Schema<Input> is illustrative, not an SDK type. Choose one validation/schema source (e.g. Zod) in the implementation, and derive server and browser tool schemas from that source. Always validate runtime args/results on the executing side; TypeScript alone does not validate untrusted JSON.
+Schema<Input> is illustrative, not an SDK type. Choose one validation/schema source (e.g. Zod 4.2+ for current MCP SDK v2 / ext-apps 2.x) in the implementation, and derive server and browser tool schemas from that source. Always validate runtime args/results on the executing side; TypeScript alone does not validate untrusted JSON.
+
+The OperationContext must expose **narrow, injected ports** (e.g., authenticated task repository, explicit request cancellation, clock, limits) rather than an ambient global database/window. Browser-local and Worker-backed contexts can execute a common operation only when their provider semantics intentionally match. Adapter-specific network/auth glue must not leak into the core function.
 
 ### Example: simple pure function (not a production tax spec)
 
