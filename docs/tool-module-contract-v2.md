@@ -132,7 +132,7 @@ Use the existing four-layer persisted schemas as the basis; do **not** add proto
 | Runtime state | open panel, loading, current timer tick | UI host only by default |
 | Host connection | MCP session, iframe theme, browser tool registration | Adapter, never board persistence |
 
-- Enforce one canonical config store. Existing docs suggest *both* embedded config and an independent localStorage toolConfig key. Resolve in code before writing migrations; current recommendation is embedded per-instance config (with an explicit unplaced/standalone config key where needed), no shadow writes.
+- Enforce one canonical config store. Existing docs suggest both embedded config and independent localStorage keys. With IndexedDB now being considered, **a normalized config store keyed by explicit board instance/standalone identity is the leading candidate**, not an accepted final choice. Resolve with actual import/export, multi-instance and migration tests before writing final schema; no shadow writes. See [platform-and-data-v2.md](./platform-and-data-v2.md).
 - Each standalone tool must behave even if it has never been on a board. A deterministic namespace for its config/data must not require an instanceId.
 - Preserve unknown widget kinds during import/export, display an "unavailable tool" placeholder instead of deleting their board instances, and do not execute unrecognized operations.
 - Separate protocol/operation version changes from persisted config/data migrations; they are not equivalent.
@@ -140,7 +140,7 @@ Use the existing four-layer persisted schemas as the basis; do **not** add proto
 
 ## 6. UI composition rules
 
-Design one focused ToolView that can receive typed data and emit actions. Hosts provide their own surrounding chrome:
+Design one focused ToolView that can receive typed ViewModel data and emit intents/actions. Hosts provide their own surrounding chrome. Visual styling belongs to reusable design tokens, optional semantic part manifests and host shells; see [design-system-and-parts-v2.md](./design-system-and-parts-v2.md). A schema-driven renderer is optional for simple forms/results, not a mandatory generic UI engine:
 
 ~~~text
                   ToolView.vue (when reuse makes sense)
@@ -148,7 +148,7 @@ Design one focused ToolView that can receive typed data and emit actions. Hosts 
                   +--------+---------+
                   |        |         |
           WidgetShell  Standalone  MCPAppShell
-             Vue        Astro/Vue   MCP iframe
+             Vue        Vite/Vue    MCP iframe
                   |
           BoardRoot and layouts
 ~~~
@@ -161,7 +161,7 @@ Optional shortcut/link-style widgets to existing standalone applications are acc
 
 1. Define kind, metadata, configuration defaults/schema/migration in one local module. Mark whether it has Widget and/or Standalone views.
 2. Implement actual pure operations **only when needed**. Declare runtime compatibility, input/output schemas, privacy class, effect and explicit agent exposure.
-3. Implement the focused Vue ToolView if it has a human interface. Board/Standalone shells wrap it; the loader adds it to the picker/catalog.
+3. Implement a focused Vue ToolView or use the small set of semantic UI primitives/parts if the UI is simple. Board/Standalone shells wrap it; the loader adds it to the picker/catalog. Changing the visual theme must not change tool operation code.
 4. If MCP Apps UI adds value, build its iframe entry using the shared ToolView and bridge. If it does not, ordinary MCP JSON/text results are enough.
 5. Add fixtures, permission/limits tests, config migration/offline tests and relevant browser + MCP smoke coverage. Adapters must require no bespoke protocol handler per utility.
 
