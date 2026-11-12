@@ -52,7 +52,7 @@ Do not merge/implement unconfirmed product scope as if all requested widgets wer
 
 1. Scaffold minimal Astro + Vue app with local-only zero-env mode; compile one pure TypeScript operation with a JSON schema and fixtures. Prefer a synthetic, bounded text normalization operation for architectural proof; do not duplicate the full existing bulk-text-replacement-tool.
 2. Expose the operation via a minimal standalone UI and a single stateless remote MCP Worker. Verify tools/list, tools/call, invalid input handling, structured output and no stateful binding.
-3. Create **one** small MCP Apps iframe view from the same reusable Vue presentation when possible. Verify ui:// discovery, resource loading, host bridge, interactive value updates, text-only fallback and sandbox/CSP constraints.
+3. Create **one** small MCP Apps iframe view from the same reusable Vue presentation when possible. Use mutually compatible MCP SDK v2 / MCP Apps ext-apps 2.x packages and a Worker-safe prebundled HTML resource (not Node fs at request time). Verify ui:// discovery, resource loading, host bridge, interactive value updates, text-only fallback and sandbox/CSP constraints.
 4. Implement a feature-detected WebMCP adapter over the same operation. Test in an environment with a supported API; lack of API in production browsers must not prevent the Web page from functioning.
 5. Use MCP Inspector/SDK integration tests before any client connection. Verify actual ChatGPT connection and UI if the account's app-development controls permit it; connection may require an explicit human setup step.
 6. Validate that server build contains no Web DOM/Vue board or secret browser config. Capture build sizes/cold path and free-tier resource usage when measurements become possible; do not assume zero hosting cost.
@@ -65,7 +65,7 @@ Do not merge/implement unconfirmed product scope as if all requested widgets wer
 2. Build one board page, add/remove widgets, edit-mode-gated drag/resize, persistence/recovery and breakpoint-specific layouts. Test keyboard and touch flows.
 3. Keep advanced grouping, layering, multiple layouts and elaborate widget picker features as documented future capabilities; no need to implement everything before the first usable board.
 4. Support a "shortcut/link to independent utility" entry, so mature external tool repos can be reached without copying code.
-5. Verify desktop Chrome/Firefox and mobile Safari/WebKit layouts are intentionally adapted.
+5. Ship the installable PWA/offline shell and verify standalone/tool assets are cached appropriately without requiring /mcp. Verify desktop Chrome/Firefox and mobile Safari/WebKit layouts are intentionally adapted.
 
 **Gate:** Web works disconnected and without a Worker; refresh/import does not lose instances or personal settings; mobile is usable and not just scaled desktop.
 
