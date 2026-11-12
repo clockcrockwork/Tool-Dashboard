@@ -35,7 +35,7 @@ Do not merge/implement unconfirmed product scope as if all requested widgets wer
 
 **Explicit nondecisions:**
 - Final wanted-widget inventory/prioritization and which old widgets now have standalone applications.
-- Sync provider, account flow, temporary file transfer storage and retention.
+- **General** cross-device sync provider, full account UX, temporary file transfer storage and retention. The narrow authenticated remote access for specifically opted-in AI targets is required separately in Stage 1e.
 - Product-wide visual system, actual mobile layout composition and theme choice.
 - Public app-directory listing, third-party marketplace, generic plugin SDK, commercial SaaS.
 
@@ -97,7 +97,7 @@ Register browser operations centrally per page/host and feature-detect support; 
 
 ### Stage 2 — usable local widget board
 
-1. Implement a clock as first **human-facing** widget/standalone tool (the original accepted v1 example), with optional network time fallback and versioned config.
+1. Extend/polish the clock and color tools already proven in Stage 1b, with an optional network-time fallback and versioned configuration, without reintroducing the old JSX or a second UI/data model.
 2. Extend the Stage 1b minimal board with edit-mode-gated drag/resize, layout persistence and per-breakpoint composition. Reuse the previously tested storage/three-delete-mode contracts; do not create a second identity or config store. Test keyboard and touch flows.
 3. Keep advanced grouping, layering, multiple layouts and elaborate widget picker features as documented future capabilities; no need to implement everything before the first usable board.
 4. Support a "shortcut/link to independent utility" entry, so mature external tool repos can be reached without copying code.
@@ -149,7 +149,7 @@ CI must run the canonical `npm run check` (lint, TS/Vue typecheck, unit and sche
 2. **Hidden server dependency:** one dashboard widget calls /mcp in local-only mode and breaks offline.
 3. **Registry drift:** one operation receives different schema/defaults in WebMCP and remote MCP.
 4. **Tool explosion:** model tool list polluted with irrelevant widget controls; operation selection degrades.
-5. **State confusion:** localStorage and Worker are portrayed as shared state without synchronization.
+5. **State confusion:** local IndexedDB and remote Worker are portrayed as shared state without explicit per-target remote opt-in/auth and a common provider.
 6. **Insecure writes:** an unauthenticated Worker shares task/user data among callers or accepts unbounded payloads.
 7. **Import loss:** a legacy board export drops unsupported kinds, versions, or instance config.
 8. **Mobile regression:** desktop board works but phone Safari cannot operate picker, settings or resized widgets.
