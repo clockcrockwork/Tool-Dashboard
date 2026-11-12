@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "vitest/globals"
+    ]
+  },
+  "include": [
+    "src/core/**/*.ts",
+    "src/tools/**/*.ts",
+    "contracts/**/*.ts"
+  ],
+  "exclude": [
+    "src/**/*.vue"
+  ]
+}

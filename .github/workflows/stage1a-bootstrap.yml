@@ -1,0 +1,43 @@
+name: Stage 1a one-shot contract bootstrap
+
+on:
+  push:
+    branches:
+      - feat/stage-1a-contract-tooling
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stage1a-bootstrap
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - name: Resolve and generate one reviewed lockfile
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Verify contracts and bundle
+        run: |
+          npm ci --no-audit --no-fund
+          npm run check
+          npm run build
+      - name: Commit lockfile on success
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "chore: lock reviewed Stage 1a dependencies"
+          HEADER="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          git -c http.extraheader="AUTHORIZATION: basic $HEADER" push origin HEAD:refs/heads/feat/stage-1a-contract-tooling
