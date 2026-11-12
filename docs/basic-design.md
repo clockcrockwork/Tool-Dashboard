@@ -1,5 +1,8 @@
 # Basic Specification & Architecture
 
+> **Historical v1 reference for Tool-Dashboard v2 (2026-11-12).** The 2025 design is preserved below. New v2 implementations follow the [v2 normative map](../README.md#normative-v2-map-for-this-branch-effective-on-merge). Astro+Vue, localStorage as the primary database, Board-embedded/shadow tool config and mandatory Widget+Standalone UIs are superseded where conflicting. Independent tools, accessibility, local-first and user control remain.
+
+
 ## 1. Tech Stack
 - Astro: Routing, page shells, static layout
 - Vue: Interactive UI, widgets, state handling

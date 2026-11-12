@@ -1,0 +1,137 @@
+# Tool-Dashboard v2: AI-compatible architecture proposal
+
+Status: **accepted architectural direction; implementation still draft/unverified** (2026-11-12). The four-layer type/compatibility decisions are canonical in [four-layer-contracts-v2.md](./four-layer-contracts-v2.md) and [quality-gates-v2.md](./quality-gates-v2.md). The main-branch v1 documents remain intact until PR review/merge.
+Baseline: main at 56a7cac (last changed 2025-12-25). There is no packaged/runnable app yet; prototype.jsx is a React design prototype. **Prior docs named Astro + Vue, but the creator selected Vue 3 + Vite + TypeScript as the initial stack on 2026-11-12**. React + Vite is only a contingency for a demonstrated blocker; actual versions/runtime still require verification. See [platform-and-data-v2.md](./platform-and-data-v2.md).
+
+## 1. Decisions already accepted (keep)
+
+1. Personal-use-first, public source, self-host/self-config; no shared managed SaaS assumed.
+2. Every utility runs independently of the dashboard. The board is a host, not a business-logic dependency.
+3. The attractive personal start page/widget board, explicit edit mode, responsive layouts and visual portfolio value remain accepted. **Astro + Vue is a legacy proposal, not a fixed stack.**
+4. Local-first/offline whenever feasible. The Web app must work with no backend or environment variables configured.
+5. Phone and desktop need separately appropriate layouts, not just a scaled desktop board. Cross-device continuity (including temporary transfer of text/URLs/files) remains a product requirement; the precise sync implementation is **not yet chosen**.
+6. The supported interface *targets* now include Web standalone/board, remote MCP, MCP Apps UI, and WebMCP. **Not every utility must implement all four**, and "target" does not mean "ship all four in the first release."
+7. ChatGPT usability is the first external-AI priority. Other clients should work where they implement the relevant standards; do not assume uniform availability.
+
+## 2. One core, multiple surfaces
+
+~~~text
+packages/tools/<kind>/             Web + Worker compatible behavior and schemas
+  definition.ts                     Static metadata, config/data schemas, permitted operations
+  operations.ts                     Pure, validated functions; no DOM, storage, secrets
+  *.test.ts                         Shared fixtures
+
+packages/tool-ui/<kind>/            Vue view (optional), host-independent presentation
+  ToolView.vue                      Render data and emit intent; not responsible for transport
+
+packages/board/                     Board model, placement, responsive layouts, migration
+apps/web/                           Proposed Vite + Vue SPA/PWA board and standalone hosts
+  WebMCP adapter                    Only in supported browsers, feature detected
+apps/mcp/                           One optional Cloudflare Worker /mcp (Streamable HTTP)
+  MCP tool adapter                  Registers only declared server-capable operations
+  MCP Apps resource adapter         Serves versioned ui:// HTML resources as needed
+apps/mcp-ui/                        Minimal iframe shell/assets per UI-enabled operation
+  MCP Apps bridge                   Host context, tool input/result, explicit tool calls
+~~~
+
+The directory names are a **proposed target**, not instructions to scaffold empty packages now. Start with fewer physical packages if the first implementation is small; preserve these dependency boundaries.
+
+- Pure tool operation code must not import Vue, Astro, Cloudflare APIs, window, document, localStorage, or host-specific MCP SDKs.
+- Adapters, not tools, translate to MCP protocol, MCP Apps UI resources, and experimental WebMCP browser registrations.
+- Board reads tool metadata/definitions and renders the selected UI. An MCP server must not import the board or a full browser UI bundle.
+- Optional UI can be shared as a Vue component between standalone, widget, and MCP iframe **when its interaction model fits**. The iframe shell, auth/transport bridge and host chrome are separate.
+- Existing independent tools in other repositories should default to a linked standalone integration or thin adapter. Do not duplicate or relocate their implementation merely to put them on the board.
+
+## 3. A widget is not automatically an MCP tool
+
+Model two orthogonal units:
+
+- **Utility**: human-facing product (clock, task list, file tool), optional Widget and Standalone views, per-instance configuration.
+- **Operation**: named, versioned callable capability (e.g., convert time, apply named text replacement), typed input/output, validated side effects and explicit exposure flags. One user instruction **must** be able to perform authorized operations across multiple board targets, including same-kind multi-target and cross-kind A→B output chaining; this is a product AC, not achieved merely by having two pure tools.
+
+Expose only useful operations; a decorative clock display or image slider may have no MCP operation at all. There may be several operations per utility or several UI views over one operation. Avoid creating one opaque "run_any_tool" endpoint: explicit tools are discoverable, testable and permissionable. Also avoid registering every incidental control as a model-visible tool (context/tool-selection cost).
+
+| Feature | Web standalone + board | Remote MCP | MCP Apps UI | WebMCP |
+| --- | --- | --- | --- | --- |
+| Clock/timer visualization | Primary | Only useful discrete operations | Optional if host benefits | Optional, only while page open |
+| Pure conversion/calculation | Primary | Good candidate | Optional when visual/interactive | Browser capability |
+| Color picker/visual comparison | Primary | Data-only operation if useful | Strong UI candidate | Browser capability |
+| File-local transformation | Browser-first | Not implicitly available; needs explicit user-approved upload | Only after transport/privacy design | Can use current browser-selected files with explicit authorization |
+| Tasks/recurring tasks | Local first, data separately stored | Only with a server-side per-user data provider | Useful interactive UI | Can act on current open page/session |
+| Cross-device temporary transfer | Deferred product feature | Only after explicit server/auth/storage design | Possible view after backend | Page/session dependent |
+
+Do not claim shared browser state: an MCP Worker cannot read the user's localStorage, tabs, or local files. An MCP Apps iframe cannot assume it shares storage/cookies with the regular site.
+
+## 4. Runtime and deployment boundaries
+
+### Web
+
+- The proposed Vite + Vue web build remains a static SPA/PWA. No Cloudflare Worker request is required to start or use local utilities, except to initially serve the files. Separate browser Dedicated Web Workers (heavy computation), Service Workers (PWA cache), and Cloudflare Workers (remote MCP); these are not interchangeable. See [platform-and-data-v2.md](./platform-and-data-v2.md).
+- Keep board layout, tool settings and local tool data separable. Browser functionality should fail gracefully without the MCP server.
+- WebMCP is **not** remote MCP. Register only supported/appropriate operations in the current page via a small adapter, feature-detect the experimental browser API, unregister on teardown/page change, and preserve normal UI if unsupported. Do not make a browser preview API a hard dependency.
+- WebMCP calls must use the same application service, permissions, validation and commit semantics as human UI actions; no alternate unguarded path.
+
+### Remote MCP + MCP Apps
+
+- Start with **one optional Cloudflare Worker** exposing the standard Streamable HTTP MCP endpoint at /mcp. No Worker per widget.
+- Current Cloudflare docs (2026-10-27) recommend stateless createMcpHandler with a fresh McpServer per request. **No Durable Object, Queue or D1 is needed for a pure/stateless tool.** Add persistence only for a concrete stateful requirement.
+- The MCP adapter registers a subset of explicit operations, validates inputs and outputs, returns concise text + structuredContent for data consumers, and supplies stable read-only/side-effect annotations where appropriate. The adapter also emits **explicit model/app visibility** separate from remote-mcp/webmcp transport exposure: never rely on the MCP Apps default that exposes both. Model visibility never replaces per-user authorization.
+- **SDK compatibility as of 2026-11-12:** Cloudflare's current stateless handler uses @modelcontextprotocol/server v2, and MCP Apps ext-apps 2.x is built for that same split SDK family (with Zod >=4.2). Do not mix @modelcontextprotocol/sdk v1 helpers/types with these classes. Pin the mutually compatible releases together when scaffolding, not separate unverified latest versions. [MCP Apps v2 migration](https://github.com/modelcontextprotocol/ext-apps/blob/main/docs/migrate-to-2.md).
+- For an interactive result, link the operation to a versioned ui:// resource with MCP Apps metadata. The host loads a sandboxed HTML app; the UI must also degrade to usable text/structured output when the client lacks MCP Apps support. Package the compiled self-contained HTML for Worker runtime consumption at build time; do **not** copy Node-only runtime fs.readFile examples into the Worker.
+- Prefer a core UI contract and the standard MCP Apps postMessage bridge; ChatGPT-specific APIs/extensions are optional, isolated enhancements, not requirements for business logic.
+- Split computational/data tools from dedicated rendering tools **when this prevents excessive iframe re-renders**. Do not attach a UI to every operation automatically.
+- Web publishing, Worker deployment, and external ChatGPT connection are independent milestones. A private dev setup should not be mistaken for publicly available app-directory distribution.
+
+### Security and resource policy
+
+- Do not place API keys, user tokens, private notes, file contents or backend storage credentials in tool metadata, browser configuration or returned UI HTML. The first publicly callable remote proof uses bounded, non-sensitive structured color input, not arbitrary submitted prose or local files. Even a `read` operation can receive private user input.
+- Stateless public calculation endpoints, if enabled, require input/CPU/size caps and abuse controls. Anything stateful or user-private requires authentication and per-user authorization from the start; never use one shared "anonymous" identity as private storage.
+- Bind host credentials on the server, use least-privilege provider scopes, and re-check authorization on **each** mutating operation. Treat tool args and output as untrusted.
+- Browser-local file operations do not silently upload files. An MCP operation requesting remote file processing must disclose/obtain the required user approval and bound bytes; never fabricate access to local paths.
+- Declare narrow CSP and origin policies for embedded UIs, with no unreviewed third-party scripts or wildcard cross-origin access.
+- Keep logs free of payloads and personal secrets by default.
+- Keep heavy Wasm/bulk image processing browser-side unless a clear reason and budget justify moving it server-side.
+
+## 5. Stateful data and the AI-to-visible-board boundary (accepted)
+
+**Canonical record identities, provider modes, multi-target AI flows, deletion/export semantics and revision requirements live exclusively in [tool-module-contract-v2.md](./tool-module-contract-v2.md) §§1/4/5.** The Vue ViewModel/draft/subscription contract is in [four-layer-contracts-v2.md](./four-layer-contracts-v2.md) Layer 2. Do not create a parallel persistence schema here.
+
+- IndexedDB via Dexie remains the local-only source of committed truth. Board placement, durable config instance, data target and a mounted view are distinct identities. The original v1 `WidgetInstance.config` embedded state and separate `localStorage` config key are **historical alternatives superseded for v2**. Old exported shapes are supported through explicit import migration rather than retained as new write formats.
+- **Local-only is the default and must work with zero server configuration.** It is not automatically reachable from ChatGPT. Neither remote MCP nor the MCP Apps iframe can inspect the browser's IndexedDB.
+- **Remote access is a per-resource opt-in (instance configuration and/or saved data)**, not an implicit side effect of having a widget. The user connects an authenticated provider, chooses the eligible configuration/data resource(s), and Web + remote MCP use the same remote committed-state service with explicit identity mapping, per-user scopes and revision checks. Other local-only/opted-out targets remain private/unavailable to remote MCP. The initial remote-enabled policy allows local cached reads and drafts offline, **not silent queued remote writes**.
+- A stateless Cloudflare Worker can route protocol calls, but stateful remote targets require a real transactional provider with authorization, conditional writes and tombstones. **Provider technology** (D1/DO/etc.) is an implementation choice to prove at the first stateful remote gate; do not provision a database for pure operations. Remote access to only selected targets is not the same as general full-board multi-device sync.
+- The persistently displayed Web board must follow confirmed provider changes (from ChatGPT, another widget/tab or device) without losing dirty drafts. Controller/subscription reads the latest revisions on visibility/reconnect and uses bounded live events/polling when available. An online visible board should reflect a committed remote change within **30 seconds** with a first implementation 15-second visible-only poll fallback; measure actual request/cost impact and allow a more efficient push later. No notification should trigger another mutation.
+- When two remote configuration/data resources are acted on by one AI instruction, the host invokes explicit typed operations (not UI clicks), validates receiving inputs, reports success/failure/skipped **per target**, and does not imply a transaction across multiple tool calls. Shared targets must be deduplicated. Revision + idempotency safeguards prevent replay and stale resurrection.
+
+The local-first design is not reversed by remote integration. PC↔phone continuity including temporary transfers remains a later feature scope for data not explicitly remote-enabled. **The real ChatGPT-to-two-authorized-targets-to-visible-board route is mandatory for the AI-integrated milestone**, but the local Web MVP and stateless pure MCP proof may complete earlier.
+
+
+## 6. Visual and accessibility behavior
+
+- The former `prototype.jsx` is an unpartitioned Claude Design experiment, **not an accepted design or migration target**. Rebuild the interface from the v2 schema and usability needs; it may be consulted only as optional historical inspiration. UI is being redesigned from design tokens, reusable semantic parts and host-specific shells (see [design-system-and-parts-v2.md](./design-system-and-parts-v2.md)).
+- Web board can support free placement/editing; UI embedded inside ChatGPT/Claude should present one focused tool, **not the full dashboard board**.
+- Keyboard operation, focus visibility, screen-reader semantics and escape/cancel behavior remain part of the implementation contract.
+- Mobile Safari/WebKit is a required validation surface; desktop visual layouts cannot be merely shrunken for phones.
+- Do not force all UI hosts to look identical. Share the functional Vue view when sensible, but adapt shells, dimensions, navigation, and touch targets per host.
+
+## 7. Trade-offs considered and rejected for initial design
+
+- **All tools server-only**: rejected. Breaks local-first/offline and adds cost to trivial browser tools.
+- **One Worker/Durable Object per widget**: rejected. Widgets are UI instances, not server processes.
+- **Automatic model exposure of every widget**: rejected. Many widgets lack a meaningful AI operation; unnecessary tool registration harms discovery.
+- **Duplicate code for Web, MCP, WebMCP**: rejected when operation semantics match; adapters should invoke a common validated core.
+- **Mandatory central hosted account or automatic data synchronization**: rejected for first build; conflicts with self-config/local-only.
+- **Copying all independent utility repositories into one monorepo**: rejected without proven reuse value.
+- **A generic dynamic third-party plugin/marketplace platform**: out of scope. A build-time registry of first-party utilities is sufficient.
+
+## 8. Reference specifications (recheck versions at implementation)
+
+- [MCP Apps official extension / SDK](https://github.com/modelcontextprotocol/ext-apps) — ui:// resources, host capabilities, model/app visibility, sandbox, structuredContent.
+- [OpenAI MCP server and UI quickstart](https://developers.openai.com/plugins/build/app-quickstart) — ChatGPT client behavior, iframe UI and MCP endpoint.
+- [OpenAI MCP UI guidelines](https://developers.openai.com/plugins/build/chatgpt-ui) — separate data and rendering tools, template versioning, CSP.
+- [Cloudflare remote MCP server](https://developers.cloudflare.com/agents/model-context-protocol/guides/remote-mcp-server/) — stateless createMcpHandler, auth variants.
+- [Cloudflare MCP tool definitions](https://developers.cloudflare.com/agents/model-context-protocol/protocol/tools/) — typed registration, stateful boundaries; experimental WebMCP adapter is not a stable requirement.
+- [Chrome: WebMCP vs MCP](https://developer.chrome.com/docs/ai/webmcp/compare-mcp) — browser page/session tools versus remote server.
+- [Chrome WebMCP best practices](https://developer.chrome.com/docs/ai/webmcp/best-practices) — shared service, tool registration and commit semantics.
+
+See [tool-module-contract-v2.md](./tool-module-contract-v2.md) for the utility/module contract; [four-layer-contracts-v2.md](./four-layer-contracts-v2.md) for Operation/ViewModel/Parts/Tokens; [quality-gates-v2.md](./quality-gates-v2.md) for enforced lint, types and compatibility; and [implementation-plan-v2.md](./implementation-plan-v2.md) for staging.

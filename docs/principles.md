@@ -1,5 +1,8 @@
 # Project Principles & Rules
 
+> **V2 precedence note (2026-11-12).** The independent, personal/self-configured, accessible and local-first principles remain in force. For concrete implementation decisions use the [v2 normative map](../README.md#normative-v2-map-for-this-branch-effective-on-merge). Explicit v2 contracts supersede conflicting examples here. This document preserves their historical origin.
+
+
 ## 1. Project Stance
 - This project is primarily for personal use.
 - The repository is public.
