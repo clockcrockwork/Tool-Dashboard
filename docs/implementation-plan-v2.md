@@ -1,6 +1,6 @@
 # Tool-Dashboard v2: staged redesign and acceptance plan
 
-Status: draft plan, 2026-11-12. This plan accompanies [architecture-v2.md](./architecture-v2.md) and [tool-module-contract-v2.md](./tool-module-contract-v2.md).
+Status: **accepted implementation direction, executable gates pending**, 2026-11-12. This plan follows the accepted [four-layer-contracts-v2.md](./four-layer-contracts-v2.md) and [quality-gates-v2.md](./quality-gates-v2.md), with architectural context from [architecture-v2.md](./architecture-v2.md).
 Do not merge/implement unconfirmed product scope as if all requested widgets were approved for the same MVP.
 
 ## A. Confirmed baseline (2026-11-12)
@@ -23,8 +23,11 @@ Do not merge/implement unconfirmed product scope as if all requested widgets wer
 - Desktop and smartphone need independently designed composition; cross-device continuity is an explicit product requirement.
 - ChatGPT is the first external AI host to test.
 
+**Accepted technology direction (actual tool versions and runtime compatibility still require validation):**
+- **Vue 3 + Vite + TypeScript** for the first Web implementation, **IndexedDB + Dexie** for browser-local persistence. React + Vite is only a blocker-based fallback. Keep the React prototype as a visual/interaction reference, not production code to port wholesale.
+- Cloudflare `cf`/Vite plugin v2 beta is the first **reversible deployment spike**; Hono is optional for real API-routing needs, not the UI stack.
+
 **Proposals requiring validation by runnable vertical slice, not blanket adoption:**
-- Web framework selection is **reopened**: Vue 3 + Vite is the leading candidate, React + Vite is a fallback; Astro + Vue is no longer a mandatory default. Keep the React file as a visual/interaction reference only, not production code to port wholesale.
 - A TypeScript workspace with one static first-party utility catalog, and optional per-tool Vue views.
 - Stateless Cloudflare Workers createMcpHandler for /mcp, no DB/DO initially.
 - IndexedDB-based local repository (Dexie candidate) for board/config/tool-data is preferred for validation. **Choose and prove one canonical per-instance + standalone config store** before migration; do not assume embedded-board config is accepted. Keep runtime state separate.
@@ -44,13 +47,14 @@ Do not merge/implement unconfirmed product scope as if all requested widgets wer
 2. Identify legacy schema conflicts and define one candidate config/data separation.
 3. Require a new tool to be addable through a manifest + optional view/operations, without new hand-authored protocol endpoint per tool.
 4. Review security, environment boundaries, existing independent tool reuse and mobile-first constraints.
-5. Do not claim tests/build passed: this repository still has no installable project.
+5. Freeze the four-layer Operation/ViewModel/Parts/Tokens v1 contracts, schema versioning and quality gates. A persisted tool record/config version is **independent** of these four layers; no silent incompatible migrations.
+6. Do not claim tests/build passed: this repository still has no installable project.
 
 **Gate:** architecture review separates accepted decisions, experimentally validated assumptions and deferred product choices. The v2 PR stays Draft pending this review.
 
 ### Stage 1 — cross-surface vertical slice (thin proof, no big board yet)
 
-1. Scaffold minimal **Vue 3 + Vite** app with local-only zero-env mode; evaluate cf + cloudflare.config.ts + Vite plugin v2 beta as a pinned and reversible deployment experiment. Compile one pure TypeScript operation with a JSON schema and fixtures. Prefer bounded synthetic text normalization for architecture proof, without duplicating the full existing bulk-text-replacement-tool.
+1. Scaffold minimal **Vue 3 + Vite + TypeScript** app with local-only zero-env mode; try cf + cloudflare.config.ts + Vite plugin v2 beta as a pinned/reversible deployment experiment. **First establish executable `npm run lint`, `npm run typecheck` (`tsc` and `vue-tsc`), `npm run test:unit`, `npm run test:contracts`, and an aggregate `npm run check` script; the build/deploy workflow must run `check` explicitly because `cf build` skips npm build-script extras.** Implement one Zod 4 source schema with TypeScript-inferred types, generated MCP JSON Schema and fixtures. Prefer bounded synthetic text normalization for proof, without duplicating the existing bulk-text-replacement-tool.
 2. Expose the operation via a minimal standalone UI and a single stateless remote MCP Worker. Verify tools/list, tools/call, invalid input handling, structured output and no stateful binding.
 3. Create **one** small MCP Apps iframe view from the same reusable Vue presentation when possible. Use mutually compatible MCP SDK v2 / MCP Apps ext-apps 2.x packages and a Worker-safe prebundled HTML resource (not Node fs at request time). Verify ui:// discovery, resource loading, host bridge, interactive value updates, text-only fallback and sandbox/CSP constraints.
 4. Implement a feature-detected WebMCP adapter over the same operation. Test in an environment with a supported API; lack of API in production browsers must not prevent the Web page from functioning.
@@ -58,7 +62,7 @@ Do not merge/implement unconfirmed product scope as if all requested widgets wer
 6. Validate that server build contains no Web DOM/Vue board or secret browser config. Capture build sizes/cold path and free-tier resource usage when measurements become possible; do not assume zero hosting cost.
 7. Prove one IndexedDB schema upgrade, two-tab behavior, storage error/backup, and one optional Dedicated Web Worker with cancellation/transferable payloads. Also verify cf's beta commands do not skip type-checks in CI.
 
-**Gate:** one operation produces comparable validated results directly, from the Web, from /mcp, and through WebMCP where available. MCP Apps UI is a distinct test, not assumed to be automatically compatible with every client.
+**Gate:** one operation produces comparable validated results directly, from the Web, from /mcp, and through WebMCP where available; a **second utility** registers without altering host protocol adapters. Lint, TS/Vue typecheck, schema generation/snapshots, migrations, unit and build must pass. MCP Apps UI is a distinct test, not assumed to be automatically compatible with every client.
 
 ### Stage 2 — usable local widget board
 
@@ -106,7 +110,7 @@ Only after these answers, implement the minimal operation/view and derive host a
 | Unknown/unsupported host | normal Web | text/data fallback | no iframe expected | feature detected / no registration |
 | Board/storage schema migration | required | n/a | n/a | n/a |
 
-CI should include types, lint, unit tests for schema/operations/migrations, Workers integration test, and focused Playwright E2E for Web and iframe behavior. An external ChatGPT connection is a separate integration smoke, not a guaranteed CI environment. In the first PR that introduces a build, record exact commands and CI evidence.
+CI must run the canonical `npm run check` (lint, TS/Vue typecheck, unit and schema-contract tests) and build, with a focused Workers integration test and Playwright E2E for relevant Web/iframe behavior when executable. An external ChatGPT connection is a separate integration smoke, not a guaranteed CI environment. In the first PR that introduces a build, record exact commands and CI evidence.
 
 ## E. Principal risks to actively try to falsify
 
@@ -139,5 +143,7 @@ CI should include types, lint, unit tests for schema/operations/migrations, Work
 - [Current development guide](./dev-guide.md)
 - [New v2 architecture](./architecture-v2.md)
 - [New v2 module contract](./tool-module-contract-v2.md)
+- [Four-layer accepted contracts](./four-layer-contracts-v2.md)
+- [Lint, typing, schema migration and CI gates](./quality-gates-v2.md)
 - [Platform and browser-local data decision](./platform-and-data-v2.md)
 - [Design system and UI parts contract](./design-system-and-parts-v2.md)
