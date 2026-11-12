@@ -20,7 +20,7 @@ Utility operation: inputs + semantics + typed result + side effect rules
 Keep four independent contracts:
 
 1. **Operation schema** (already proposed in tool-module-contract-v2.md): validated inputs/outputs for an AI-callable function and direct application use. Contains no visual style.
-2. **View model/state**: what the user sees and does — display values, validation errors, progress, enabled/disabled actions, busy state. UI actions dispatch typed intents, not host-specific fetch() or localStorage calls.
+2. **ViewModel/controller**: read-only projected committed data, per-view editable draft, validation feedback and async status. Fields emit typed change intents into the controller; host-specific fetch()/IndexedDB access and remote refresh stay outside the view.
 3. **Presentation contract (parts)**: how a tool opts into known UI regions and reusable primitives; host layouts may rearrange or omit parts while preserving essential data and actions.
 4. **Design tokens and shells**: visual styling, density, type scale, motion, focus, and host container/chrome. Board layout remains a separate data model; design tokens do not encode its instance ID or grid position.
 
@@ -45,7 +45,7 @@ type PresentationSpec<TData extends object, TActionId extends string> = {
 `PresentationSpec` is an illustrative **shape**; the exact compiled type will import `Part` from the one canonical source. Avoid duplicating this contract in production packages.
 
 - Parts must have stable, unique IDs and semantic roles; no arbitrary event-handler JavaScript, HTML, inline CSS or secret-bearing props in persisted schema.
-- Each `dataKey` and `actionId` is checked against the utility's typed ViewModel/intent union. Referenced custom components are checked against a local first-party registry.
+- Each field's `draftKey` / `changeIntentId` is checked against its typed draft/change-intent union, and each result's `dataKey` against committed ViewModel data. Submit uses a snapshot of the draft and validates operation args via Zod; incomplete/invalid edit values stay in draft rather than coercing or executing. Referenced custom components are checked against a local first-party registry.
 - The Parts contract is **not** the persistence schema of tool data, and is **not** the input/output JSON Schema for MCP tools.
 - Host surfaces decide layout/breakpoint/safe area. Visibility overrides cannot hide required feedback, consent or destructive-action confirmation.
 - Widget frame uses size/resize constraints from Board metadata/schema; no grid x/y/w/h in tool Parts.
@@ -54,10 +54,10 @@ type PresentationSpec<TData extends object, TActionId extends string> = {
 ### Example
 
 For a line-ending normalizer, a manifest may describe:
-- input: a textarea bound to ViewModel.inputText,
-- controls: one choice bound to ViewModel.ending and a Run action,
-- result: a value/copy panel bound to ViewModel.outputText,
-- status: validation and failure feedback.
+- input: a textarea bound to per-view `draft.inputText` via a typed change intent,
+- controls: an `ending` selector bound to draft and a Submit intent which snapshots/validates the operation args,
+- result: a value/copy panel bound to committed result data,
+- status: parse errors, pending/ready/error, and an external-update conflict notice without dropping dirty draft.
 
 On the widget surface, output may be compact. On a standalone page, it can expand to a large dual-pane editor. In an MCP App, the tool result may initially be text-first with an optional focused view. **All use the same operation**, but not necessarily the same layout/component tree.
 
@@ -145,6 +145,8 @@ Developer experience for a second utility:
 - Unsupported embedded host styling falls back to a readable neutral theme. Host variables and locale/size can change after mount.
 - Local storage, server auth and private data access are not available merely because a component renders.
 - Re-render and resize of widgets must not inadvertently restart file conversions or mutate persistent data.
+- An external AI commit updates all clean views of a shared target; a dirty editor retains its draft/baseRevision and visibly reports a newer committed revision. A stale save fails with CONFLICT and offers comparison/reapply, never silently overwrites.
+- Each mounted view owns its draft/subscription cleanup and invocation order; mounting a second widget does not create duplicated provider writes or unbounded subscriptions. Keyboard/focus/error and browser visibility/reconnect refresh remain test cases. The provider transport itself is specified in the module and architecture docs, not in visual Parts.
 
 ## 7. Explicitly open visual decisions
 
