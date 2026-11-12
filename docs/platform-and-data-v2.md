@@ -1,6 +1,6 @@
 # Platform and data architecture for Tool-Dashboard v2
 
-Status: **Draft recommendation** for PR #10, 2026-11-12. The creator explicitly reopened the earlier Astro + Vue assumption. **Do not treat the UI framework choice as decided until the thin implementation confirms it.** This ADR complements [architecture-v2.md](./architecture-v2.md) and [design-system-and-parts-v2.md](./design-system-and-parts-v2.md).
+Status: **Accepted initial platform choice** (2026-11-12), not yet runtime-verified. **Vue 3 + Vite + TypeScript** is fixed as the first implementation stack; IndexedDB is the primary local data platform (Dexie selected as its first adapter). React + Vite is a contingency only if evidence demonstrates a material blocker. Cloudflare `cf` / Vite plugin v2 remains a **beta deployment experiment** rather than a guaranteed production platform. This ADR complements [four-layer-contracts-v2.md](./four-layer-contracts-v2.md), [quality-gates-v2.md](./quality-gates-v2.md), [architecture-v2.md](./architecture-v2.md), and [design-system-and-parts-v2.md](./design-system-and-parts-v2.md).
 
 ## 1. Baseline and decision criteria
 
@@ -18,12 +18,12 @@ The existing repository has a large React design prototype (~94KB JSX) that was 
 | Option | Fit | Tradeoff | Recommendation |
 | --- | --- | --- | --- |
 | Astro + Vue islands | Many static SEO pages with a few dynamic widgets | Most of this board stays hydrated/interactive; extra islands/ownership boundaries, cf beta reports Astro 6+ incompatibility | **Deprioritize**, preserve for a separate content/marketing site if ever needed |
-| **Vue 3 + Vite + TypeScript SPA/PWA** | High-interactivity widget board, IndexedDB, browser workers; existing planned Vue model | New production code; React prototype not directly reusable | **First implementation candidate** |
-| React + Vite + TypeScript SPA/PWA | Equally capable, some prototype JSX reusable and mature ecosystem | Prototype has monolithic logic and visual design needs rework; reuse may be misleading | **Valid fallback** if a tiny spike demonstrates significant advantage |
+| **Vue 3 + Vite + TypeScript SPA/PWA** | High-interactivity widget board, IndexedDB, browser workers; existing planned Vue model | New production code; React prototype not directly reusable | **Accepted initial choice** |
+| React + Vite + TypeScript SPA/PWA | Equally capable, some prototype JSX reusable and mature ecosystem | Prototype has monolithic logic and visual design needs rework; reuse may be misleading | **Contingency only** on a demonstrated technical blocker |
 | Hono (+ JSX / SSR) alone | Cloudflare HTTP routing, server-rendered forms, API | Not a direct substitute for rich browser UI; does not make IndexedDB/Web Workers easier | **Not the primary UI framework** |
 | Vue + Vite with optional Hono Worker | Client-first UI plus API/MCP routes with optional future sync | Adds a server framework and configuration only when /api warrants it | **Preferred optional server evolution** |
 
-Recommendation: choose Vue 3 + Vite + TypeScript for the vertical slice, **not because framework X enables IndexedDB**, but because a consistently interactive SPA has little to gain from an Astro islands shell. Re-evaluate after implementing one human-facing tool + one board instance and one MCP App iframe. Avoid porting the whole React prototype.
+Decision: use Vue 3 + Vite + TypeScript for the initial implementation, **not because framework X enables IndexedDB**, but because a consistently interactive SPA has little to gain from an Astro islands shell. Do not re-open framework choice merely for aesthetics; reconsider only against an observed technical blocker with a minimal comparative test. Avoid porting the whole React prototype.
 
 ## 3. What "Worker" means — do not mix runtimes
 
@@ -57,7 +57,7 @@ Static SPA routes can be served as Workers Static Assets without invoking applic
 
 ## 5. Local data, IndexedDB and isolation
 
-Adopt a **LocalRepository abstraction** for tool data, instance configuration, board layout, and migrations. Use IndexedDB as the proposed canonical local persistence rather than layering an ever-growing collection of localStorage keys. Dexie.js is a reasonable first adapter because it supports declarative IndexedDB versions and migration handlers; do not force Dexie imports into every utility operation.
+Adopt a **LocalRepository abstraction** for tool data, instance configuration, board layout, and migrations. **IndexedDB is selected as canonical local persistence**, with **Dexie.js as the first adapter** for declarative versions and migrations. Do not force Dexie imports into core utility operations. Exact store layout and canonical config identity must be verified by the first two-instance migration/import test.
 
 Proposed logical object-store categories (not mandatory DB tables until usage exists):
 
