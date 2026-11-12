@@ -9,7 +9,7 @@ Status: **ACCEPTED DEVELOPMENT POLICY** for implementing [four-layer-contracts-v
 - **TypeScript interfaces/types** are the authority for internal ViewModels, typed intents, the static Parts discriminated union and design-token registry. Only the parts serialized over MCP Apps/iframe, import/export or persistence need a runtime schema.
 - **CSS custom properties** are the rendered design-token interface. Their semantic keys are typed in TS. Runtime user theme values are checked with a narrow Zod schema/allowlist.
 - A **single build-time tool catalog** owns `kind` and operation registrations; WebMCP and remote MCP adapters project only declared capabilities, not a separate hand-maintained registry.
-- **Persisted data** has independent per-tool/store schema versions and a sequential migration registry. Data/config shape changes do not automatically bump Operation/Parts/Theme versions.
+- **Persisted data** has independent per-tool/store schema versions and a sequential migration registry. Data/config shape changes do not automatically bump Operation/Parts/Theme versions. Canonical board `placementId`, tool `instanceId`, `targetRef`, `viewId`, revision and three deletion modes are defined **once** in [tool-module-contract-v2.md](./tool-module-contract-v2.md), not duplicated in this test policy.
 
 ## 2. TypeScript and lint baseline
 
@@ -57,21 +57,31 @@ Current sources:
 | Layer | Type/lint | Runtime/compatibility | UI / host |
 | --- | --- | --- | --- |
 | Operation | Zod-derived input/output, no `any`, exhaustiveness, isolated core | valid/invalid input and output, exported JSON Schema snapshot, bounded payload, error code and effect/auth tests, direct vs MCP/WebMCP fixture equality | non-MCP client gets useful structured/text fallback |
-| ViewModel | typed projection and intents, error union exhaustive | idle/working/ready/error transitions and serialized boundary parse (only if transported) | no premature success, correct async cancellation and focus feedback |
-| Parts | discriminated union, unique IDs, binding/action key checks | manifest schema/version, duplicate/missing keys, unknown kinds, cross-host fallback | compact/detailed widget, phone, MCP iframe, no hidden required controls |
+| ViewModel | typed committed/draft projection, change intents, exhaustive error union | idle/working/ready/error; dirty vs clean, expectedRevision CAS, external provider refresh, invocation ordering, serialized boundary parse if transported | invalid partial field preserved; AI update refreshes clean views and preserves dirty editor; no premature success/unmount mutation |
+| Parts | discriminated union, unique IDs, typed `draftKey/changeIntentId/actionId` | manifest schema/version, invalid or mismatched value types, duplicate/missing keys, unknown kinds, cross-host fallback | compact/detailed widget, phone, MCP iframe, validation failure retains draft; no hidden required controls |
 | Tokens | typed required semantic keys and safe override types | required-token completeness, user override rejection, no operation fixture changes | light/dark, contrast/focus, reduced motion and MCP host fallback |
-| Persisted data/config (orthogonal) | versioned record types, repo interface | migration fixtures, import-export round trip, unknown/future versions preserved read-only, backup/restore, two-tab IndexedDB behavior | no silent reset or lost layout/instance settings |
+| Persisted data/config (orthogonal) | placement/instance/target IDs, provider and revision types | migration fixtures; two same-kind instances + standalone; three delete modes; export/restore; unknown versions; atomic expectedRevision and two-tab concurrency | keep→re-add, export→re-import, export cancelled/changed⇒no deletion, shared data never cascaded |
 
 Schema snapshots are **review signals**, not self-justifying truth: a change must be accompanied by a declared compatibility classification, fixture changes, version decision and migration when needed. CI must never blindly update golden snapshots and accept them.
 
 ### Compatibility rule
 
-- **Compatible**: add new operation/tool/part/token, or optional field with tested default and identical behavior for existing input. Keep prior artifacts valid.
+- **Compatible**: add a new operation/tool/part/token, or add a backward-compatible optional **input** field with a tested default that leaves old inputs behaving identically. **Adding any field to a strict serialized output is not automatically compatible**: older iframe/clients may reject it as unknown; require tested producer/consumer compatibility or a versioned contract.
 - **Potentially breaking**: rename/remove/repurpose `kind` / operation / part / token name; change required field, enum meaning, result shape, permission, dataClass/effect or persistence identity. Require explicit review and versioned adapter/migration.
-- **Published operation breaking**: prefer a new operation ID or supported compatibility adapter; do not silently retarget old MCP clients. Keep old IDs documented until retirement is intentional and checked.
-- **Data migration**: migrate sequentially by stored schema version in an atomic IndexedDB transaction when feasible; backup raw export before destructive changes. Failure must preserve the old bytes and surface a recoverable error. Unsupported *newer* versions must not be written over.
+- **Published operation breaking**: prefer a new operation ID/version or a tested compatibility adapter; do not silently retarget old MCP clients. Pair immutable/versioned MCP Apps `uiResourceUri`/artifact with an operation contract version. An old cached iframe must either work with a tested range or receive `VERSION_UNSUPPORTED`, preserve its unsaved draft, and request a user-approved refresh. Full indefinite legacy iframe maintenance is not required; **the old React `prototype.jsx` is not a compatibility target**.
+- **Data migration**: migrate sequentially by stored schema version in an atomic IndexedDB transaction when feasible; backup raw export before destructive changes. Failure preserves old bytes; unsupported newer versions remain read-only. For normal deletion, compare the **current revision** with the exported revision in the same storage transaction; never equate download-start to verified user save. Refuse stale writes/deletes and tombstone deleted targets to prevent resurrection.
 - **ViewModel**: purely internal compatible type changes have no transport version requirement. If serialized across an iframe/Worker boundary, independently version and validate the transmitted shape.
 - **Visual-only**: changing a CSS value, theme preset or visual arrangement does not bump the operation contract version; still run UI/a11y smoke tests.
+
+### Cross-target AI and privacy test contract (added from Astro review)
+
+- **Model/app exposure:** test independent `exposeTo` transport and MCP Apps `visibility` axes: a UI-only `["app"]` tool is hidden from the model list, model-only tool is blocked to an iframe caller, absent visibility is rejected by our registry (protocol default would expose both), and authorization is rechecked regardless of metadata. <https://github.com/modelcontextprotocol/ext-apps/blob/main/specification/2026-01-26/apps.mdx>
+- **Remote target opt-in:** unauthenticated, unauthorized, local-only and revoked targets must not be read/changed via remote MCP. `read` classification does not make submitted text non-sensitive. First public proof uses bounded structured non-sensitive color values; inspect logs to prove no payloads/tokens leak. Stateful proof must use a real authenticated transactional provider and not IndexedDB.
+- **Multi-target instruction:** from one real ChatGPT user instruction, enumerate permitted targets, disambiguate identical labels, operate two distinct configured instances (same kind and cross-kind A→B), revalidate B's typed input, apply per-target revision/idempotency safeguards, deduplicate shared targets, and report completed/failed/skipped on partial failure. No hidden atomicity/automatic rollback.
+- **Long-running visible board:** provider notification/refresh updates clean sibling views and does not mutate data; a dirty draft survives an AI commit, a stale save fails, delayed result A cannot supersede newer B, mount/unmount/reconnect does not duplicate watchers, and a deleted target cannot be resurrected.
+- **Three deletion modes:** retain+readd, export+reimport with explicit saved-export acknowledgement, export cancel/failure/changed revision→no deletion, exclusive-data deletion only, shared reference impact without cascade, AI mode/target confirmation. Cross-provider export+delete is not treated as one transaction.
+- **Compatibility:** strict output new field with old iframe must fail safely or use an explicitly compatible schema, and UI resource URI/version mismatch must request refresh without erasing draft.
+- **Deployment gates:** standalone Web acceptance and stateless remote MCP acceptance cannot be blocked by unavailable external AI-host/WebMCP features. A later connected-AI capability is **not complete** without a real two-target ChatGPT→provider→always-visible-board E2E demonstration.
 
 ## 4. First code PR must establish a working `check` command
 
@@ -117,11 +127,11 @@ These policies are **accepted today**, but implementation is not yet complete. A
 - [ ] TS and Vue SFC typechecking both execute successfully.
 - [ ] Type-aware ESLint actually analyzes core, adapters and .vue files, including a negative fixture that must fail.
 - [ ] All external schema JSON generation succeeds from the single Zod source; incompatible Zod-only types fail generation.
-- [ ] Registry rejects duplicate `kind` and operation IDs and undeclared agent exposure.
-- [ ] Part renderer rejects invalid data/action bindings; one custom view works without the generic parts renderer.
-- [ ] Two separately configured widgets of the same `kind` survive IndexedDB reload/migration and import-export; new unknown entries are preserved.
+- [ ] Registry rejects duplicate `kind`/operation IDs, unrepresentable JSON Schema, undeclared remote transports, omitted model/app visibility and exposure bypasses.
+- [ ] Part renderer rejects invalid `draftKey/changeIntentId/actionId` bindings and incorrect value-type intents; one custom view works without the generic renderer. Partial/invalid field entries are retained until valid Submit.
+- [ ] Two separately configured instances of the same `kind`, plus standalone config, survive IndexedDB reload/migration/export/import; placements/targets stay distinct; unknown entries are preserved and can be restored.
 - [ ] Theme changes alter only presentation; core fixture results are unchanged.
-- [ ] A public read operation works via core + MCP with matching fixtures, and text-only fallback if no MCP Apps UI is available.
+- [ ] Bounded non-sensitive public read operation works through core and remote MCP with matching fixtures, and text-only fallback if no MCP Apps UI is available. Stateful AI multi-widget tests are a separately required later gate, not considered satisfied by pure operations.
 - [ ] The `check` command is wired into a build gate; test/lint/typecheck/build evidence is attached to the implementation PR.
 
 Do not mark the current documentation-only PR "build verified": it has no runnable app.
