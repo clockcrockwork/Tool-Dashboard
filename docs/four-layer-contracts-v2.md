@@ -6,9 +6,9 @@ Companion: [quality-gates-v2.md](./quality-gates-v2.md), [architecture-v2.md](./
 
 ## Scope and non-goals
 
-Use Vue 3 + Vite + TypeScript for the first Web implementation, IndexedDB as the primary local-data platform (Dexie adapter candidate/selected for the first proof), a Cloudflare Worker for remote MCP, an optional browser Dedicated Web Worker for heavy computations, and a Service Worker for offline application assets. Hono is **not** a required dependency; add it if HTTP route/middleware complexity warrants it. The new Cloudflare `cf` CLI / Vite plugin beta is the first deployment spike, pinned and reversible.
+Use Vue 3 + Vite + TypeScript for the first Web implementation, IndexedDB as the primary local-data platform (Dexie as the accepted first adapter (runtime proof pending)), a Cloudflare Worker for remote MCP, an optional browser Dedicated Web Worker for heavy computations, and a Service Worker for offline application assets. Hono is **not** a required dependency; add it if HTTP route/middleware complexity warrants it. The new Cloudflare `cf` CLI / Vite plugin beta is the first deployment spike, pinned and reversible.
 
-**Do not conflate this four-layer presentation/execution contract with the legacy four-layer storage metadata model** in [schemas.md](./schemas.md) (Board / Tool Common / Metadata / Tool Extension). Both exist; the legacy storage model must be reconciled with IndexedDB and versioned migrations before code is treated as canonical.
+**Do not conflate this four-layer presentation/execution contract with the historical v1 storage taxonomy** in [schemas.md](./schemas.md) (Board / Tool Common / Metadata / Tool Extension). The v2 canonical placement, instance, data target and revision model is in [tool-module-contract-v2.md](./tool-module-contract-v2.md). Legacy persisted shapes are import-only; they are not an alternative v2 source of truth.
 
 The four **new** layers are:
 
