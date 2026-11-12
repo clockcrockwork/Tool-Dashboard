@@ -1,7 +1,7 @@
 # Tool-Dashboard v2: AI-compatible architecture proposal
 
-Status: **Draft design for review** (2026-11-12). This document records the accepted *direction* and concrete implementation proposals; it does not supersede existing principles until merged and reconciled.
-Baseline: main at 56a7cac (last changed 2025-12-25). There is no packaged/runnable app yet; prototype.jsx is a React design prototype. **Prior docs named Astro + Vue, but the creator reopened the UI framework choice on 2026-11-12**. The current recommendation is Vite + Vue 3 with React + Vite as a fallback, subject to a thin running proof. See [platform-and-data-v2.md](./platform-and-data-v2.md).
+Status: **accepted architectural direction; implementation still draft/unverified** (2026-11-12). The four-layer type/compatibility decisions are canonical in [four-layer-contracts-v2.md](./four-layer-contracts-v2.md) and [quality-gates-v2.md](./quality-gates-v2.md). The main-branch v1 documents remain intact until PR review/merge.
+Baseline: main at 56a7cac (last changed 2025-12-25). There is no packaged/runnable app yet; prototype.jsx is a React design prototype. **Prior docs named Astro + Vue, but the creator selected Vue 3 + Vite + TypeScript as the initial stack on 2026-11-12**. React + Vite is only a contingency for a demonstrated blocker; actual versions/runtime still require verification. See [platform-and-data-v2.md](./platform-and-data-v2.md).
 
 ## 1. Decisions already accepted (keep)
 
@@ -104,7 +104,7 @@ Proposed v2 separation (subject to validation with first tool):
 4. Runtime transient state: not persisted by default. Persist a clock/timer deadline only if UX explicitly calls for recovery semantics, not every tick.
 5. Sync projection: future opt-in backend copy of explicitly selected state/data, with conflict and migration rules. **Sync never becomes a prerequisite for local-only tools.**
 
-**Reopened storage choice:** the old localStorage-first recommendation is insufficient as a blanket rule for larger per-tool data. IndexedDB with a local repository adapter (Dexie candidate) is the preferred evaluation path, preserving backup/export and offline operation. UI preferences, board instance config, and durable tool data must not be conflated. The earlier embedded-config suggestion is superseded as a recommendation but not yet replaced with a verified schema.
+**Updated storage direction:** the old localStorage-first recommendation is insufficient as a blanket rule for larger per-tool data. **IndexedDB with Dexie as the first LocalRepository adapter is selected** for the initial implementation, preserving backup/export and offline operation. UI preferences, board instance config, and durable tool data must not be conflated. The earlier embedded-config suggestion is superseded as a recommendation but not yet replaced with a verified schema.
 
 When a stateful utility becomes available both on the website and via remote MCP, both server-side adapters must invoke the **same authenticated application service/data provider** (separate HTTP routes may be appropriate). The browser's local-only provider remains a distinct mode; do not imply it is already synchronized just because operation code is shared. Reuse one Worker deployment if sufficient, but keep /mcp, optional /api and storage permissions distinct.
 
@@ -138,4 +138,4 @@ Preserve the legacy board shape and migration constraints until an actual stored
 - [Chrome: WebMCP vs MCP](https://developer.chrome.com/docs/ai/webmcp/compare-mcp) — browser page/session tools versus remote server.
 - [Chrome WebMCP best practices](https://developer.chrome.com/docs/ai/webmcp/best-practices) — shared service, tool registration and commit semantics.
 
-See [tool-module-contract-v2.md](./tool-module-contract-v2.md) for an implementable module contract and [implementation-plan-v2.md](./implementation-plan-v2.md) for the first validation gates.
+See [tool-module-contract-v2.md](./tool-module-contract-v2.md) for the utility/module contract; [four-layer-contracts-v2.md](./four-layer-contracts-v2.md) for Operation/ViewModel/Parts/Tokens; [quality-gates-v2.md](./quality-gates-v2.md) for enforced lint, types and compatibility; and [implementation-plan-v2.md](./implementation-plan-v2.md) for staging.
