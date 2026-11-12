@@ -9,5 +9,7 @@ The project is revisiting its independent widget/tool design to support a common
 - [Architecture and runtime boundaries](./docs/architecture-v2.md)
 - [Utility/module and operation contract](./docs/tool-module-contract-v2.md)
 - [Staged implementation and acceptance plan](./docs/implementation-plan-v2.md)
+- [Frontend platform / local-data recommendation](./docs/platform-and-data-v2.md)
+- [UI design tokens and reusable part schema](./docs/design-system-and-parts-v2.md)
 
 These documents are review proposals. Until accepted, the existing `docs/principles.md`, `docs/basic-design.md`, `docs/schemas.md`, and `docs/dev-guide.md` remain the current specification. The React `prototype.jsx` is a visual/interaction reference, not a packaged deployable application.
