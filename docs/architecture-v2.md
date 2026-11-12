@@ -1,13 +1,13 @@
 # Tool-Dashboard v2: AI-compatible architecture proposal
 
 Status: **Draft design for review** (2026-11-12). This document records the accepted *direction* and concrete implementation proposals; it does not supersede existing principles until merged and reconciled.
-Baseline: main at 56a7cac (last changed 2025-12-25). There is no packaged/runnable app yet; prototype.jsx is a React design prototype, whereas the accepted stack is Astro + Vue.
+Baseline: main at 56a7cac (last changed 2025-12-25). There is no packaged/runnable app yet; prototype.jsx is a React design prototype. **Prior docs named Astro + Vue, but the creator reopened the UI framework choice on 2026-11-12**. The current recommendation is Vite + Vue 3 with React + Vite as a fallback, subject to a thin running proof. See [platform-and-data-v2.md](./platform-and-data-v2.md).
 
 ## 1. Decisions already accepted (keep)
 
 1. Personal-use-first, public source, self-host/self-config; no shared managed SaaS assumed.
 2. Every utility runs independently of the dashboard. The board is a host, not a business-logic dependency.
-3. Astro + Vue, attractive custom start page/widget board, explicit edit mode and per-breakpoint layouts remain the Web direction.
+3. The attractive personal start page/widget board, explicit edit mode, responsive layouts and visual portfolio value remain accepted. **Astro + Vue is a legacy proposal, not a fixed stack.**
 4. Local-first/offline whenever feasible. The Web app must work with no backend or environment variables configured.
 5. Phone and desktop need separately appropriate layouts, not just a scaled desktop board. Cross-device continuity (including temporary transfer of text/URLs/files) remains a product requirement; the precise sync implementation is **not yet chosen**.
 6. The supported interface *targets* now include Web standalone/board, remote MCP, MCP Apps UI, and WebMCP. **Not every utility must implement all four**, and "target" does not mean "ship all four in the first release."
@@ -25,7 +25,7 @@ packages/tool-ui/<kind>/            Vue view (optional), host-independent presen
   ToolView.vue                      Render data and emit intent; not responsible for transport
 
 packages/board/                     Board model, placement, responsive layouts, migration
-apps/web/                           Astro static pages + Vue board/standalone hosts
+apps/web/                           Proposed Vite + Vue SPA/PWA board and standalone hosts
   WebMCP adapter                    Only in supported browsers, feature detected
 apps/mcp/                           One optional Cloudflare Worker /mcp (Streamable HTTP)
   MCP tool adapter                  Registers only declared server-capable operations
@@ -66,7 +66,7 @@ Do not claim shared browser state: an MCP Worker cannot read the user's localSto
 
 ### Web
 
-- The Astro + Vue web output remains useful as static files and an installable PWA. No Worker call is required to start or use local utilities.
+- The proposed Vite + Vue web build remains a static SPA/PWA. No Cloudflare Worker request is required to start or use local utilities, except to initially serve the files. Separate browser Dedicated Web Workers (heavy computation), Service Workers (PWA cache), and Cloudflare Workers (remote MCP); these are not interchangeable. See [platform-and-data-v2.md](./platform-and-data-v2.md).
 - Keep board layout, tool settings and local tool data separable. Browser functionality should fail gracefully without the MCP server.
 - WebMCP is **not** remote MCP. Register only supported/appropriate operations in the current page via a small adapter, feature-detect the experimental browser API, unregister on teardown/page change, and preserve normal UI if unsupported. Do not make a browser preview API a hard dependency.
 - WebMCP calls must use the same application service, permissions, validation and commit semantics as human UI actions; no alternate unguarded path.
@@ -102,6 +102,8 @@ Proposed v2 separation (subject to validation with first tool):
 2. Tool instance config: versioned preferences attached to the instance **or** addressed by one canonical ID; pick one canonical store and document it. Initial preference: attach small config to instances, as existing schemas.md already describes.
 3. Tool data: distinct from config (tasks, transfer payload metadata, histories). Stored only when that tool explicitly needs it; schema and retention are per tool.
 4. Runtime transient state: not persisted by default. Persist a clock/timer deadline only if UX explicitly calls for recovery semantics, not every tick.
+
+**Reopened storage choice:** the old localStorage-first recommendation is insufficient as a blanket rule for larger per-tool data. IndexedDB with a local repository adapter (Dexie candidate) is the preferred evaluation path, preserving backup/export and offline operation. UI preferences, board instance config, and durable tool data must not be conflated. A normalized IndexedDB per-instance config store is now a candidate; avoid assuming the earlier embedded-config suggestion is final until the vertical slice proves migration and export.
 5. Sync projection: future opt-in backend copy of explicitly selected state/data, with conflict and migration rules. **Sync never becomes a prerequisite for local-only tools.**
 
 When a stateful utility becomes available both on the website and via remote MCP, both server-side adapters must invoke the **same authenticated application service/data provider** (separate HTTP routes may be appropriate). The browser's local-only provider remains a distinct mode; do not imply it is already synchronized just because operation code is shared. Reuse one Worker deployment if sufficient, but keep /mcp, optional /api and storage permissions distinct.
@@ -110,7 +112,7 @@ Preserve the legacy board shape and migration constraints until an actual stored
 
 ## 6. Visual and accessibility behavior
 
-- Keep the glassmorphism/neumorphism-inspired visual exploration from prototype.jsx as a **design reference**, not as production React code.
+- Keep the glassmorphism/neumorphism-inspired exploration from prototype.jsx as **one design reference**, not the approved final visual direction nor production React code. UI is being redesigned from design tokens, reusable semantic parts and host-specific shells (see [design-system-and-parts-v2.md](./design-system-and-parts-v2.md)).
 - Web board can support free placement/editing; UI embedded inside ChatGPT/Claude should present one focused tool, **not the full dashboard board**.
 - Keyboard operation, focus visibility, screen-reader semantics and escape/cancel behavior remain part of the implementation contract.
 - Mobile Safari/WebKit is a required validation surface; desktop visual layouts cannot be merely shrunken for phones.
