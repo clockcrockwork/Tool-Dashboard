@@ -57,7 +57,7 @@ Static SPA routes can be served as Workers Static Assets without invoking applic
 
 ## 5. Local data, IndexedDB and isolation
 
-Adopt a **LocalRepository abstraction** for tool data, instance configuration, board layout, and migrations. **IndexedDB is selected as canonical local persistence**, with **Dexie.js as the first adapter** for declarative versions and migrations. Do not force Dexie imports into core utility operations. Exact store layout and canonical config identity must be verified by the first two-instance migration/import test.
+Adopt a **LocalRepository abstraction** for tool data, instance configuration, board layout, and migrations. **IndexedDB is the selected canonical local persistence**, with **Dexie.js as the first adapter**. The identity, store ownership and three deletion modes are **fixed in [tool-module-contract-v2.md](./tool-module-contract-v2.md)**, not left for a later framework choice. The first two-instance migration/import fixture still must prove the contract works. Do not force Dexie imports into pure tool operations.
 
 Proposed logical object-store categories (not mandatory DB tables until usage exists):
 
@@ -67,7 +67,7 @@ Proposed logical object-store categories (not mandatory DB tables until usage ex
 - System metadata: migration version, backup/export metadata, explicit sync cursors (when sync exists).
 - Files: consider Blob storage or OPFS only for a concrete file tool; do not casually retain large raw files as board state.
 
-Legacy v1 docs conflict on whether widget config is embedded inside the board state or stored separately. **Resolve canonical source of truth and an independent standalone tool ID before building migration logic.** The prototype was not a deployed app, so don't claim real-user data migration is needed; support imported/exported legacy-shaped JSON if that format is published.
+Legacy v1 docs conflict on whether widget config is embedded inside the board state or stored separately. **Resolved for v2:** board placement references a durable `instanceId`, while a normalized `ConfigRepository` owns the one authoritative configuration (`instance:<UUID>` or `standalone:<kind>`); `ToolRepository` owns separate data targets. See [tool-module-contract-v2.md](./tool-module-contract-v2.md). The prototype was not a deployed app, so real-user migration is not presumed; **import** of legacy-shaped JSON (if any) must preserve its IDs/raw payload without destructive data loss.
 
 Storage reliability:
 - IndexedDB quota and eviction behavior vary by browser, particularly Safari; use try/catch around writes and expose storage errors.
@@ -77,7 +77,7 @@ Storage reliability:
 - Web Worker may access indexedDB, but tool operations must still have a deterministic, injected storage/compute port. Not all operations should run inside a Worker.
 - Service Worker and Dedicated Web Worker have different lifecycles; do not rely on the former for ongoing Pomodoro alarm guarantees when all tabs are closed.
 
-**Remote state is separate.** A ChatGPT MCP tool cannot access browser IndexedDB directly. If shared tasks/data are introduced, Web and MCP must use the same authenticated server-side repository, and the Web must retain a true local-only mode. Synchronization/merge/auth/retention are separate feature requirements and cannot be inferred from the existence of /mcp.
+**Remote state is separate.** A ChatGPT MCP tool cannot access browser IndexedDB directly. The selected **remote-enabled** targets must explicitly opt in to a common authenticated service/provider (Web API + remote MCP share the same committed record/revision and authorization). Non-selected targets remain local-only. For the first remote integration, online write + conditional revision is supported; offline caches/drafts are permitted but **automatic offline write queue/sync is not promised**. On reconnect stale edits must enter conflict review, not overwrite remote truth. A provider must support atomic compare-and-swap and tombstones: select and test D1/DO or another implementation at the stateful feature milestone rather than choosing based on the presence of a Worker. Full-board PC↔phone synchronization, retention and file transfer remain distinct requirements.
 
 Sources: [MDN IndexedDB in workers](https://developer.mozilla.org/en-US/docs/Web/API/WorkerGlobalScope/indexedDB), [MDN Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers), [MDN storage eviction](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria), [Dexie migration](https://dexie.org/docs/Tutorial/Understanding-the-basics).
 
