@@ -1,6 +1,6 @@
-# Tool-Dashboard v2: Utility module / operation contract (proposal)
+# Tool-Dashboard v2: Utility module / operation contract
 
-Status: draft, 2026-11-12. Companion to [architecture-v2.md](./architecture-v2.md).
+Status: **ACCEPTED module boundaries / draft runtime implementation**, 2026-11-12. Canonical four-layer types and schema lifecycle: [four-layer-contracts-v2.md](./four-layer-contracts-v2.md). Required quality gates: [quality-gates-v2.md](./quality-gates-v2.md). Companion to [architecture-v2.md](./architecture-v2.md).
 The main goal is **quickly adding widgets without separately rewriting the same operation for WebMCP, remote MCP and MCP Apps**. This is an implementation design, not a claim that existing code already implements the interfaces below.
 
 ## 1. Core distinctions
@@ -46,49 +46,38 @@ apps/mcp/
 
 For the first tool, a single workspace package is fine if it enforces the same import boundaries. Split packages only when a second runtime actually needs to consume them.
 
-## 3. Proposed typed definition (illustrative API)
+## 3. Typed operation definition (accepted invariants)
 
-The exact TypeScript interface and schema library should be finalized with the first compiling fixture. The following shape describes the invariants, not pre-tested code:
+The authoritative rules are in [four-layer-contracts-v2.md](./four-layer-contracts-v2.md). **Zod 4** input/output schemas define the public contract; TypeScript types are derived. The following describes a valid static descriptor; a reusable `defineOperation()`/registry helper is implementation work, not a new second schema.
 
 ~~~ts
-type ExecutionSurface = "browser" | "server";
-type AgentSurface = "remote-mcp" | "webmcp";
+import { z } from "zod";
 
-type OperationDefinition<Input, Output> = {
-  id: string;                    // globally unique + stable: "text.normalize_lines"
-  title: string;
-  description: string;           // human / agent discoverability
-  inputSchema: Schema<Input>;    // one source of truth; JSON Schema export
-  outputSchema: Schema<Output>;
-  runtimes: readonly ExecutionSurface[];
-  exposeTo: readonly AgentSurface[]; // explicit opt-in, not by default
-  effect: "read" | "write";
-  dataClass: "public" | "user-private" | "file";
-  inputLimit: number;
-  execute(input: Input, context: OperationContext): Promise<Output>;
-};
+const normalizeLines = {
+  id: "text.normalize_lines",
+  contractVersion: 1,
+  title: "Normalize line endings",
+  description: "Convert text to LF or CRLF line endings.",
+  inputSchema: z.strictObject({
+    text: z.string().max(50_000),
+    ending: z.enum(["lf", "crlf"]),
+  }),
+  outputSchema: z.strictObject({ text: z.string() }),
+  runtimes: ["browser", "server"],
+  exposeTo: ["remote-mcp", "webmcp"],
+  effect: "read",
+  dataClass: "public",
+  inputLimit: 50_000,
+} as const;
 
-type UtilityDefinition<Config> = {
-  kind: string;                  // stable and distinct from instanceId
-  version: string;               // version of tool/operation definitions
-  metadata: ToolMetadata;       // reuse existing Board/Metadata schema
-  config: {
-    schemaVersion: number;
-    defaults: Config;
-    migrate(input: unknown): Config;
-  };
-  operations?: readonly OperationDefinition<unknown, unknown>[];
-  ui?: {
-    widget?: boolean;
-    standalone?: boolean;
-    mcpApp?: { operationIds: readonly string[]; resourceVersion: string };
-  };
-};
+type NormalizeArgs = z.infer<typeof normalizeLines.inputSchema>;
+type NormalizeResult = z.infer<typeof normalizeLines.outputSchema>;
 ~~~
 
-Schema<Input> is illustrative, not an SDK type. Choose one validation/schema source (e.g. Zod 4.2+ for current MCP SDK v2 / ext-apps 2.x) in the implementation, and derive server and browser tool schemas from that source. Always validate runtime args/results on the executing side; TypeScript alone does not validate untrusted JSON.
-
-The OperationContext must expose **narrow, injected ports** (e.g., authenticated task repository, explicit request cancellation, clock, limits) rather than an ambient global database/window. Browser-local and Worker-backed contexts can execute a common operation only when their provider semantics intentionally match. Adapter-specific network/auth glue must not leak into the core function.
+- The operation implementation receives parsed, validated values and narrow injected context ports, not ambient global browser/server objects.
+- `z.toJSONSchema` supplies the MCP input/output JSON schemas at build/registration time. No hand-maintained JSON schema or parallel TypeScript interface.
+- This descriptor **does not** auto-publish to MCP: a build-time utility manifest and explicit surface exposure policy decide what adapters register.
+- The server and browser implementations each validate untrusted input and output; current runtime compatibility and SDK versions must be confirmed by the first compiling/running vertical slice.
 
 ### Example: simple pure function (not a production tax spec)
 
