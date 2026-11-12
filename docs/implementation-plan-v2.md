@@ -83,13 +83,13 @@ Do not merge/implement unconfirmed product scope as if all requested widgets wer
 
 ### Stage 1e — **mandatory** stateful AI→multiple targets→visible board
 
-1. Choose one authenticated transactional remote provider only at this milestone (required: owner scopes, target discovery, revision CAS, tombstones, idempotency). User explicitly opts in selected data targets; others stay local-only. Remote-enabled Web and MCP use the **same committed provider**, not browser IndexedDB.
+1. Choose one authenticated transactional remote provider only at this milestone (required: owner scopes, target discovery, revision CAS, tombstones, idempotency). User explicitly opts in selected tool-instance configuration and/or data targets; others stay local-only. Remote-enabled Web and MCP use the **same committed provider**, not browser IndexedDB.
 2. From one **real ChatGPT** instruction, discover/resolve two authorized board targets and run typed operations across both (same-kind multi-target and cross-kind A→B cases). Validate inputs at every boundary; do not create a generic workflow engine or simulate clicks.
 3. Verify ambiguous names, shared-target deduplication, retry idempotency, revision conflict, deletion races, midway failure with per-target succeeded/failed/skipped results, and unavailable local-only targets.
 4. The persistently displayed Web board follows committed AI updates within the chosen freshness target while preserving dirty local drafts and refusing stale saves. Test visibility regain, reconnect and subscription lifecycle. Offline remote-enabled drafts do not silently write or merge.
 5. Explicit user account/app connection may be a HUMAN_GATE for real ChatGPT smoke; perform independent provider/contract tests first.
 
-**Exit:** one ChatGPT instruction modifies two authorized remote-enabled targets and the open board reflects both. Without this, **AI cross-widget requirement is NOT satisfied**, even if MCP Apps/WebMCP pure demos pass.
+**Exit:** one ChatGPT instruction modifies two authorized remote-enabled configuration/data targets and the open board reflects both. Without this, **AI cross-widget requirement is NOT satisfied**, even if MCP Apps/WebMCP pure demos pass.
 
 ### Stage 1f — experimental WebMCP gate (non-blocking)
 
