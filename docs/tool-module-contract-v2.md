@@ -13,14 +13,14 @@ The main goal is **quickly adding widgets without separately rewriting the same 
 | Board placement | `placementId` (UUID) | Board page's layout and visibility; can be detached |
 | Durable tool instance | `instanceId` (UUID) | One config record; reusable across placements and retainable without a placement |
 | Standalone default | `standalone:<kind>` config key | Exists without being added to a board |
-| Data target | `targetRef = { providerId, kind, targetId }` | User-owned data; several tool instances may reference the same target |
+| Addressable resource | `targetRef = { providerId, resourceType: "config" | "data", kind, targetId }` | Committed settings **or** data, each with its own revision. Multiple widgets may share data, but instance configs remain independent unless explicitly linked |
 | View / editor | Ephemeral `viewId` | One mounted view owns one draft; not a persisted data identity |
 | Operation | Stable `operationId` + contract version | Executable capability; stateless operations require **no instance/target** |
 | Provider | `local` or authenticated remote provider ID | Owner of committed data; never implied by rendering surface |
 
 - Board state stores `placementId → instanceId` and presentation layout; **not** a second copy of config or target data. Multiple placements may reference the same instance or data target.
 - `instanceId` owns one versioned config key `instance:<UUID>`, while a standalone without a board uses `standalone:<kind>`. Store one canonical value in the IndexedDB LocalRepository, not both in the Board object and a config table. A future standalone multi-profile feature requires its own explicit IDs; do not prebuild it.
-- Tool data records have `{providerId, kind, targetId, recordId, schemaVersion, revision, ...payload}` (exact table shape is a code detail), and are linked by explicit `targetRef`, never by a display label or placement ID.
+- Tool data records have `{providerId, kind, targetId, recordId, schemaVersion, revision, ...payload}` (exact table shape is a code detail), and are linked by explicit `targetRef`, never by a label or placement ID. **Tool-instance configuration itself is also an addressable resource** (`resourceType: "config"`, one stable config identity/revision per instance). This permits authorized AI updates to widget settings as well as saved tool data; remote participation must be separately approved per resource.
 - A committed target/config record has a monotonic **revision** under the owning provider, used as the compare-and-swap precondition on writes/deletes. Remote target IDs are not secretly assumed equal to local IDs; an authorized mapping is explicit.
 - Old v1 imports may use a `WidgetInstance.instanceId` for both layout and config. A versioned importer must map that legacy ID into the new placement+durable-instance records deterministically and preserve all unknown raw fields for recovery.
 - Two widgets with the same title/kind may be different instances; two widgets with different instance IDs may display the **same data target**. Destructive operations deduplicate by data target, not the number of visible widgets.
@@ -119,17 +119,32 @@ The same fixture must produce exactly the same result when invoked directly, via
 ### Local-only and remote-enabled modes
 
 - The default **local-only** mode uses IndexedDB; Web remains fully usable with no remote endpoint, login or network. A remote MCP Worker **cannot** access IndexedDB, local files or current browser tabs, even while the dashboard is open.
-- To use stateful tool data from ChatGPT, the user must explicitly **enable remote access on a selected target/instance**. Its authoritative committed data then lives in an authenticated provider shared by Web and MCP. The board holds an explicit mapping from its local instance/target to the authorized remote target ID; local IndexedDB may cache a snapshot but is **not** an independent shadow write authority.
+- To let ChatGPT change widget settings or saved tool data, the user explicitly enables remote access to the selected **configuration or data resource** (and authorized operation scope). Its authoritative committed record then lives in an authenticated provider shared by Web and MCP. The board holds an explicit mapping from its local instance/target to the authorized remote target ID; local IndexedDB may cache a snapshot but is **not** an independent shadow write authority.
 - Initial remote-enabled policy: online commits use provider revision/CAS. If offline, show cached data and preserve local drafts but **do not queue silent remote writes or promise automatic conflict-free sync**. Refetch and resolve stale revisions before commit. This preserves normal local-only functionality while avoiding an unimplemented sync engine.
-- Remote target discovery returns only targets currently authorized for the authenticated principal, including stable targetRef, kind, optional user-visible label, available typed operation IDs and revision. Display labels are not identity. No local-only/opt-out target is listed as callable; report it explicitly as unavailable rather than guessing a bridge.
+- Remote target discovery returns only resources currently authorized for the authenticated principal, including stable targetRef (`resourceType: config | data`), kind, optional user-visible label, available typed operation IDs and revision. Display labels are not identity. No local-only/opt-out target is listed as callable; report it explicitly as unavailable rather than guessing a bridge.
 - Future browser-local ChatGPT access requires a **separate explicit browser bridge** with consent and a defined lifecycle. Experimental WebMCP is a separate browser-host capability, not proof of ChatGPT remote access.
 - Choose an actual remote provider/storage technology only when implementing the first stateful remote target. It must support per-user authorization, atomic conditional writes, revisions, deletion markers and bounded target discovery; a Worker alone is not a database. No blanket multi-device synchronization is implied.
+
+### Remote MCP exposure metadata (two independent axes)
+
+A published operation must set `exposeTo` (transport) **and** for remote MCP a nonempty explicit `mcpVisibility: readonly ("model" | "app")[]` (caller channel). A visibility array of `["model", "app"]` is allowed **only if intentionally declared**. The adapter generates `_meta.ui.visibility` and optional `ui.resourceUri`. Missing or empty visibility blocks registration; the MCP Apps protocol defaults to both audiences when omitted. A real caller still needs the correct identity/scope per request. Local and WebMCP operations do not gain remote rights through presentation reuse.
+
+Example for a bounded structured color operation (schema omitted for brevity):
+
+~~~ts
+const remoteExposure = {
+  exposeTo: ["remote-mcp", "webmcp"],
+  mcpVisibility: ["model"], // AI can call; iframe cannot directly call this tool
+} as const;
+~~~
+
+UI-only actions use `mcpVisibility: ["app"]`. Do not treat this metadata as authorization.
 
 ### Multiple-target AI operation contract (mandatory capability)
 
 1. **Discover** authorized targets and their `providerId/kind/targetId/revision/operationIds`. Resolve ambiguous titles by stable IDs or explicit user selection; never silently choose the first matching name. Pure operations do not require a target.
 2. **Plan using declared operations**. One instruction may affect two instances of the same kind, or pass operation A's typed result into operation B's typed input. Revalidate the receiving schema. The AI host may orchestrate sequential calls; no generic `run_any_tool`, generated code execution or custom workflow engine is required for v1.
-3. **Validate and commit each call**: check target existence and principal authorization again, require `expectedRevision` on mutable targets and a scoped `idempotencyKey` for retries. Repeated requests with the same idempotency key and payload return the already-committed outcome; reusing a key with a changed payload is rejected. Deduplicate different widgets that reference the same data target.
+3. **Validate and commit each call**: check target existence and principal authorization again (including `resourceType` and action scope), require `expectedRevision` on mutable targets and a scoped `idempotencyKey` for retries. Repeated requests with the same idempotency key and payload return the already-committed outcome; reusing a key with a changed payload is rejected. Deduplicate different widgets that reference the same data target.
 4. **Partial failure is explicit**: each result reports `succeeded | failed | skipped` with affected target, committed revision (if succeeded), and stable error code. Stop dependent later steps after failure. **No implicit atomicity, automatic compensation, or automatic retry of successful earlier writes across separate tool calls.** Add one dedicated typed transactional operation only for a genuinely indivisible use case.
 5. **Provider is the source for UI updates**. The board and standalone views observe committed data; AI need not simulate clicks or edit a ViewModel draft. Pages/hosts register WebMCP operations centrally: unmount of one widget must not unregister another's tools.
 6. **Require real end-to-end proof**: a connected ChatGPT client operates two authorized, different board targets from one user instruction and changes appear on the persistently open Web board. Local-only/unconnected targets report not available. Test same-kind bulk changes, cross-kind A→B, duplicate labels, shared-target deduplication, replay, midway failure and deleted-target conflict.
@@ -149,10 +164,10 @@ The v2 canonical local store is **IndexedDB via the LocalRepository/Dexie adapte
 | Persisted concern | Identity and owner | Rules |
 | --- | --- | --- |
 | Board | boardId/pageId/placementId, Board repository | Positions, display and instance references; no duplicate config payload |
-| Config | `instance:<UUID>` or `standalone:<kind>`, Config repository | One versioned value with migration; retained independently of placement |
+| Config | `instance:<UUID>` or `standalone:<kind>`, Config repository | One versioned value with migration; retained independently of placement; may map to a remote config resource only after explicit opt-in |
 | Tool data | providerId + kind + targetId + recordId, Tool repository | Separate data schema/version, references, revision, retained/deleted state |
 | Runtime view | viewId + draft/baseRevision | Controller only; not automatically persisted |
-| Remote mapping | local instance/target → remote targetRef | Explicit opt-in, scope/identity and revocation, not assumed sync |
+| Remote mapping | selected local config key / data target → authorized remote targetRef | Explicit opt-in per config/data resource, scoped operations, identity and revocation; no assumed global sync |
 | Host session | MCP/iframe/WebMCP lifecycle | Adapter only, not Board persistence |
 
 **Export v1** is a documented, JSON-serializable, versioned envelope (`format`, `exportVersion`, `createdAt`, `selected placements`, `instances/configs`, `targetRef + records + revisions`, `attachment manifest` where applicable). Include the full recovery-relevant subset, no secrets/tokens. Unknown versions/kinds/fields are kept losslessly in an opaque read-only section for re-import; no automatic rewriting of unsupported newer versions. Attachments are packaged where a tool actually creates them (e.g., a ZIP), not invented for simple tools. Export parser validates the envelope and per-record schemas and can preview recovery without changing the current DB. Migrations run sequentially/transactionally where feasible with rollback or raw-byte backup before destructive steps.
