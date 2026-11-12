@@ -99,12 +99,12 @@ Existing docs/basic-design.md and docs/schemas.md store per-instance config in W
 Proposed v2 separation (subject to validation with first tool):
 
 1. Board state: pages, layouts, visibility, locks, per-instance references and presentation settings.
-2. Tool instance config: versioned preferences attached to the instance **or** addressed by one canonical ID; pick one canonical store and document it. Initial preference: attach small config to instances, as existing schemas.md already describes.
+2. Tool instance config: versioned preferences keyed by an explicit instance/standalone identity. **Current candidate**: a single canonical IndexedDB repository/config store rather than a second shadow copy in Board state. The accepted storage shape is conditional on import/export and multi-instance tests.
 3. Tool data: distinct from config (tasks, transfer payload metadata, histories). Stored only when that tool explicitly needs it; schema and retention are per tool.
 4. Runtime transient state: not persisted by default. Persist a clock/timer deadline only if UX explicitly calls for recovery semantics, not every tick.
-
-**Reopened storage choice:** the old localStorage-first recommendation is insufficient as a blanket rule for larger per-tool data. IndexedDB with a local repository adapter (Dexie candidate) is the preferred evaluation path, preserving backup/export and offline operation. UI preferences, board instance config, and durable tool data must not be conflated. A normalized IndexedDB per-instance config store is now a candidate; avoid assuming the earlier embedded-config suggestion is final until the vertical slice proves migration and export.
 5. Sync projection: future opt-in backend copy of explicitly selected state/data, with conflict and migration rules. **Sync never becomes a prerequisite for local-only tools.**
+
+**Reopened storage choice:** the old localStorage-first recommendation is insufficient as a blanket rule for larger per-tool data. IndexedDB with a local repository adapter (Dexie candidate) is the preferred evaluation path, preserving backup/export and offline operation. UI preferences, board instance config, and durable tool data must not be conflated. The earlier embedded-config suggestion is superseded as a recommendation but not yet replaced with a verified schema.
 
 When a stateful utility becomes available both on the website and via remote MCP, both server-side adapters must invoke the **same authenticated application service/data provider** (separate HTTP routes may be appropriate). The browser's local-only provider remains a distinct mode; do not imply it is already synchronized just because operation code is shared. Reuse one Worker deployment if sufficient, but keep /mcp, optional /api and storage permissions distinct.
 
