@@ -76,7 +76,8 @@ Do not claim shared browser state: an MCP Worker cannot read the user's localSto
 - Start with **one optional Cloudflare Worker** exposing the standard Streamable HTTP MCP endpoint at /mcp. No Worker per widget.
 - Current Cloudflare docs (2026-10-27) recommend stateless createMcpHandler with a fresh McpServer per request. **No Durable Object, Queue or D1 is needed for a pure/stateless tool.** Add persistence only for a concrete stateful requirement.
 - The MCP adapter registers a subset of explicit operations, validates inputs and outputs, returns concise text + structuredContent for data consumers, and supplies stable read-only/side-effect annotations where appropriate.
-- For an interactive result, link the operation to a versioned ui:// resource with MCP Apps metadata. The host loads a sandboxed HTML app; the UI must also degrade to usable text/structured output when the client lacks MCP Apps support.
+- **SDK compatibility as of 2026-11-12:** Cloudflare's current stateless handler uses @modelcontextprotocol/server v2, and MCP Apps ext-apps 2.x is built for that same split SDK family (with Zod >=4.2). Do not mix @modelcontextprotocol/sdk v1 helpers/types with these classes. Pin the mutually compatible releases together when scaffolding, not separate unverified latest versions. [MCP Apps v2 migration](https://github.com/modelcontextprotocol/ext-apps/blob/main/docs/migrate-to-2.md).
+- For an interactive result, link the operation to a versioned ui:// resource with MCP Apps metadata. The host loads a sandboxed HTML app; the UI must also degrade to usable text/structured output when the client lacks MCP Apps support. Package the compiled self-contained HTML for Worker runtime consumption at build time; do **not** copy Node-only runtime fs.readFile examples into the Worker.
 - Prefer a core UI contract and the standard MCP Apps postMessage bridge; ChatGPT-specific APIs/extensions are optional, isolated enhancements, not requirements for business logic.
 - Split computational/data tools from dedicated rendering tools **when this prevents excessive iframe re-renders**. Do not attach a UI to every operation automatically.
 - Web publishing, Worker deployment, and external ChatGPT connection are independent milestones. A private dev setup should not be mistaken for publicly available app-directory distribution.
@@ -102,6 +103,8 @@ Proposed v2 separation (subject to validation with first tool):
 3. Tool data: distinct from config (tasks, transfer payload metadata, histories). Stored only when that tool explicitly needs it; schema and retention are per tool.
 4. Runtime transient state: not persisted by default. Persist a clock/timer deadline only if UX explicitly calls for recovery semantics, not every tick.
 5. Sync projection: future opt-in backend copy of explicitly selected state/data, with conflict and migration rules. **Sync never becomes a prerequisite for local-only tools.**
+
+When a stateful utility becomes available both on the website and via remote MCP, both server-side adapters must invoke the **same authenticated application service/data provider** (separate HTTP routes may be appropriate). The browser's local-only provider remains a distinct mode; do not imply it is already synchronized just because operation code is shared. Reuse one Worker deployment if sufficient, but keep /mcp, optional /api and storage permissions distinct.
 
 Preserve the legacy board shape and migration constraints until an actual stored-data test proves a safe change. Cross-device continuity remains required as a goal even though its provider and rollout phase remain open.
 
