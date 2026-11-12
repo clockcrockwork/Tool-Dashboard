@@ -23,11 +23,11 @@ Persisted tool data/config **is a separate cross-cutting concern** that receives
 
 ## Layer 1 — Operation Schema
 
-- A **utility** has a stable `kind` (e.g. `text-normalize`), metadata and optional operations. A **board instance** has a unique `instanceId`, but is not itself an operation or MCP tool.
+- A **utility** has a stable `kind` (e.g. `text-normalize`), metadata and optional operations. The Board owns a unique `placementId` for each visual placement; a durable tool instance has a separate `instanceId` (config) and optional `targetRef` (data). Neither a placement nor an instance is itself an MCP tool. Identity/ownership are canonical in [tool-module-contract-v2.md](./tool-module-contract-v2.md).
 - A callable operation has an immutable, globally unique stable ID (e.g. `text.normalize_lines`); one utility may expose zero or more operations. A tool must opt in to remote MCP or WebMCP independently; operations are not automatically exposed because a widget exists.
 - The **one source of truth** for externally usable operation input and output is a Zod 4 schema (strict object, JSON-compatible data). Use `z.infer` / `z.input` / `z.output` to derive TypeScript types. Generate any MCP JSON Schema with `z.toJSONSchema()`; do not maintain a hand-edited duplicate schema.
 - All input is `unknown` until `schema.parse` / `safeParse`, on both browser and server boundaries. Validate output before exposing or persisting. Keep failures as typed, intentionally narrow error codes; never leak stack traces or secrets to MCP.
-- Operations record `effect: read | write`, `dataClass: public | user-private | file`, allowed runtimes (`browser | server`), explicit AI exposures (`remote-mcp | webmcp`), and input/resource bounds. Do not infer authorization from effect metadata: **runtime authorization is required for writes/private data**.
+- Operations record `effect: read | write`, `dataClass: public | user-private | file`, allowed runtimes (`browser | server`), **transport** exposures (`remote-mcp | webmcp`), plus separate explicit **MCP caller visibility** (`model | app`) for Remote MCP Apps, and input/resource bounds. MCP Apps visibility defaults to both if omitted: **never omit it on published tools**. Model visibility never implies user authorization. Input may be sensitive even for a `read` public operation. Recheck per-user scopes/target and expected revision on every stateful write.
 - Public schema must be serializable to JSON Schema. Do **not** use `Date`, `bigint`, `File`, `Map`, `transform`, or non-JSON native values in external I/O; normalize to documented strings, numbers, enums and explicit uploaded content references at the boundary.
 - No `any`, unchecked type casts or hidden direct `window`/IndexedDB/Cloudflare imports in core operations. Inject narrow ports for clock, repository, cancellation and other capabilities.
 - The execution result must have structured JSON plus a useful readable representation for hosts that do not support MCP Apps. An MCP App UI is **optional** and must not be necessary for the underlying operation to work.
@@ -52,37 +52,47 @@ export type NormalizeLinesResult = z.infer<typeof NormalizeLinesOutput>;
 // id: "text.normalize_lines"; contractVersion: 1;
 // effect: "read"; dataClass: "public";
 // runtimes: ["browser", "server"];
-// exposeTo: ["remote-mcp", "webmcp"];
+// exposeTo: ["webmcp"]; // Example accepts arbitrary text; no public remote exposure
 // inputSchema: NormalizeLinesInput; outputSchema: NormalizeLinesOutput;
 ~~~
 
 Use this Zod instance as the source for browser validation, Worker registration, WebMCP registration and generated MCP tool descriptions. The operation implementation itself is independent of the transport.
 
-## Layer 2 — ViewModel (typed, not a storage schema)
+## Layer 2 — ViewModel and controller (typed, not a storage schema)
 
-- A ViewModel is a **read-only projection** of a tool's current presentation state. It never owns the business truth, IndexedDB connection, Cloudflare authentication or a DOM component.
-- Core envelope is fixed: `kind`, `status`, `data`, `feedback` and optional action availability. `status` is a discriminated union (`idle | working | ready | error`) with stable fields for each variant. Each utility provides its own typed `data`.
-- The UI emits typed **intents** (e.g. `{ type: "normalize.submit", payload: {...} }`). A controller/application service validates, authorizes, performs the action, then projects the new ViewModel. A view must not directly invoke the MCP endpoint or a DB write for an action already defined in the application service.
-- Do not require every action to have an MCP operation (opening settings, copying text, local-only interactions do not need one). Intent names are stable in a utility, but the visual arrangement is not.
-- The in-process ViewModel does not require a JSON Schema for every transient field. **Only** a ViewModel or action transported across a process/iframe/persistence boundary needs runtime Zod validation and a versioned serialized envelope.
-- For multi-stage/long-running work, use explicit states and progress fields; no "success" before an operation confirms completion. Avoid rendering feedback purely from guessed elapsed time.
+**Canonical dataflow:** UI fields → view-local editable draft → typed change intent → controller snapshot on Submit → Operation input `safeParse` → authorized common application service → committed provider result → ViewModel projection. A model caller skips the UI draft and calls the **same** service with validated args; no UI click simulation or direct DB/MCP calls inside a view.
 
-Illustrative structural type, not an implementation library:
+- A ViewModel is a **read-only projection** of committed data plus one view's draft/status/feedback, not the authority for persistence. The controller owns draft and subscriptions, the provider owns committed truth. A `viewId` distinguishes two editors of the same target, separately from `placementId`, `instanceId` and `targetRef`.
+- **Draft != Operation input.** Drafts accept partial/invalid input (empty numeric field, incomplete date, etc.) without coercing to 0 or submitting. Each field uses a typed `change` intent to update draft; Submit snapshots the draft and validates against the operation schema. On validation failure, do not call the service and do not discard the draft.
+- Core status is discriminated `idle | working | ready | error`; feedback and action availability are typed. Async results include a per-view `invocationId`: ignore a late response if a later invocation has superseded it. Re-render/resize/provider notifications never auto-run an operation.
+- **External committed updates are required.** The controller subscribes to/refetches the same provider's committed records, including changes from AI, another widget/tab or network reconnection. For remote-enabled targets, refresh on opening/visibility regain and by bounded polling when live events are unavailable. Transport (poll/SSE/etc.) is replaceable; a visible online board must eventually reflect the server commit without manual refresh. Avoid introducing one subscription per widget when shared watchers suffice.
+- **Clean vs dirty:** clean views track newer committed revisions automatically. A dirty view preserves its unsaved draft and baseRevision, signals an external change and offers comparison/reapply. Saving against an outdated baseRevision fails with `CONFLICT`, not silent overwrite. Another clean view of the same target still updates. A deleted target must not be resurrected by an obsolete editor.
+- **Unmount/cancel:** dispose subscriptions and in-flight view-side work, but do not assume an already committed mutation was rolled back. For `UNKNOWN_OUTCOME` or retry after disconnect, read committed provider state/idempotency result first. A notification is not an implicit mutation intent.
+- In-process ViewModels do not need a Zod schema for every field; any state transmitted via iframe/Worker or persisted requires a versioned runtime-validated envelope. Visual host shells may differ without changing these semantics.
+
+Illustrative shape, not a compiled implementation API:
 
 ~~~ts
 type UiStatus =
   | { phase: "idle" }
-  | { phase: "working"; progress?: number }
+  | { phase: "working"; invocationId: string; progress?: number }
   | { phase: "ready" }
   | { phase: "error"; code: string; message: string };
 
-type ViewModel<TData> = Readonly<{
+type ViewModel<TCommitted, TDraft> = Readonly<{
   kind: string;
+  committed: Readonly<TCommitted>;
+  committedRevision?: number | string;
+  draft: Readonly<TDraft>;
+  baseRevision?: number | string;
+  isDirty: boolean;
+  hasExternalChange: boolean;
   status: UiStatus;
-  data: Readonly<TData>;
   feedback: readonly { kind: "info" | "warning" | "error"; text: string }[];
 }>;
 ~~~
+
+**AC:** editing an empty numeric field does not run a 0-valued operation; field edits → Run produce the same validated args on widget, standalone and applicable MCP Apps; mismatched typed intents fail TS checks. A dirty editor survives AI updates, a clean sibling refreshes, old A/B invocations never overwrite the newest result, and repeated mount/unmount/reconnect never duplicates watchers or writes.
 
 ## Layer 3 — Parts Schema (simple semantic composition)
 
@@ -93,25 +103,30 @@ type ViewModel<TData> = Readonly<{
 - Only simple tools need the standard parts renderer. A custom calendar, clock face, image editor or canvas may implement a dedicated Vue view over the same ViewModel. Never build a full JSON-driven page builder by default.
 - No direct user or AI injection of component constructors/HTML styles. User-configurable parts preferences must use a separate validated persistent data schema.
 
-Typed discriminated shape (**binding keys are checked at compile time**, not arbitrary string paths):
+Typed discriminated shape (conceptual; compile-backed generic helper is a Stage 1a gate):
 
 ~~~ts
-type DataKey<TData> = Extract<keyof TData, string>;
+type DataKey<T> = Extract<keyof T, string>;
 type Region = "input" | "controls" | "result" | "status" | "settings";
 
-type Part<TData extends object, TActionId extends string> =
+type Part<
+  TCommitted extends object,
+  TDraft extends object,
+  TChangeIntentId extends string,
+  TActionId extends string
+> =
   | { id: string; kind: "field"; region: "input";
-      dataKey: DataKey<TData> }
+      draftKey: DataKey<TDraft>; changeIntentId: TChangeIntentId }
   | { id: string; kind: "action"; region: "controls";
       actionId: TActionId }
   | { id: string; kind: "result"; region: "result";
-      dataKey: DataKey<TData> }
+      dataKey: DataKey<TCommitted> }
   | { id: string; kind: "feedback"; region: "status" }
   | { id: string; kind: "custom"; region: Region;
       componentId: string };
 ~~~
 
-A utility manifest declares its data and intent union, so a nonexistent `dataKey` or `actionId` produces a TS error. Part IDs and `custom.componentId` also get runtime uniqueness/registry validation, especially for imported part settings. The compiler-backed implementation may refine the syntax, **not weaken these invariants**.
+`draftKey` and `changeIntentId` **must** identify a real typed draft property and typed change intent (not a generic `string` route); the first implementation must compile negative fixtures for wrong keys, value types and undeclared actions. The controller maps part-origin change intents to the view-local draft and constructs operation arguments **only on Submit**. Runtime validation checks imported part IDs and registered custom components; no eval/inline handlers or duplicate IDs.
 
 ## Layer 4 — Design Tokens
 
@@ -138,15 +153,15 @@ Example of role-based tokens:
 
 | Change | Rule |
 | --- | --- |
-| Add new operation, part, theme or optional ViewModel property | Allowed with build/contract tests; defaults/fallbacks required if user data persists |
-| Change an operation's existing required input, meaning, side effects or output type | Breaking: new operation ID or explicitly versioned compatibility adapter; no silent behavior change |
+| Add a new operation/part/theme or optional **internal** ViewModel property | Allowed with build/contract tests; defaults/fallbacks when state persists. **Do not infer compatibility for strict serialized outputs** |
+| Change an operation's required input, meaning, effect, output type or **strict output shape** | Breaking to deployed clients (even added optional output keys can fail old strict decoders); new version/ID or explicitly tested compatibility adapter required |
 | Rename/remove `kind`, operation ID, part ID referenced by persisted user settings, or semantic token key | Breaking; requires migration/alias and tests; do not silently repurpose an old ID |
 | Change a visual token value, component appearance, layout density or reorder optional parts | Compatible; visual/a11y regression checks, no domain/schema version bump |
 | Change ViewModel internals in the same JS process | Safe if all typed consumers pass; bump wire version **only if** it crosses an iframe/process/persistent boundary |
 | Change persisted board/tool config/data | Separate ordered migration, backup/round-trip tests, no silent data loss |
 | Receive newer unknown schema or unknown widget kind | Preserve raw data and display non-destructive unsupported placeholder/read-only state; never auto-reset or overwrite |
 
-**Version identity is not one global number.** Keep `operation.contractVersion` (plus stable operation IDs), `parts.schemaVersion`, `theme.schemaVersion`, and per-tool `configVersion`/`dataVersion` independently. The in-process ViewModel has no unnecessary version; serialized ViewModel envelopes are versioned if required. No version bump for mere paint/color changes.
+**Version identity is not one global number.** Keep `operation.contractVersion` (plus stable operation IDs), immutable/versioned MCP Apps `uiResourceUri`/artifact version, `parts.schemaVersion`, `theme.schemaVersion`, and per-tool `configVersion`/`dataVersion` independently. The in-process ViewModel has no unnecessary version; serialized ViewModel envelopes are versioned if required. No version bump for mere paint/color changes. A cached **old iframe + new Worker** pairing must either have a tested compatible contract or return `VERSION_UNSUPPORTED` and offer a reload without discarding a dirty draft. Do not promise perpetual support for every old UI artifact; never silently accept extra strict output fields without a receiver version check.
 
 ## Durable data and registry rules outside the four layers
 
