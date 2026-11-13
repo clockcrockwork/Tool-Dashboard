@@ -14,18 +14,22 @@
     "test:contracts": "vitest run contracts",
     "check": "npm run lint && npm run typecheck && npm run test:unit && npm run test:contracts",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
+    "dexie": "4.4.7",
     "vue": "3.5.45",
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "1.65.0",
     "@types/node": "24.19.2",
     "@vitejs/plugin-vue": "6.0.10",
     "@vue/eslint-config-typescript": "14.9.0",
     "eslint": "10.14.0",
     "eslint-plugin-vue": "10.12.1",
+    "fake-indexeddb": "6.2.8",
     "typescript": "5.9.3",
     "vite": "8.3.8",
     "vitest": "5.1.0",

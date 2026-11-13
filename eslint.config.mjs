@@ -25,4 +25,14 @@ export default withVueTs(
       'no-restricted-imports': ['error', { patterns: [{ group: ['*'], message: 'Parts and tokens are dependency-free declarations.' }] }],
     },
   },
+  {
+    files: ['src/web/**/*.{ts,vue}', 'src/App.vue'],
+    ignores: ['src/web/local-repository.ts', 'src/web/export-import.ts', 'src/web/migrations.ts', 'src/web/legacy-import.ts', 'src/web/**/*.test.ts'],
+    rules: {
+      'no-restricted-syntax': ['error',
+        { selector: 'MemberExpression[property.name=/^(records|targetStates|table)$/]', message: 'Use the LocalRepository mutation API; target revisions must change atomically.' },
+        { selector: 'CallExpression[callee.object.property.name="configs"][callee.property.name=/^(add|put|update|delete|clear|bulkAdd|bulkPut|bulkDelete)$/]', message: 'Use the LocalRepository mutation API for configurations.' },
+      ],
+    },
+  },
 );
