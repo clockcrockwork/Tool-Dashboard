@@ -40,3 +40,8 @@ it('rejects dynamic imports in core', async () => {
   const [result] = await eslint.lintText('export async function bad() { return await import("vue"); }', { filePath: 'src/core/operations.ts' });
   expect(result?.messages.some(m => m.ruleId === 'no-restricted-syntax')).toBe(true);
 });
+
+it('rejects direct access to target records outside persistence adapters', async () => {
+  const [result] = await eslint.lintText('<script setup lang="ts">\nconst probe = repository.records;\nvoid probe;\n</script>\n<template><main>Probe</main></template>', { filePath: 'src/App.vue' });
+  expect(result?.messages.some(m => m.ruleId === 'no-restricted-syntax')).toBe(true);
+});

@@ -1,31 +1,35 @@
-/* Stage 1a neutral verification shell — not the final visual design. */
-:root {
-  color-scheme: dark;
-  --td-color-surface: #1a1c24;
-  --td-color-text: #f5f6f8;
-  --td-color-accent: #96aefa;
-  --td-color-error: #ffb8b8;
-  --td-space-2: .5rem;
-  --td-radius-card: 1rem;
-  font-family: system-ui, sans-serif;
-}
+:root { color-scheme: dark; font-family: system-ui, sans-serif; background: #11151b; color: #eef2f5; --accent: #a7dcd5; }
 * { box-sizing: border-box; }
-body { margin: 0; background: #111218; color: var(--td-color-text); }
-.shell { max-width: 760px; padding: clamp(1rem, 3vw, 2.5rem); margin: auto; }
-.eyebrow { color: var(--td-color-accent); font-size: .78rem; letter-spacing: .09em; }
-p { color: #c8cad6; line-height: 1.6; }
-.panel { background: var(--td-color-surface); border: 1px solid #393b47; padding: 1.5rem; border-radius: var(--td-radius-card); margin-top: 1.5rem; }
-.panel h2 { margin-top: 0; font-size: 1.08rem; }
-.panel li { margin-block: .4rem; }
-.panel li span { color: #9fa1ad; }
-label { display: block; margin-bottom: .5rem; }
-.controls { display: flex; flex-wrap: wrap; gap: var(--td-space-2); }
-input, button { font: inherit; border-radius: .55rem; padding: .65rem 1rem; }
-input { flex: 1; min-width: 180px; border: 1px solid #737786; color: inherit; background: #252733; }
-button { border: 0; background: var(--td-color-accent); color: #101521; cursor: pointer; font-weight: 600; }
-:focus-visible { outline: 3px solid var(--td-color-accent); outline-offset: 3px; }
-.error { color: var(--td-color-error); }
-.result { display: block; margin-top: .9rem; }
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-}
+body { margin: 0; }
+.shell { max-width: 1100px; margin: auto; padding: clamp(1rem, 4vw, 3rem); }
+.header, .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.header { margin-bottom: 2rem; }
+.header h1 { margin: .3rem 0; }
+.eyebrow { color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .12em; }
+p { color: #c7d0d8; line-height: 1.55; }
+.board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.panel { background: #1c252d; border: 1px solid #42505c; border-radius: 1rem; padding: 1.25rem; }
+.panel h2 { margin: 0 0 1rem; font-size: 1.1rem; }
+.wide { grid-column: span 2; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+input, button { font: inherit; border-radius: .5rem; padding: .6rem .8rem; }
+input:not([type=radio]):not([type=checkbox]) { min-width: 0; max-width: 100%; border: 1px solid #7c8b98; background: #111920; color: inherit; }
+.controls input { flex: 1 1 10rem; }
+button { border: 1px solid transparent; background: var(--accent); color: #102322; cursor: pointer; font-weight: 650; }
+button.secondary { color: #e6f1f1; background: transparent; border-color: #71878b; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button[aria-pressed=true] { box-shadow: inset 0 0 0 2px #fff; }
+:focus-visible { outline: 3px solid #fff1a8; outline-offset: 3px; }
+label { display: block; margin: .75rem 0 .4rem; }
+label input[type=radio], label input[type=checkbox] { margin-right: .45rem; }
+.clock { font-size: clamp(2rem, 6vw, 3.5rem); font-variant-numeric: tabular-nums; letter-spacing: .03em; }
+.result { display: block; margin-top: .8rem; font-weight: 650; }
+.warning { color: #ffda91; }
+.error { color: #ffb6b6; }
+.edit-controls { border-top: 1px solid #42505c; padding-top: 1rem; margin-top: 1rem; }
+.modal-backdrop { position: fixed; inset: 0; display: grid; place-items: center; padding: 1rem; background: #000b; z-index: 5; overflow: auto; }
+.modal { max-width: 36rem; width: 100%; max-height: 95vh; overflow: auto; }
+fieldset { border: 1px solid #71878b; border-radius: .5rem; margin-bottom: 1rem; }
+li { margin: .5rem 0; }
+@media (max-width: 640px) { .board { grid-template-columns: 1fr; } .wide { grid-column: auto; } .toolbar { align-items: stretch; flex-direction: column; } .toolbar > button { align-self: flex-start; } .header { align-items: flex-start; flex-direction: column; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
