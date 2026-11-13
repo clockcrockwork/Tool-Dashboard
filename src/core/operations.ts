@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { operationJsonSchema } from './json-schema';
 
 export type RuntimeSurface = 'browser' | 'server';
 export type AgentTransport = 'remote-mcp' | 'webmcp';
@@ -54,19 +55,47 @@ export function defineOperation<I extends z.ZodType, O extends z.ZodType>(
     throw new Error('Invalid payload bound for ' + definition.id);
   }
   // Fail closed: JSON Schema cannot represent dates, transforms, functions, etc.
-  z.toJSONSchema(definition.inputSchema);
-  z.toJSONSchema(definition.outputSchema);
+  operationJsonSchema(definition.inputSchema, 'input');
+  operationJsonSchema(definition.outputSchema, 'output');
 
   return {
     ...definition,
     async run(raw: unknown, context: OperationContext = {}): Promise<z.output<O>> {
-      const serial = JSON.stringify(raw);
-      if (serial === undefined || new TextEncoder().encode(serial).byteLength > definition.maxInputBytes) {
-        throw new Error('PAYLOAD_TOO_LARGE');
+      let serial: string | undefined;
+      try {
+        serial = JSON.stringify(raw);
+      } catch {
+        throw new OperationError('INVALID_INPUT');
       }
-      const input = definition.inputSchema.parse(raw);
-      const result = await definition.execute(input, context);
-      return definition.outputSchema.parse(result);
+      if (serial === undefined) throw new OperationError('INVALID_INPUT');
+      if (new TextEncoder().encode(serial).byteLength > definition.maxInputBytes) {
+        throw new OperationError('PAYLOAD_TOO_LARGE');
+      }
+      const input = parseBoundary(definition.inputSchema, raw, 'INVALID_INPUT');
+      let result: unknown;
+      try {
+        result = await definition.execute(input, context);
+      } catch {
+        throw new OperationError('EXECUTION_FAILED');
+      }
+      return parseBoundary(definition.outputSchema, result, 'INVALID_OUTPUT');
     },
   };
+}
+
+/** Safe public failures: never copy payloads, validation details or executor errors. */
+export type OperationErrorCode = 'INVALID_INPUT' | 'PAYLOAD_TOO_LARGE' | 'INVALID_OUTPUT' | 'EXECUTION_FAILED';
+export class OperationError extends Error {
+  constructor(readonly code: OperationErrorCode) {
+    super(code);
+    this.name = 'OperationError';
+  }
+}
+
+function parseBoundary<S extends z.ZodType>(schema: S, value: unknown, code: 'INVALID_INPUT' | 'INVALID_OUTPUT'): z.output<S> {
+  try {
+    return schema.parse(value);
+  } catch {
+    throw new OperationError(code);
+  }
 }
