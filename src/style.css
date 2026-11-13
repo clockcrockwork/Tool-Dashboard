@@ -1,0 +1,31 @@
+/* Stage 1a neutral verification shell — not the final visual design. */
+:root {
+  color-scheme: dark;
+  --td-color-surface: #1a1c24;
+  --td-color-text: #f5f6f8;
+  --td-color-accent: #96aefa;
+  --td-color-error: #ffb8b8;
+  --td-space-2: .5rem;
+  --td-radius-card: 1rem;
+  font-family: system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #111218; color: var(--td-color-text); }
+.shell { max-width: 760px; padding: clamp(1rem, 3vw, 2.5rem); margin: auto; }
+.eyebrow { color: var(--td-color-accent); font-size: .78rem; letter-spacing: .09em; }
+p { color: #c8cad6; line-height: 1.6; }
+.panel { background: var(--td-color-surface); border: 1px solid #393b47; padding: 1.5rem; border-radius: var(--td-radius-card); margin-top: 1.5rem; }
+.panel h2 { margin-top: 0; font-size: 1.08rem; }
+.panel li { margin-block: .4rem; }
+.panel li span { color: #9fa1ad; }
+label { display: block; margin-bottom: .5rem; }
+.controls { display: flex; flex-wrap: wrap; gap: var(--td-space-2); }
+input, button { font: inherit; border-radius: .55rem; padding: .65rem 1rem; }
+input { flex: 1; min-width: 180px; border: 1px solid #737786; color: inherit; background: #252733; }
+button { border: 0; background: var(--td-color-accent); color: #101521; cursor: pointer; font-weight: 600; }
+:focus-visible { outline: 3px solid var(--td-color-accent); outline-offset: 3px; }
+.error { color: var(--td-color-error); }
+.result { display: block; margin-top: .9rem; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
