@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer"><meta name="color-scheme" content="dark">
+<title>Local LLM Mobile Lab | Tool-Dashboard</title>
+<style>
+:root{font:16px/1.6 system-ui,sans-serif;color:#ecf1f8;background:#0e1521}*{box-sizing:border-box}
+body{margin:0}.page{max-width:840px;margin:auto;padding:24px 16px 60px}h1{font-size:clamp(1.7rem,5vw,2.5rem);line-height:1.2;margin:10px 0}
+.kicker{letter-spacing:.13em;font-size:.75rem;color:#95ddc8;font-weight:700}p{color:#c5d0df}.warning{background:#352b20;border-left:4px solid #efb968;padding:12px 15px;color:#ffe5b7}
+section{background:#192638;border:1px solid #35465e;border-radius:13px;padding:22px;margin:20px 0}h2{font-size:1.16rem;margin:0 0 17px}
+label{display:grid;gap:7px;font-weight:650;margin:12px 0}select,textarea{background:#0e1827;border:1px solid #60748f;color:#fff;border-radius:8px;padding:11px;font:inherit;width:100%;min-height:43px}
+textarea{resize:vertical;min-height:112px}select:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid #85ddca;outline-offset:2px}
+button{background:#a7edda;color:#102228;border:1px solid #a7edda;font:inherit;font-weight:750;border-radius:8px;padding:9px 16px;min-height:44px;cursor:pointer}
+button.secondary{background:transparent;color:#f0f5fb;border-color:#89a4b8}button:disabled{opacity:.45;cursor:not-allowed}
+.buttons{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+dl{display:grid;grid-template-columns:minmax(110px,1fr) minmax(0,2fr);gap:8px 10px;margin:0}dt,dd{font-size:.88rem;overflow-wrap:anywhere;border-bottom:1px solid #35445a;padding-bottom:9px;margin:0}dt{color:#a7b8cb}
+.note{font-size:.84rem;color:#b7c5d5}pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:350px;overflow:auto;background:#0a101b;border:1px solid #3f516a;border-radius:8px;padding:14px;min-height:90px}
+.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metrics>div{border:1px solid #40536d;border-radius:7px;padding:11px}
+.metrics strong{display:block;font-size:1.24rem;font-variant-numeric:tabular-nums}.metrics span{font-size:.81rem;color:#adbed2}
+progress{width:100%;height:11px;accent-color:#93dcc4}.status{font-size:.91rem;color:#d0f4e7;overflow-wrap:anywhere}
+.record{border-bottom:1px solid #3f516a;padding:9px 0;font-size:.86rem}.record strong{display:block}footer{font-size:.79rem;color:#92a7bf}
+@media(max-width:560px){.grid{grid-template-columns:1fr}section{padding:17px}.page{padding-top:10px}dl{grid-template-columns:110px minmax(0,1fr)}}
+</style>
+<script type="module" src="./app.js"></script>
+</head>
+<body><main class="page">
+<header><p class="kicker">TOOL-DASHBOARD / INDEPENDENT EXPERIMENT</p><h1>Mobile Local LLM Lab</h1>
+<p>WebLLMとwllamaをスマホ・PCで比較。画面専用AIの実験であり、Tool-Dashboard本体、端末間同期、MCPには接続しません。</p>
+<p class="warning">モデルを明示的に読み込むと約0.4〜1GB以上の通信・メモリ負荷が発生する可能性があります。機密情報を入力しないでください。</p></header>
+<section><h2>01. 端末の対応状況</h2><dl id="device"><dt>検出中</dt><dd>...</dd></dl>
+<p class="note">WebGPU対応でもモデルがロードできるとは限りません。VRAMや端末全体のRAM使用量は正確に取得できません。</p>
+<button id="probe" class="secondary">再検出</button></section>
+<section><h2>02. モデルの読み込み</h2><div class="grid">
+<label>実行エンジン<select id="runtime"><option value="webllm">WebLLM / WebGPU</option><option value="wllama">wllama / Wasm・WebGPU</option></select></label>
+<label>モデル<select id="model"></select></label></div>
+<label id="backendField" hidden>wllama実行方法<select id="backend"><option value="cpu">CPU（シングルスレッド）</option><option value="gpu">WebGPU（可能な限りオフロード）</option></select></label>
+<p class="note" id="modelInfo"></p>
+<div class="buttons"><button id="load">モデルを読み込む</button><button id="release" class="secondary" disabled>メモリを解放</button></div>
+<progress id="progress" value="0" max="100" aria-label="読み込み進捗"></progress><p id="status" class="status" role="status" aria-live="polite">未読み込み</p></section>
+<section><h2>03. 同じ日本語入力でテスト</h2>
+<label>テスト文章<textarea id="prompt" maxlength="1500" spellcheck="false">2026年11月22日までに表紙のラフを完成させる。優先度は高。作業はイラスト。</textarea></label>
+<p class="note">共通指示：文章からタスク名・期日・優先度・タグをJSON形式で返す。上限128トークン、temperature 0。</p>
+<div class="buttons"><button id="run" disabled>生成して計測</button><button id="stop" class="secondary" disabled>生成を中断</button></div>
+<p id="validity" class="note">未実行</p><pre id="output">生成結果がここに表示されます。</pre></section>
+<section><h2>04. 測定結果</h2><div class="metrics">
+<div><span>読み込み所要時間</span><strong id="loadMs">—</strong></div><div><span>生成所要時間</span><strong id="generationMs">—</strong></div>
+<div><span>出力トークン数</span><strong id="tokens">—</strong></div><div><span>出力速度（概算）</span><strong id="speed">—</strong></div></div>
+<p class="note">生成所要時間はプロンプト処理も含みます。トークン数を取得できない場合、速度は計算しません。初回・キャッシュ済みの読み込み時間は区別して記録してください。</p>
+<div class="buttons"><button class="secondary" id="export" disabled>JSONを保存</button><button class="secondary" id="clear" disabled>結果を消去</button></div><div id="records">記録はありません。</div></section>
+<footer>推論用ライブラリとモデルは外部CDN / Hugging Faceから取得します。独自のサーバー送信・解析タグは設置していません。履歴はこのタブのメモリ上のみで、JSONダウンロードは操作した場合だけ実行します。</footer>
+</main></body></html>
