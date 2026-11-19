@@ -17,7 +17,7 @@ The project is revisiting its independent widget/tool design to support a common
 ## UI design workflow decisions (2026-11-19)
 
 - **Accepted:** Claude Design maintains a visual **Design Pattern Gallery**; actual reusable UI components get **Storybook** stories/documentation and state/interaction checks when implemented ([issue #18](https://github.com/clockcrockwork/Tool-Dashboard/issues/18)). Storybook remains a development dependency and is not a substitute for Playwright E2E.
-- **Open review, no migration authorized:** evaluate the current Vue runtime against Svelte 5 / Preact using representative widget performance and lifecycle tests ([issue #17](https://github.com/clockcrockwork/Tool-Dashboard/issues/17)). Vue continues to power the existing Stage 1b app until an evidence-backed architecture decision changes it. The Claude Design JSX output is only a design reference.
+- **Vue 3 + Vite + TypeScript remains fixed:** the speculative framework comparison was cancelled ([closed as not planned in #17](https://github.com/clockcrockwork/Tool-Dashboard/issues/17)). Claude Design JSX is a visual reference only; assess performance within Vue as real widgets are implemented.
 
 ## Normative v2 map
 
