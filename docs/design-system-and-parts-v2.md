@@ -28,6 +28,8 @@ A "parts schema" is helpful, but **a full JSON-to-any-UI renderer is not require
 
 ## 2. Minimal part system (accepted v1)
 
+The [widget schema v0 working draft](./widget-schema-v0.md) explores template/variant references and common placement controls using this Parts contract. Its [three examples](./widget-schema-v0-examples.md) and [prototype checklist](./widget-schema-v0-checklist.md) are design artifacts; they do not introduce a second Parts enum, generic JSON renderer, or verified runtime behavior.
+
 Use static TypeScript manifests, one registration per utility. The **canonical** union is `field | action | result | feedback | custom` in [four-layer-contracts-v2.md](./four-layer-contracts-v2.md). Do not introduce alternative `button/value/preview` enum names or an arbitrary `dataKey: string` that cannot be checked against a ViewModel.
 
 ~~~ts

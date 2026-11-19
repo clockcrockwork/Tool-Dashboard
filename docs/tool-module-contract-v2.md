@@ -185,6 +185,8 @@ The v2 canonical local store is **IndexedDB via the LocalRepository/Dexie adapte
 
 ## 6. UI composition rules
 
+The [widget schema v0 working draft](./widget-schema-v0.md) maps page-single and board-widget presentation onto these identities and shells. It preserves placement/config/view ownership and the existing deletion/revision rules. The proposed page composition, locks, visibility and data-source descriptors are not yet persisted or implemented; see its [conformance checklist](./widget-schema-v0-checklist.md) before adding fields to the current repository/export format.
+
 Design one focused ToolView that can receive typed ViewModel data and emit intents/actions. Hosts provide their own surrounding chrome. Visual styling belongs to reusable design tokens, optional semantic part manifests and host shells; see [design-system-and-parts-v2.md](./design-system-and-parts-v2.md). A schema-driven renderer is optional for simple forms/results, not a mandatory generic UI engine:
 
 ~~~text

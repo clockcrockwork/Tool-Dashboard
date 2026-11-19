@@ -21,6 +21,12 @@ The project is revisiting its independent widget/tool design to support a common
 
 ## Normative v2 map
 
+### Widget schema design work (2026-11-19)
+
+[Widget schema v0](./docs/widget-schema-v0.md) is a **working design draft**, with [clock/weather/script examples](./docs/widget-schema-v0-examples.md) and a [prototype conformance checklist](./docs/widget-schema-v0-checklist.md). It connects page/board presentation, independent placement controls, responsive Parts, data-source states and execution lifecycles to the existing contracts below. New Claude Design HTML has not yet been supplied; the draft is not an implemented schema or a replacement for the normative v2 map.
+
+### Accepted contracts
+
 One authoritative contract per concern — no parallel sets of MUST rules:
 
 | Concern | Normative v2 reference |
