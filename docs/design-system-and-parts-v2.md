@@ -151,3 +151,14 @@ Developer experience for a second utility:
 ## 7. Explicitly open visual decisions
 
 The new overall dashboard appearance, initial theme sets, specific shadows/effects, mobile navigation, whether board grid should be freeform on phone, and which components should be authored from scratch remain **undecided**. The 2025 visual prototype should be compared as an option, not blindly reproduced.
+
+
+## 8. UI documentation and Storybook (accepted 2026-11-19)
+
+**Design Pattern Gallery** is a deliberate deliverable of the current Claude Design prototype phase: foundations, semantic parts, WidgetShell states, motion/reduced-motion behavior, responsive/host variants, and interaction/feedback examples. Treat it as a *visual and behavioral reference*, not as an authoritative runtime implementation or an instruction to migrate JSX.
+
+**Storybook is required** once reusable production UI components are implemented. It documents and tests actual components (not a duplicate token/parts contract), with only relevant stories for default/compact, light/dark, focus/keyboard, pending/error, mobile/container states, and reduced motion. The minimum initial scope is the genuine shared Field, Action, Result, Feedback and WidgetShell components as they become available; do not generate artificial components or stories.
+
+Storybook uses the framework selected by the explicit [frontend runtime re-evaluation](https://github.com/clockcrockwork/Tool-Dashboard/issues/17), not the framework used in a Claude Design artifact. The [Storybook adoption task](https://github.com/clockcrockwork/Tool-Dashboard/issues/18) tracks implementation and evidence. Storybook covers isolated component behavior; existing Playwright E2E covers board/standalone workflows, storage, keyboard/touch, and cross-widget interaction. Storybook belongs to development tooling and must not inflate the production dashboard bundle; a paid visual testing service is not required.
+
+The [agent-commons frontend interaction / UX reference pack](https://github.com/clockcrockwork/agent-commons/blob/main/core/review-packs/frontend-interaction-ux.md) is preferred to creating a parallel review framework; opt-in use only, no blanket CI/merge gate. External Skills provide design and motion *references* and do not override accepted local contracts.
