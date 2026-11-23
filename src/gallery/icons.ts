@@ -20,9 +20,8 @@ export const GIC = {
   bell: 'M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5h4',
   external: 'M14 4h6v6M20 4l-9 9M18 14v6H4V6h6',
   more: 'M6 12h.1M12 12h.1M18 12h.1',
-  play: 'M8 5.5v13l11-6.5z',
   chevDown: 'M6 9.5l6 6 6-6',
-  close: IC.close,
+  /** 全画面の時計の右上（IC.pause とは線の位置が違う） */
   pause: 'M9 6v12M15 6v12',
 } as const;
 
