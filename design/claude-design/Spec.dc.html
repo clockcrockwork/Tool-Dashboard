@@ -1,0 +1,1163 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>仕様書</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=Noto+Sans+JP:wght@400;500&display=swap">
+<style>
+body{margin:0}
+a{color:#2f6f9f}a:hover{color:#1f4f75}
+.spec{
+  color-scheme:light dark;
+  --bg:light-dark(#e8ecf1,#0d1117);--text:light-dark(#18202b,#eef2f6);--mut:light-dark(#4d5969,#a9b3c0);
+  --glass:light-dark(rgba(255,255,255,.42),rgba(255,255,255,.082));--glass2:light-dark(rgba(255,255,255,.3),rgba(255,255,255,.07));
+  --sheet:light-dark(rgba(244,247,250,.8),rgba(26,32,42,.82));
+  --hi:light-dark(rgba(255,255,255,.98),rgba(255,255,255,.46));--hi3:light-dark(rgba(255,255,255,.72),rgba(255,255,255,.2));
+  --rim0:light-dark(rgba(255,255,255,.34),rgba(255,255,255,.07));--edge:light-dark(rgba(20,30,50,.1),rgba(0,0,0,.55));
+  --sh1:light-dark(rgba(20,30,50,.08),rgba(0,0,0,.4));--shadow:light-dark(rgba(38,56,84,.22),rgba(0,0,0,.6));
+  --fill:light-dark(rgba(24,32,43,.07),rgba(255,255,255,.08));--fill2:light-dark(rgba(24,32,43,.14),rgba(255,255,255,.17));
+  --a1:light-dark(#2f6f9f,#82b8de);--a2:light-dark(#c2742d,#e2a46e);--on-a:light-dark(#ffffff,#0d1117);
+  --c1:light-dark(#2f6f9f,#4a8ec6);--c2:light-dark(#c2742d,#c97f3c);
+  --w1:light-dark(#b7cdec,#1b3558);--w2:light-dark(#efcdb6,#57321f);
+  font-family:Inter,"Noto Sans JP",system-ui,sans-serif;font-size:15px;line-height:1.75;color:var(--text);background:var(--bg);
+}
+.spec[data-theme="light"]{color-scheme:light}
+.spec[data-theme="dark"]{color-scheme:dark}
+.spec *{box-sizing:border-box}
+.spec h1{font-size:34px;font-weight:300;line-height:1.25;margin:0;letter-spacing:-0.01em}
+.spec h2{font-size:22px;font-weight:500;line-height:1.35;margin:0 0 14px}
+.spec h3{font-size:15px;font-weight:600;margin:22px 0 8px}
+.spec p{margin:0 0 10px;max-width:72ch;text-wrap:pretty}
+.spec ul{margin:0 0 10px;padding-left:1.2em;max-width:72ch}
+.spec li{margin:2px 0}
+.spec code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--fill);padding:1px 6px;border-radius:6px}
+.sec{padding:36px 0;border-top:1px solid var(--fill2)}
+.spec pre{margin:8px 0 14px;padding:14px 16px;border-radius:14px;background:var(--fill);overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.6;white-space:pre;tab-size:2}
+.spec ol{margin:0 0 10px;padding-left:1.4em;max-width:72ch}
+.lead{color:var(--mut)}
+.tw{overflow-x:auto;margin:8px 0 14px}
+.spec table{border-collapse:collapse;width:100%;min-width:560px;font-size:13.5px;line-height:1.55}
+.spec th{text-align:left;font-weight:600;color:var(--mut);font-size:12.5px;padding:8px 12px 8px 0;border-bottom:1px solid var(--fill2);white-space:nowrap}
+.spec td{padding:8px 12px 8px 0;border-bottom:1px solid var(--fill);vertical-align:top}
+.swt{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.swt i{width:16px;height:16px;border-radius:5px;border:1px solid var(--fill2);flex:none}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:14px}
+.pane{position:relative;border-radius:26px;padding:18px;background:var(--glass);
+  box-shadow:inset 0 0 0 1px var(--rim0),0 0 0 .5px var(--edge),0 1px 2px var(--sh1),0 8px 18px -14px var(--shadow)}
+.pane::before,.navx::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.25px;pointer-events:none;
+  background:linear-gradient(135deg,var(--hi) 0%,transparent 26%,transparent 70%,var(--hi3) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude}
+.stage{position:relative;border-radius:22px;padding:22px;overflow:hidden;
+  background:radial-gradient(circle at 14% 20%,var(--w1) 0 120px,transparent 122px),radial-gradient(circle at 88% 86%,var(--w2) 0 140px,transparent 142px),var(--bg);
+  box-shadow:inset 0 0 0 1px var(--fill2)}
+.lbl{font-size:12px;color:var(--mut);margin:0 0 8px}
+.rowx{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.btn{appearance:none;border:0;background:var(--fill);color:var(--text);border-radius:999px;min-width:44px;min-height:44px;padding:0;display:grid;place-items:center;cursor:pointer;font:inherit}
+.btn.on{background:var(--a1);color:var(--on-a)}
+.chip{appearance:none;border:0;background:var(--fill);color:var(--text);border-radius:999px;min-height:44px;padding:0 16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-size:14px;text-decoration:none}
+.chip.on{background:var(--text);color:var(--bg)}
+.chip.sm{font-size:13px;padding:0 13px;background:none;border:1.5px dashed var(--fill2);color:var(--mut)}
+.chip.sm.on{background:color-mix(in oklab,var(--a1) 24%,transparent);border:1.5px solid transparent;color:var(--text)}
+.seg{display:inline-flex;background:var(--fill);border-radius:999px}
+.sg{appearance:none;border:0;background:none;color:var(--text);border-radius:999px;min-height:44px;min-width:44px;padding:0 13px;cursor:pointer;font:inherit;font-size:14px}
+.sg.on{background:var(--text);color:var(--bg)}
+.sw{appearance:none;border:0;background:none;width:52px;height:44px;padding:0;display:grid;place-items:center;cursor:pointer}
+.sw .tr{width:46px;height:26px;border-radius:99px;background:var(--fill2);position:relative}
+.sw .kn{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:99px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.sw.on .tr{background:var(--a1)}
+.sw.on .kn{translate:20px 0}
+.rg{appearance:none;-webkit-appearance:none;width:180px;height:14px;border-radius:99px;margin:15px 0;border:1px solid var(--rim0);background:var(--fill2)}
+.rg::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:99px;background:#fff;border:1px solid rgba(0,0,0,.18);box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.rg::-moz-range-thumb{width:24px;height:24px;border-radius:99px;background:#fff;border:1px solid rgba(0,0,0,.18);box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.inp{appearance:none;border:0;background:var(--fill);color:var(--text);border-radius:14px;min-height:44px;padding:0 14px;width:200px;font:inherit;font-size:16px}
+.inp::placeholder{color:var(--mut)}
+.fd{position:relative;display:block;width:56px;height:120px;border-radius:16px;background:var(--fill);overflow:hidden}
+.fd span{position:absolute;left:0;right:0;bottom:0;height:60%;background:color-mix(in oklab,var(--text) 24%,transparent)}
+.navx{position:relative;display:inline-flex;align-items:center;padding:0 4px;border-radius:999px;background:var(--glass2);
+  -webkit-backdrop-filter:blur(9px) saturate(190%) brightness(1.06);backdrop-filter:blur(9px) saturate(190%) brightness(1.06);
+  box-shadow:inset 0 0 0 1px var(--rim0),0 0 0 .5px var(--edge),0 2px 4px var(--sh1),0 14px 32px -12px var(--shadow)}
+.nb{width:44px;height:44px;display:grid;place-items:center;border-radius:99px}
+.tst{display:inline-flex;align-items:center;gap:10px;padding:11px 18px 11px 14px;border-radius:999px;background:var(--sheet);
+  box-shadow:inset 0 0 0 1px var(--rim0),0 0 0 .5px var(--edge),0 14px 32px -12px var(--shadow)}
+.num{font-variant-numeric:tabular-nums}
+.cap{font-size:12px;color:var(--mut)}
+.spec{--bad:light-dark(#b3402f,#f09a8a);--sun-d:light-dark(#dfa64f,#c18a3e);--sun-t:light-dark(#9fb5d3,#3e5a7e);--jk:light-dark(#7446a8,#c3a6ee);--js:light-dark(#2b7650,#8ccfa6);--jn:light-dark(#a85a22,#e6a874);--jf:light-dark(#2f6f9f,#82b8de);--jb:light-dark(#9c3f70,#e59ac3)}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.sunb{position:relative;display:block;height:20px;border-radius:6px;overflow:hidden}
+.sunb .nw{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;border-radius:2px;background:var(--text)}
+.sunb .tk{position:absolute;top:0;bottom:0;width:1px;background:color-mix(in oklab,var(--text) 16%,transparent)}
+.rbar{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:2px;align-items:end;height:20px}
+.rbar span{border-radius:3px;background:var(--c1)}
+.code{margin:8px 0 14px;padding:12px 14px;border-radius:14px;background:var(--fill);font:13px/20px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;overflow-x:auto}
+.code .ln{display:inline-block;width:2em;margin-right:10px;text-align:right;color:var(--mut)}
+.code .er{display:inline-block;min-width:100%;background:color-mix(in oklab,var(--bad) 16%,transparent);box-shadow:inset 2px 0 var(--bad)}
+.jk{color:var(--jk)}.js{color:var(--js)}.jn{color:var(--jn)}.jf{color:var(--jf)}.jb{color:var(--jb)}.jc{color:var(--mut);font-style:italic}
+.drop{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 14px;border-radius:14px;border:1.5px dashed var(--fill2);color:var(--mut);text-align:center;font-size:14px}
+.drop.full{min-height:120px;flex-direction:column;gap:6px}
+.drop.over{border-style:solid;border-color:var(--a1);background:color-mix(in oklab,var(--a1) 12%,transparent);color:var(--text)}
+.prg{display:block;height:4px;border-radius:9px;background:var(--fill2);overflow:hidden}
+.prg i{display:block;width:100%;height:100%;transform-origin:left center;background:var(--a1)}
+.frow{display:flex;align-items:center;gap:10px;min-height:52px}
+.frow .cn{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;line-height:1.35}
+.frow .cn b{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frow .cn span{font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frow.err .cn span{color:var(--bad)}
+.fth{width:40px;height:40px;flex:none;border-radius:10px;background:var(--fill)}
+.stack{display:flex;flex-direction:column;gap:10px}
+</style>
+</helmet>
+<div class="spec" data-theme="{{theme}}" style="min-height: 100vh">
+<div style="max-width: 1040px; margin: 0 auto; padding: 48px 24px 96px">
+
+<header style="padding-bottom: 36px">
+<p class="lead" style="margin-bottom: 6px">リキッドグラス・ツールダッシュボード</p>
+<h1>仕様書</h1>
+<p class="lead" style="margin-top: 14px">ダッシュボードが何をするか、どう振る舞うかを決めた資料です。画面の作り、ウィジェットの決まり、部品の使い場所、道具ごとの仕様をまとめています。</p>
+<p class="lead">値・保存・作りの土台・標準への対応など、作るときに要ることは「実装ガイド」（<code>Impl.dc.html</code>）、部品の見た目と状態は「部品シート」（<code>Parts.dc.html</code>）、採点と変更の経緯は「レビュー」（<code>Review.dc.html</code>）にあります。振る舞いはこの資料、色や寸法の細かな値はプロトタイプを正とします。</p>
+<a href="Main.dc.html" class="chip" style="margin-top: 10px">ダッシュボードに戻る</a>
+</header>
+
+<section class="sec">
+<h2>0. 用語</h2>
+<p>画面にも資料にも、この語だけを使います。「ページ」は使いません（Webページの意味に限って残します）。</p>
+<div class="tw"><table>
+<thead><tr><th>語</th><th>意味</th><th>画面に出すか</th></tr></thead>
+<tbody>
+<tr><td>ボード</td><td>利用者が作るまとまり。ウィジェットを置く場所。名前は「ボード 1」からの通し番号</td><td>出す</td></tr>
+<tr><td>画面</td><td>ボードを表示幅で区切った1枚。1つのボードが何画面にもまたがる（点の名前は「ボード 1-2」、読み上げは「ボード 1の2」）。左右の送りは画面単位</td><td>出す（「前の画面」「次の画面」など）</td></tr>
+<tr><td>ホーム</td><td>開いたときに出すボード。⌂ と <kbd>Home</kbd> で戻る先</td><td>出す</td></tr>
+<tr><td>ウィジェット</td><td>ボードに置く、大きさを変えられる箱。中に1つのツールを表示する</td><td>出す</td></tr>
+<tr><td>全画面ウィジェット</td><td>大きさを「全画面」にして1画面を占めるウィジェット（2章）。対応しているものだけ</td><td>大きさの選択肢として「全画面」だけ出す</td></tr>
+<tr><td>ツール</td><td>ウィジェットの中身。機能そのもの（時計、メモ、翻訳など）</td><td>出さない（画面では「ウィジェット」と呼ぶ）</td></tr>
+<tr><td>パーツ</td><td>UIの部品（ボタン、スイッチ、知らせなど）。部品シートの単位</td><td>出さない</td></tr>
+</tbody></table></div>
+<p>「全画面」はブラウザやアプリの全画面表示と同じ言葉ですが、画面に出るのは大きさの選択肢の中だけなので取り違えません。「モードウィジェット」は、何が起きるか（画面いっぱいに広がる）が名前から読めないため採りません。</p>
+</section>
+
+<section class="sec">
+<h2>1. 設計原則</h2>
+<ul>
+<li><strong>1画面で完結する。</strong> 縦スクロールは作りません。収まらない分は次の画面へ送り、画面は横に並べます。</li>
+<li><strong>見て分かるものを先に、文字は最後に。</strong> 数字、図形、アイコンで伝わる情報に見出しは付けません。文字は固有名と補足だけに使います。</li>
+<li><strong>やりたいことは2〜3手。</strong> 押す・入れる・選ぶを1手と数え（読む・スクロールは数えない）、主な操作はウィジェットの表面に置きます。初回だけの準備と取り消せない操作の確認だけは+1手まで。失敗からは知らせのボタン1つで戻れます。手数の一覧は部品シート1章。</li>
+<li><strong>言葉は必要最低限。</strong> 知らせは1文（25字が目安）で何が起きたかだけを書き、どうするかはボタンの名前で伝えます。同じ操作は同じ名前（繰り返しは「もう一度」）。操作ヒントと最初の案内は説明を求められる場なので、この目安の外です。</li>
+<li><strong>すべての道具はウィジェット。</strong> 例外的な常設UIは下部バーだけです。時計やスケッチを全画面で出すときも「1画面を占めるウィジェット」として扱います。</li>
+<li><strong>ガラスは操作の層にだけ使う。</strong> ウィジェットは内容の層で、落ち着いた面として座らせます。浮かせるのはバー、シート、トーストです。</li>
+<li><strong>設定は2系統に分ける。</strong> 全体に効くものは全体設定、1つの道具に効くものはその道具の設定に置きます。両方に同じ項目を置きません。</li>
+<li><strong>消えない、持ち出せる、外に出さない。</strong> 設定と記録は端末内に保存し、書き出しと読み込みができます。外部送信は利用者が接続を選んだときだけです。</li>
+<li><strong>削除は取り消せる。</strong> ウィジェットやボードを消す操作には、必ず「元に戻す」を付けます。</li>
+</ul>
+</section>
+
+<section class="sec">
+<h2>2. グリッドとボード</h2>
+<ul>
+<li>画面をマス目に分け、ウィジェットは「横×縦」のマス数で大きさを持ちます。</li>
+<li>列数は <code>幅 ÷ 目標の横幅</code>、行数は <code>(高さ − 80) ÷ 目標の縦幅</code> を切り捨てた値です。目標は「ウィジェットの大きさ」設定で 138×124、170×150、212×186 の3段階。列は2〜14、行は3〜10に収めます。</li>
+<li>ウィジェットの大きさが列数・行数を超える場合は、その画面の上限まで縮めます。</li>
+<li>並べ方は、並び順の先頭から、左上から順に空いている場所へ入れる方式です。入らなければ次の画面へ送ります。</li>
+<li><strong>ボード</strong>は利用者が作るまとまりです。1ボードの中身が1画面に収まらないときは、そのボードが複数画面にまたがります。スマホでは1ボードが数画面になります。</li>
+<li>大きさを「全画面」にしたウィジェット（時計、スケッチ）は1画面を占め、置いたボードのほかのウィジェットの後ろに並びます。ほかに何も置いていなければ、その1画面だけのボードになります。</li>
+<li>空のボードには「ウィジェットを追加」だけを中央に出します。</li>
+</ul>
+<h3>はじめて開いたとき</h3>
+<ul>
+<li>最初は「ボード 1」に7個だけ置きます（時計、検索、天気、傘、TODO、クイックリンク、メモ）。残りは未配置で、一覧から置かずに使えます。時計は 2×1 で置きます。</li>
+<li>はじめての1回だけ、下部バーの上に案内を出します。5手順（画面切替、一覧、編集、設定、使い始めの準備）で、4手順目までは該当するボタンを枠で示します。「スキップ」でいつでも抜けられ、見終えたことは保存します。</li>
+<li>5手順目「使い始めの準備」は開いている環境で中身を変えます（実装ガイド7.2）。最後の手順なので「スキップ」は出さず、「はじめる」で閉じます。同じ内容を操作ヒントにも置き、いつでも見直せます。</li>
+<li>案内は全体設定の「操作ヒント」から何度でも見直せます。操作ヒントには、隠れた操作（長押し、キー操作、前面表示、メモからの提案、元に戻す、未接続の印）を1行ずつ並べます。</li>
+<li>マウス操作の環境では、開いた直後に検索欄へカーソルを置きます（ボード 1 に検索があるとき。全体設定で切替可）。タッチ端末ではキーボードが出るため行いません。</li>
+<li>全体設定の「ミニマル構成」と「初期状態に戻す」は最初の7個に戻します。</li>
+</ul>
+
+<h3>つながっていないときの表示</h3>
+<div class="tw"><table>
+<thead><tr><th>状況</th><th>ウィジェット側</th><th>画面全体</th></tr></thead>
+<tbody>
+<tr><td>未接続（データ元を設定していない）</td><td>右上に8pxの輪（線だけ、<code>--mut</code>）。見本や空の表示であることを示す</td><td>なし</td></tr>
+<tr><td>オフライン</td><td>右上に8pxの点（塗り、<code>--a2</code>）。前回の内容を残す</td><td>上部中央に常設の帯「オフライン。前回の内容を表示しています」。復帰したら自動で消す</td></tr>
+<tr><td>取得に失敗</td><td>3章の「失敗」状態（理由、もう一度、最終更新）</td><td>なし</td></tr>
+</tbody></table></div>
+<ul>
+<li>印は外部の情報を使うウィジェット（天気、傘、GitHub PR、RSS）だけに付けます。輪と点は色だけでなく形（線か塗りか）でも区別します。</li>
+<li>印は押せる要素にしません。意味は読み上げ用の文と操作ヒントで伝えます。</li>
+<li>保存してあった内容を出すときは、必ずどちらかの印か「更新中」の状態を伴わせ、最新に見せかけません。</li>
+</ul>
+
+<h3>全画面ウィジェット</h3>
+<ul>
+<li>1画面全体を占めるウィジェットです。面（ガラスの入れ物）を持たず、画面の端まで使います。上下の余白（下部バーの分、画面の切り欠きの分）も含めて画面いっぱいに背景を広げ、時計やボタンなどの中身だけを切り欠きと下部バーを避けて置きます。</li>
+<li>別の道具としては登録しません。全画面で出せるかはウィジェットごとの対応可否（登録の <code>pg: true</code>）で決め、出し方は設定パネルのサイズの最後の「全画面」で切り替えます。追加ボタンは増やしません。今は時計とスケッチだけが対応しています。</li>
+<li>中身と記録は、通常の大きさのときと同じものを使います（スケッチの絵は全画面にしても残る）。名前も道具の名前のまま（「時計」「スケッチ」）で、使い方を表す名前（集中モードなど）は付けません。</li>
+<li>全画面のときは「位置を固定」を使えません。入力補助の帯は、下部バーのすぐ上に浮かせて置きます。</li>
+<li>面いっぱいに描く・なぞる操作を受ける画面では、指の横移動で画面が切り替わりません。下部バーで移動します。</li>
+</ul>
+<p>全画面ウィジェットは、どのツールでも同じ形で作ります（クラスは <code>.fsw</code>）。中身はツールごとに変えても、場所と役割は変えません。</p>
+<div class="tw"><table>
+<thead><tr><th>場所</th><th>クラス</th><th>決まり</th></tr></thead>
+<tbody>
+<tr><td>外枠</td><td><code>.fsw</code></td><td>面（ガラス）を持たない。<code>data-w</code> はツールのID、<code>aria-label</code> はツールの名前。編集中は点線の枠で示し、中身は押せない</td></tr>
+<tr><td>背景</td><td><code>.fsw-bg</code></td><td>任意。画面の端まで広げる。動くものは表示中の画面でだけ動かし、止めるボタンを右上に置く。動きを減らす設定では止める</td></tr>
+<tr><td>中身</td><td><code>.fsw-main</code></td><td>上は切り欠き＋64px、下は下部バーの分を空けた中央にまとめる。大きさは <code>cqw</code> <code>cqh</code> で決める</td></tr>
+<tr><td>面</td><td><code>.fsw-surf</code></td><td>描く・なぞるツールだけ。<code>.fsw-main</code> の代わりに画面いっぱいに敷き、指の横移動で画面を送らない</td></tr>
+<tr><td>右上の操作</td><td><code>.fsw-act</code></td><td>止める・切り替えるなど1〜2個まで。ガラスの丸ボタン（<code>.btn</code>）。通信するツールの接続の点もここに置く</td></tr>
+<tr><td>下の帯</td><td><code>.fsw-bar</code></td><td>入力補助の帯（6章）。下部バーのすぐ上に浮かせる</td></tr>
+<tr><td>空のときの案内</td><td><code>.fsw-hint</code></td><td>まだ何もないときだけ、中央より少し上にアイコン1つ。文字は出さない</td></tr>
+</tbody></table></div>
+
+<h3>置かずに使う（一時利用）</h3>
+<ul>
+<li>たまにしか使わない道具は、ボードに置かなくても使えます。「ウィジェットを追加」の一覧で ▶（置かずに使う）を押すと、その場で前面に開きます。「置く前に試す」ではなく「置かなくても使える」ものとして扱い、▶ の名前も「時計を置かずに使う」にします。</li>
+<li>開いている間は、下に「‹ 戻る／名前／「ボード名」に追加」の帯を出します。戻ると、開く前の一覧に戻り、どこにも残りません。気に入ったら追加ボタンで追加先のボードに入ります。</li>
+<li>開く大きさは、そのウィジェットの既定の大きさを基準にします（横は既定の列数×180px、縦は行数×168px。最小340×240px）。単体の道具として広く使うもの（スクリプト）は、置かずに使うときの大きさを別に持ちます（5×4相当）。</li>
+<li>一時利用中も、入力した内容や設定は通常どおり保存されます。置いたときに同じ状態で始まります。</li>
+<li>初期状態では、最初の7個以外はすべて未配置です。</li>
+</ul>
+<h3>ウィジェットを探す</h3>
+<ul>
+<li>「ウィジェットを追加」の一覧の上に検索欄を置きます。打つたびに一覧を絞り込み、分類の見出しは「検索結果」1つにまとめます。</li>
+<li>名前、ID、分類、登録の検索語（<code>kw</code>）を対象にします。ひらがなとカタカナ、全角と半角、大文字と小文字は区別しません。空白で区切った語はすべて含むものだけ残します。</li>
+<li>結果を使った（▶、＋、↓、名前を押した）ときだけ、その語を「最近の検索」に5件まで覚えます。検索欄が空のときにチップで出し、押すとその語で絞り込みます。× で消せます。</li>
+<li><kbd>Enter</kbd> で最初の結果を開きます。見つからないときは「見つかりません。ほかの言葉で探してください。」を出します。</li>
+</ul>
+
+<h3>画面切替の手段</h3>
+<p>スワイプ、横スクロール、マウスホイール、左右矢印キー、数字キー（1〜9）、<code>Home</code> キーと下部バーの ⌂（ホームへ）、下部バーの矢印と点、一覧からの直接移動。<code>/</code> で一覧、<code>,</code> で全体設定、<code>e</code> で編集モード、<code>Esc</code> で1つ戻る、<code>Ctrl</code>/<code>⌘</code>+<code>Z</code> で元に戻す（7章）。入力欄にフォーカスがある間はキー操作を奪いません。修飾キーなしの1文字の操作（<code>/</code> <code>,</code> <code>e</code> 数字）は、全体設定「1文字のキー操作」でまとめて止められます（既定はオン）。</p>
+<h3>選べる大きさ</h3>
+<ul>
+<li>設定パネルのマス目は、ツールが収まる大きさ（登録の <code>min</code> と <code>max</code>）と、その端末のボードの列数・行数に収まるものだけ押せます。収まらないマスは押せない見た目にし、選んでも変わりません。</li>
+<li>保存してある大きさが今の端末に収まらないときは、収まる大きさに縮めて表示します。保存した値は変えません（大きな画面に戻れば元の大きさで出ます）。</li>
+<li>ツールの中身は、ウィジェットの今の大きさをマス数で受け取れます（CSS 変数 <code>--ww</code> と <code>--wh</code>）。細かい調整はコンテナクエリ（<code>cqw</code> <code>cqh</code>、<code>@container</code>）で行います。</li>
+</ul>
+<h3>ホームと、位置・大きさの固定</h3>
+<ul>
+<li>全体設定「ホーム」で、開いたときに出すボードを選べます（既定はボード 1）。ホームの左右どちらにもボードを置けます。</li>
+<li>ボードの名前は「ボード 1」からの通し番号です。追加や削除のたびに振り直し、ホームかどうかは名前に入れません（⌂ と全体設定で示す）。2画面以上にまたがるボードは、点のツールチップで「ボード 1-2」、読み上げで「ボード 1の2」とします（「1-2」は読み上げソフトで読み方が揃わないため）。1画面に収まるボードは「ボード 1」のまま。</li>
+<li>どのボードからも、下部バーの ⌂ か <code>Home</code> キーの1手でホームに戻れます。ホームにいる間は ⌂ を押せない状態にします。</li>
+<li>URL の <code>#p=3</code> は、そのタブだけで開く画面を指定します（全体設定より優先）。画面を送るとURLも書き換わるため、タブごとに別の画面を開いたままにできます。</li>
+<li>ウィジェットごとに「位置を固定」と「大きさを固定」を持ちます（設定パネル）。位置を固定したものは、置いた列と行（そのボードの何画面目か、列、行）を保存し、ほかを詰めるより先に置きます。ほかのウィジェットの追加・削除・大きさの変更では動きません。</li>
+<li>位置を固定したウィジェットは、設定パネルの矢印で1マスずつ動かせます（ドラッグを使わない手段を兼ねる）。画面が狭くて固定した位置に入らないときは、その画面だけ空いている場所に並べ、設定パネルにその旨を出します。広い画面に戻れば元の位置に戻ります。</li>
+<li>大きさを固定したウィジェットは、設定パネルの大きさを変えられません。画面が小さくて入らないときだけ一時的に縮め、大きさは保存し直しません。</li>
+</ul>
+</section>
+
+<section class="sec">
+<h2>3. ウィジェットの規約</h2>
+<ul>
+<li>1つのウィジェットは、面（共通）と中身（個別）でできています。面には何も書き込みません。</li>
+<li>見える見出しは付けません。読み上げ用には、共通の枠が登録名から見えない見出し（<code>h2</code>）を作り、枠を <code>role="group"</code> とその見出しで名付けます。各ウィジェットの中身は何もしなくてよく、読み上げでは見出しで移動できます。目印（ランドマーク）にはしません（50近く並ぶと探しにくくなるため）。</li>
+<li>中身は面の大きさに追従させます。あふれたときの扱いは中身の種類で決まります（下の「中身があふれるとき」）。</li>
+<li>文字だけで伝える型は「左に大きな手がかり、右に本文と補足」の3要素で統一します（今日は何の日、名言）。日ごとに絵を用意する設計にしません。</li>
+<li>編集モードの間、中身の操作は無効にし、タップは選択だけに使います。</li>
+<li>音や動きが自動で続くものには、必ず止めるボタンを付けます（全画面の時計の背景、スライド、環境音）。</li>
+</ul>
+
+<h3>中身があふれるとき</h3>
+<p>「切り落とす」を既定にしません。中身の種類ごとに、次の3つから1つを選びます。1つのウィジェットに2つを混ぜません。</p>
+<div class="tw"><table>
+<thead><tr><th>方式</th><th>使う中身</th><th>決まり</th></tr></thead>
+<tbody>
+<tr><td>寸法に合わせる</td><td>数字、図、グラフ、操作盤など、数が決まっているもの</td><td>面の寸法に比例して縮める。縮めても読めない大きさになる場合は、既定の大きさを見直す</td></tr>
+<tr><td>縦スクロール</td><td>件数が増えるリスト（TODO、予定、RSS、クリップボード、カウンター、タイムログ、録音、メモ）</td><td>リストの領域だけを縦に送る。入力欄、切替、帯は固定して送らない。下端（新しいものが下に来るリストは上端）を16pxぼかして続きがあることを示す</td></tr>
+<tr><td>ウィジェット内の横送り</td><td>同じ形のものが1枚ずつ並ぶもの（スライドショー）</td><td>必ず止まる位置を持ち、前後のボタンと現在位置の印を付ける。タブや選択チップと併用しない</td></tr>
+</tbody></table></div>
+<ul>
+<li>RSSのように上部に切替がある中身は、横送りにしません。切替で種類を選び、選んだ中を縦に送ります。</li>
+<li>リストの中でのホイールや指の縦移動は、リストを先に送ります。端まで送り切ったときだけ、画面切替に渡します。</li>
+<li>件数は設定で絞らず、送って見られるようにします。絞り込みは「完了を隠す」のように、意味のある条件のときだけ設定に置きます。</li>
+<li>保持する件数には上限を置きます（TODO 50、予定 50、タイムログ 40、クリップボード 20、録音 6）。</li>
+</ul>
+
+<h3>状態</h3>
+<p>外部の情報を出すウィジェット（天気、PR、RSS、予定）は、実装時に次の状態を必ず持たせます。利用者が書きためるもの（TODO、メモ、タイムログなど）の「空」は実装ガイド8章を参照してください。</p>
+<div class="tw"><table>
+<thead><tr><th>状態</th><th>見せ方</th></tr></thead>
+<tbody>
+<tr><td>通常</td><td>各ウィジェットの通常の表示</td></tr>
+<tr><td>読み込み中（初回）</td><td>中身を隠し、形だけの下書き（スケルトン）を出す。太い帯1本と細い帯2本</td></tr>
+<tr><td>更新中</td><td>前回の内容を45%に薄くして残し、右上に小さな回転の印（スピナー）を出す</td></tr>
+<tr><td>空</td><td>何をすれば埋まるかを1行と、そのためのボタン1つ（例:「接続する」）</td></tr>
+<tr><td>失敗</td><td>理由を1行、「もう一度」のボタン、最終更新の時刻</td></tr>
+</tbody></table></div>
+<h3>ウィジェット内の知らせ</h3>
+<p>形は1つ（印・文・操作1つ・色で重さ）にそろえ、置く場所だけを原因で決めます。見た目は部品シート6章。</p>
+<div class="tw"><table>
+<thead><tr><th>原因</th><th>置く場所</th></tr></thead>
+<tbody>
+<tr><td>入力が足りない・形が違う</td><td>その入力のすぐ下（入力欄の補足とエラー）</td></tr>
+<tr><td>実行の結果が失敗した</td><td>結果の欄・一覧の行の中（スクリプトの入力、画像変換の行）</td></tr>
+<tr><td>ウィジェット全体が使えない</td><td>中身ごと置き換える。印・見出し・説明・操作2つまで（空、失敗、許可のお願い）</td></tr>
+<tr><td>使えるが、待つ・気をつける</td><td>操作の帯のすぐ上（AIの準備）</td></tr>
+<tr><td>1×1 で入りきらない</td><td>中身を薄くして残し、トースト（頭にウィジェット名）で知らせる。同じ状態のあいだは1回だけ、ウィジェットを押すと出し直す</td></tr>
+</tbody></table></div>
+<h3>利用者が書きためるものが空のとき</h3>
+<p>TODO、予定、ハビット、クイックリンク、カウンター、クリップボード、タイムログ、録音には、空のときの表示を必ず持たせます。中央に1行で、何をすれば埋まるかを書きます。入れる場所が同じ面にあるならその場所を指し（「上の欄に書いて Enter で追加します」）、無いなら入口のボタンを1つ添えます（「項目を追加」で設定パネル、「メモを開く」でメモへ）。「完了を隠す」で見えなくなった場合は「すべて完了しました」にします。</p>
+<h3>人前では隠す</h3>
+<ul>
+<li>全体設定と、一覧のシートの右上に「中身を隠す」を置きます。オンの間、「人前では隠す」にしたウィジェットは中身を描かず、目を閉じた印と「表示する」だけを出します。「表示する」はそのウィジェットだけを一時的に出し、もう一度隠すをオンにすると戻ります。</li>
+<li>「人前では隠す」の既定がオンのもの: メモ、TODO、予定、クリップボード、AIチャット、翻訳、受け渡し、表、スクリプト、タイムログ、スケッチ。ほかは設定パネルでオンにできます。</li>
+<li>隠すは見た目を消すだけでなく、中身の要素を見えなくして読み上げにも出しません。隠しているかどうかは保存し、再読み込みしても隠れたまま開きます。</li>
+</ul>
+
+<h3>待ちを伝える部品</h3>
+<div class="tw"><table>
+<thead><tr><th>部品</th><th>一般的な呼び名</th><th>使いどころ</th></tr></thead>
+<tbody>
+<tr><td>形だけの下書き</td><td>スケルトン</td><td>ウィジェットの初回読み込み。中身の形が予想できるとき</td></tr>
+<tr><td>回転の印</td><td>スピナー</td><td>ウィジェットの更新中、ボタンやトーストの中。18px、線幅2px</td></tr>
+<tr><td>画面上端の細い帯</td><td>プログレスバー（不確定）</td><td>ページ全体の読み込みや切替。高さ3px、<code>--a1</code></td></tr>
+<tr><td>回転の印つきトースト</td><td>進行中のトースト（ローディングトースト）</td><td>保存や同期など、裏で進む通信。終わったら同じ位置で「完了」のトーストに置き換える</td></tr>
+</tbody></table></div>
+<ul>
+<li>0.3秒以内に終わる処理には何も出しません。1秒を超えそうなら必ず出します。</li>
+<li>動きを減らす設定では、回転と流れる動きをやめ、明滅（不透明度の変化）だけにします。</li>
+<li>待ちの表示は読み上げに乗せます（<code>role="status"</code> または <code>role="progressbar"</code>）。</li>
+</ul>
+
+<h3>確認と警告のダイアログ</h3>
+<ul>
+<li>利用者の判断が要るときだけ使います。結果の報告はトースト、取り消せる削除は「元に戻す」で済ませ、ダイアログにしません。</li>
+<li>構成は、見出し1行、説明1〜2行、ボタン。ボタンは右寄せで、主な操作を右端に置きます。</li>
+<li>お知らせはボタン1つ（<code>--a1</code>）。取り消せない操作の確認は「キャンセル」と操作名のボタン（<code>--bad</code>: ライト #b3402f、ダーク #f09a8a）。ボタンの文言は「はい」ではなく「削除する」のように動作を書きます。</li>
+<li>閉じ方は、ボタン、背後の暗い部分のタップ、<code>Esc</code>。確認の場合、ボタン以外で閉じたときは「キャンセル」と同じ扱いにします。</li>
+<li>開いたときのフォーカスは、お知らせなら「OK」、取り消せない操作の確認なら「キャンセル」に置きます（うっかり Enter で消さないため）。読み上げには <code>role="alertdialog"</code> で伝えます。</li>
+<li>標準の <code>&lt;dialog&gt;</code> を <code>showModal()</code> で開きます。フォーカスがダイアログの中に留まり、背後は操作できなくなり、<code>Esc</code> で閉じます。閉じたら開いたボタンにフォーカスを戻します。</li>
+</ul>
+
+<h3>大きさで中身が増えるウィジェット（段階表示）</h3>
+<p>大きくしたときだけ見せる情報は、段として定義します。小さいときは、その段の要素を作らず、その段のデータも取りに行きません。隠すだけ（見えないが存在する）は不可です。</p>
+<div class="tw"><table>
+<thead><tr><th>天気の段</th><th>出る条件（マス数）</th><th>中身</th><th>必要なデータ</th></tr></thead>
+<tbody>
+<tr><td>基本</td><td>常に</td><td>朝・昼・夜の天気と気温、湿度</td><td>今日の概況</td></tr>
+<tr><td>3時間ごと</td><td>縦2以上</td><td>3時間おき8枠の天気と気温</td><td>24時間分の予報</td></tr>
+<tr><td>週間</td><td>縦2以上かつ横3以上、または縦3以上</td><td>7日分の天気と最高／最低</td><td>週間予報</td></tr>
+</tbody></table></div>
+<ul>
+<li>段を出すかどうかは、面の実寸ではなく割り当てられたマス数で決めます（判定が安定し、並べ直しの計算と同じ情報で済むため）。</li>
+<li>段のデータは、その段が初めて必要になったときに取りに行きます。届くまでは、その段の場所にだけ下書き（スケルトン）を出し、すでに出ている段は動かしません。</li>
+<li>一度取ったデータは、小さくして段が消えても保持して構いません。ただし段が出ていない間は更新を止めます。</li>
+<li>未配置のウィジェット、表示中でない画面のウィジェットは、基本の段も更新しません。表示されたときに古ければ「更新中」の状態を経て差し替えます。</li>
+<li>段の境目で大きさを変えても、既存の段の位置がずれないよう、段は下に足していきます。</li>
+</ul>
+
+<h3>情報が多い道具の見せ方（傘の例）</h3>
+<p>天気は、問いが違う2つのウィジェットに分けました。「傘」は出かける判断（要るか、いつ降るか）、「天気」は一日の様子（朝・昼・夜の気温と湿度、広げれば3時間ごとと週間）です。1つに詰めると、どちらの問いにも一目で答えられなくなるためです。</p>
+<p>傘は、項目を足すのではなく、知りたい問いに順番を付けて、上から答えます。</p>
+<div class="tw"><table>
+<thead><tr><th>段</th><th>答える問い</th><th>見せ方</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>傘は要るか</td><td>アイコン（傘／雲と日差し）と見出し1行。「傘がいります」「傘はいりません」「いま雨が降っています」</td></tr>
+<tr><td>2</td><td>いつ降り始めるか、いつ止むか</td><td>補足1行。「約3時間後、17時ごろに降り始め・22時ごろに止む」「あと約4時間、18時ごろに止む」</td></tr>
+<tr><td>3</td><td>この先12時間の降り方</td><td>1時間ごとの棒12本。降る時間は <code>--c1</code> で量に応じた高さ、降らない時間は3pxの印</td></tr>
+</tbody></table></div>
+<ul>
+<li>「降っている」の判定は1時間あたり0.1mm超。傘が要るのは、この先12時間に1時間でも降るとき。</li>
+<li>見出しと補足は1行に収め、あふれたら省略します。数字の単位や「見込み」は補足側に寄せます。</li>
+</ul>
+
+<h3>設定の持ち方</h3>
+<p>ウィジェット固有の設定は、項目の定義から自動で画面を作ります。項目の型は4つだけです。新しい型を足す前に、既存の型で表せないか確認してください。</p>
+<div class="tw"><table>
+<thead><tr><th>型</th><th>部品</th><th>使いどころ</th><th>例</th></tr></thead>
+<tbody>
+<tr><td><code>tg</code></td><td>スイッチ</td><td>する／しない</td><td>秒を表示</td></tr>
+<tr><td><code>sg</code></td><td>選択の並び</td><td>2〜4個からの択一</td><td>集中(分) 15 / 25 / 50</td></tr>
+<tr><td><code>rg</code></td><td>スライダー＋数値</td><td>連続した量</td><td>文字サイズ</td></tr>
+<tr><td><code>tx</code> / <code>dt</code></td><td>入力欄</td><td>名前、日付</td><td>カウントダウンの日付</td></tr>
+</tbody></table></div>
+<p>設定パネルの構成は固定です。上から、サイズ（4×3のマス目で選ぶ。全画面で出せるウィジェットは下に「全画面」）、大きさを固定、位置を固定（オンのときは位置と矢印）、人前では隠す、固有の項目、項目の編集（ある場合。6章）、置くボード、並び順、このボードから外す。外したウィジェットは「ウィジェットを追加」の一覧に「置いていません」として残ります。</p>
+
+<h3>登録済みウィジェット</h3>
+<div class="tw"><table>
+<thead><tr><th>名前</th><th>ID</th><th>既定</th><th>固有の設定</th><th>主な部品の型</th></tr></thead>
+<tbody>
+<tr><td>時計</td><td>clock</td><td>2×1（全画面にできる）</td><td>秒を表示、12時間表示</td><td>大きな数字。全画面では画面いっぱいの数字＋秒の進み＋日付、動く背景</td></tr>
+<tr><td>天気</td><td>weather</td><td>2×1</td><td>単位</td><td>朝・昼・夜の天気と気温＋湿度。広げると3時間ごと、週間が増える（段階表示）</td></tr>
+<tr><td>傘</td><td>rain</td><td>2×1</td><td>サンプル</td><td>傘の要否の見出し＋降る時刻＋12時間の棒</td></tr>
+<tr><td>タイムスケジュール</td><td>gantt</td><td>4×1</td><td>現在時刻の線</td><td>横の時間帯</td></tr>
+<tr><td>TODO</td><td>todo</td><td>2×2</td><td>完了を隠す、定型ボタンを表示</td><td>入力欄＋入力補助＋チェック行</td></tr>
+<tr><td>予定</td><td>agenda</td><td>2×2</td><td>なし</td><td>日時順の行の一覧（縦スクロール）。メモから追加できる</td></tr>
+<tr><td>ミュージック</td><td>music</td><td>2×2</td><td>なし</td><td>再生操作＋進行の帯</td></tr>
+<tr><td>月間カレンダー</td><td>month</td><td>2×2</td><td>週の始まり</td><td>日付のマス目</td></tr>
+<tr><td>ハビット</td><td>habit</td><td>2×1</td><td>達成を通知、項目の編集（名前・アイコン・画像）</td><td>切替の丸ボタン</td></tr>
+<tr><td>ポモドーロ</td><td>pomo</td><td>2×1</td><td>集中する時間（分）、完了を通知</td><td>進行リング</td></tr>
+<tr><td>週間カレンダー</td><td>week</td><td>4×1</td><td>週の始まり</td><td>7列</td></tr>
+<tr><td>クイックリンク</td><td>links</td><td>2×1</td><td>項目の編集（名前・アイコン・画像・URL）</td><td>アイコンボタン</td></tr>
+<tr><td>今日は何の日</td><td>today</td><td>2×1</td><td>なし</td><td>3要素の型</td></tr>
+<tr><td>名言</td><td>quote</td><td>2×1</td><td>なし</td><td>3要素の型</td></tr>
+<tr><td>アラーム</td><td>alarm</td><td>2×1</td><td>アラーム1・2の時刻</td><td>時刻＋スイッチ</td></tr>
+<tr><td>トースト通知</td><td>toast</td><td>2×1</td><td>表示位置、表示秒数</td><td>発火ボタン</td></tr>
+<tr><td>棒グラフ</td><td>bar</td><td>3×2</td><td>なし</td><td>棒</td></tr>
+<tr><td>GitHub PR</td><td>github</td><td>3×2</td><td>なし</td><td>状態アイコン付きの行</td></tr>
+<tr><td>電卓</td><td>calc</td><td>2×3</td><td>なし</td><td>キーのマス目</td></tr>
+<tr><td>RSS</td><td>rss</td><td>3×3</td><td>なし</td><td>選択チップ＋行</td></tr>
+<tr><td>カラーピッカー</td><td>color</td><td>3×2</td><td>なし</td><td>横スライダー3本</td></tr>
+<tr><td>メモ</td><td>memo</td><td>2×2</td><td>文字サイズ、書式ボタンを表示、文字数を表示、スマホで入力時に前面表示</td><td>Markdownの色分け入力＋プレビュー＋入力補助＋前面表示</td></tr>
+<tr><td>円グラフ</td><td>pie</td><td>2×1</td><td>なし</td><td>円＋凡例</td></tr>
+<tr><td>ドーナツグラフ</td><td>donut</td><td>1×1</td><td>なし</td><td>リング（TODO達成率に連動）</td></tr>
+<tr><td>検索</td><td>search</td><td>3×1</td><td>検索先（Google・Bing・DuckDuckGo・Yahoo!）、独自の検索URL（<code>%s</code> が検索語。入れると検索対象の切替を隠す）、新しいタブで開く（本実装の既定はオフ）</td><td>入力欄＋選択の並び。入力欄の名前は「Bingで検索」のように検索先を含める</td></tr>
+<tr><td>ヒートマップ</td><td>heat</td><td>3×1</td><td>なし</td><td>濃淡のマス目</td></tr>
+<tr><td>カウンター</td><td>counter</td><td>2×2</td><td>ステップ</td><td>名前つきの行ごとに数のステッパー（0より下にしない）。行の追加と削除</td></tr>
+<tr><td>スライドショー</td><td>slides</td><td>2×2</td><td>自動再生、間隔(秒)</td><td>スナップする横スクロール</td></tr>
+<tr><td>クリップボード</td><td>clip</td><td>2×2</td><td>なし</td><td>タップでコピーする行</td></tr>
+<tr><td>単位換算</td><td>convert</td><td>2×2</td><td>なし</td><td>ドロップダウン＋数値入力</td></tr>
+<tr><td>ストップウォッチ</td><td>stopwatch</td><td>2×2</td><td>なし</td><td>数字＋ラップ行</td></tr>
+<tr><td>世界時計</td><td>world</td><td>2×1</td><td>なし</td><td>行の一覧</td></tr>
+<tr><td>スケッチ</td><td>sketch</td><td>2×2（全画面にできる）</td><td>ツールバーを表示</td><td>手書き面＋入力補助（太さ3種・色3種・戻す・消去）＋前面表示</td></tr>
+<tr><td>パスワード生成</td><td>pass</td><td>2×2</td><td>なし</td><td>チェックボックス＋スライダー</td></tr>
+<tr><td>折れ線グラフ</td><td>line</td><td>2×1</td><td>なし</td><td>数字＋折れ線</td></tr>
+<tr><td>メーター</td><td>meter</td><td>2×1</td><td>なし</td><td>横棒ゲージ</td></tr>
+<tr><td>カウントダウン</td><td>countdown</td><td>2×1</td><td>名前、日付</td><td>大きな数字</td></tr>
+<tr><td>サイコロ</td><td>dice</td><td>1×1</td><td>面の数</td><td>面全体がボタン</td></tr>
+<tr><td>タイムログ</td><td>timelog</td><td>2×3</td><td>秒まで記録、定型ボタンを表示</td><td>入力欄＋入力補助（1タップ記録）＋縦のタイムライン</td></tr>
+<tr><td>打刻</td><td>punch</td><td>2×2</td><td>タイムログにも記録</td><td>状態で変わるボタン</td></tr>
+<tr><td>環境音ミキサー</td><td>mixer</td><td>2×2</td><td>なし</td><td>縦の太いスライダー</td></tr>
+<tr><td>割り勘</td><td>split</td><td>2×2</td><td>端数の扱い（多めに集める／幹事が払う）</td><td>合計金額＋人数の −／＋＋1人あたりの大きな数字＋端数の説明。帯で端数の単位（1・10・100・1000円）とコピー</td></tr>
+<tr><td>税込・税抜</td><td>tax</td><td>2×2</td><td>税率（カンマ区切りで最大4つ）、1円未満の扱い</td><td>計算の向き＋金額＋税込・税抜・消費税の3行。帯で税率の切替とコピー</td></tr>
+<tr><td>表</td><td>table</td><td>3×3</td><td>なし（操作はすべて帯）</td><td>セルが入力欄の表＋行と列の追加・削除＋固定行・固定列＋書き出し。10章</td></tr>
+<tr><td>受け渡し</td><td>share</td><td>2×3</td><td>なし（端末の設定は全体設定「端末をつなぐ」）</td><td>送り先の選択＋入力と画像と送信＋送受信の一覧（縦スクロール）＋受け取りの確認。9章</td></tr>
+<tr><td>翻訳</td><td>translate</td><td>2×2</td><td>文体、補助ボタンを表示、スマホで入力時に前面表示</td><td>言語の選択＋入力と訳文（幅520px以上で左右、未満で上下）＋入力補助＋前面表示。ローカルAI（8章）</td></tr>
+<tr><td>AIチャット</td><td>chat</td><td>2×3</td><td>応答の長さ、会話を保存、定型ボタンを表示、スマホで入力時に前面表示</td><td>会話の一覧（新しいものが下）＋入力欄と送信／停止＋定型ボタン＋前面表示。ローカルAI（8章）</td></tr>
+<tr><td>日の出・日の入り</td><td>sun</td><td>2×1</td><td>場所（東京・大阪・札幌・福岡・那覇・現在地）</td><td>一文＋時刻＋24時間の帯（傘と同じ骨組み）。縦2で太陽の通り道と昼の長さ・薄明・ゴールデンアワー、縦3で7日間。11章</td></tr>
+<tr><td>スクリプト</td><td>script</td><td>3×3</td><td>実行時間の上限</td><td>小さいと入力・実行・結果だけ。3×3でコード欄と出力欄、大きく表示・置かずに使うときは横に広げる。実行・強制停止・再実行、Alt+1〜9。12章</td></tr>
+<tr><td>画像変換</td><td>imgconv</td><td>2×2</td><td>形式、品質、長辺</td><td>ドロップ受け＋集計＋進捗バー＋ファイル行の一覧。広いと左に設定とサムネイル。13章</td></tr>
+<tr><td>録音</td><td>recorder</td><td>2×2</td><td>なし</td><td>録音ボタン＋経過時間＋入力レベル＋録音の行</td></tr>
+</tbody></table></div>
+<h3>「部品の見本」として置いているもの</h3>
+<p>上の一覧には、道具というより表示部品の見本として置いたものが混ざっています。実装では区別してください。</p>
+<div class="tw"><table>
+<thead><tr><th>区分</th><th>該当</th><th>実装での扱い</th></tr></thead>
+<tbody>
+<tr><td>道具</td><td>時計、天気、TODO、予定、メモ、電卓、タイムログ、打刻、録音 など</td><td>それ自体に役割と記録がある。ウィジェットとして登録する</td></tr>
+<tr><td>データ表示の部品</td><td>棒グラフ、折れ線グラフ、円グラフ、ドーナツ（リング）、ヒートマップ、メーター</td><td>どのウィジェットからでも使える部品として切り出す。固有のデータは持たせない</td></tr>
+<tr><td>操作の部品</td><td>ハビットの切替ボタン群、クイックリンクのアイコンボタン群、トースト通知の発火ボタン、スライドの横送り、サイコロの全面ボタン</td><td>部品として切り出し、道具の側が中身（項目やデータ）を与える</td></tr>
+</tbody></table></div>
+<ul>
+<li>グラフをウィジェットとして置きたい場合は、種類ごとに作らず、<strong>汎用のデータグラフ</strong>を1つ用意します。設定は「データの指定」「グラフの種類（棒・折れ線・円・リング・ヒートマップ・メーター）」「期間」の3つ。</li>
+<li>ハビットは「切替ボタン群」という部品に、利用者の項目を与えたものです。同じ部品は、薬の服用確認や持ち物の確認などにも使えます。見た目を道具ごとに変えません。</li>
+<li>データ表示の部品の決まり: 色は <code>--c1</code> と <code>--c2</code>、3系列目以降は中間色ではなく <code>--fill2</code> の濃淡。棒は上端だけ角丸10px、棒と棒の間は10px。線は2px。数値の文字は系列色にしない。値はホバー（タッチでは長押し）で出す。凡例は2系列以上のときだけ。</li>
+</ul>
+<p>同じ種類を複数置けるかは種類ごとに決め、保存は置いた1個ごとに持つ形にします（実装ガイド7.4）。</p>
+</section>
+
+<section class="sec">
+<h2>4. UI部品</h2>
+<p>下の見本は実際のトークンで描いています。状態の違いは色だけに頼らず、塗りの有無や線の種類でも区別します。</p>
+<div class="stage">
+<div class="grid2">
+
+<div class="pane">
+<p class="lbl">丸ボタン（通常／選択・実行）</p>
+<div class="rowx">
+<button class="btn" aria-label="リセット"><svg class="i" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v4.5h4.5"></path></svg></button>
+<button class="btn on" aria-label="再生"><svg class="i" aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
+</div>
+<p class="cap" style="margin-top: 10px">主な操作は1ウィジェットに1つだけ <code>--a1</code> で塗ります。ボタンは役割で4つ（文字のボタン・アイコンボタン・選択の並び・行全体のボタン）。決まりは部品シート4章。</p>
+</div>
+
+<div class="pane">
+<p class="lbl">チップ（通常／選択中）と、出し入れ用の小チップ（置いてある／未配置）</p>
+<div class="rowx">
+<button class="chip">保存</button><button class="chip on">Dev</button>
+<button class="chip sm on">時計</button><button class="chip sm">天気</button>
+</div>
+</div>
+
+<div class="pane">
+<p class="lbl">選択の並び（2〜4個の択一）</p>
+<div class="seg" role="group" aria-label="テーマの見本"><button class="sg on" aria-pressed="true">自動</button><button class="sg" aria-pressed="false">ライト</button><button class="sg" aria-pressed="false">ダーク</button></div>
+<p class="cap" style="margin-top: 10px">5個以上になる選択はドロップダウンにします。</p>
+</div>
+
+<div class="pane">
+<p class="lbl">スイッチ（オフ／オン）</p>
+<div class="rowx">
+<button class="sw" role="switch" aria-checked="false" aria-label="オフの見本"><span class="tr"><span class="kn"></span></span></button>
+<button class="sw on" role="switch" aria-checked="true" aria-label="オンの見本"><span class="tr"><span class="kn"></span></span></button>
+</div>
+</div>
+
+<div class="pane">
+<p class="lbl">横スライダーと入力欄</p>
+<div class="rowx">
+<input class="rg" type="range" min="0" max="100" value="60" aria-label="スライダーの見本">
+<input class="inp" placeholder="追加…" aria-label="入力欄の見本">
+</div>
+</div>
+
+<div class="pane">
+<p class="lbl">縦の太いスライダー（量を面の塗りで見せる）</p>
+<div class="rowx">
+<span class="fd" role="img" aria-label="60%の見本"><span></span></span>
+<span class="fd" role="img" aria-label="25%の見本"><span style="height: 25%"></span></span>
+<p class="cap" style="flex: 1; min-width: 140px; margin: 0">透明な標準のスライダーを全面に重ねて操作させます。キーボードでも同じ操作ができます。</p>
+</div>
+</div>
+
+<div class="pane">
+<p class="lbl">3要素の型（手がかり／本文／補足）</p>
+<div class="rowx" style="gap: 14px">
+<span class="num" style="font-size: 56px; font-weight: 200; line-height: 1">17</span>
+<div><div class="cap">11月</div><div style="font-size: 20px; font-weight: 500; line-height: 1.3">将棋の日</div></div>
+</div>
+</div>
+
+<div class="pane">
+<p class="lbl">データ表示の部品（棒／リング／メーター／濃淡のマス）</p>
+<div class="rowx" style="align-items: flex-end; gap: 18px">
+<span role="img" aria-label="棒グラフの見本" style="display: flex; align-items: flex-end; gap: 6px; height: 64px"><i style="width: 12px; height: 55%; border-radius: 6px 6px 2px 2px; background: var(--fill2)"></i><i style="width: 12px; height: 80%; border-radius: 6px 6px 2px 2px; background: var(--fill2)"></i><i style="width: 12px; height: 100%; border-radius: 6px 6px 2px 2px; background: var(--c1)"></i><i style="width: 12px; height: 40%; border-radius: 6px 6px 2px 2px; background: var(--fill2)"></i></span>
+<svg role="img" aria-label="リングの見本" viewBox="0 0 100 100" style="width: 64px; height: 64px; rotate: -90deg"><circle cx="50" cy="50" r="38" fill="none" stroke-width="12" style="stroke: var(--fill2)"></circle><circle cx="50" cy="50" r="38" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="150 238.76" style="stroke: var(--c1)"></circle></svg>
+<span role="img" aria-label="メーターの見本" style="display: block; width: 110px; height: 8px; margin-bottom: 28px; border-radius: 99px; background: var(--fill2); overflow: hidden"><i style="display: block; width: 62%; height: 100%; border-radius: 99px; background: var(--c1)"></i></span>
+<span role="img" aria-label="濃淡のマスの見本" style="display: grid; grid-template-columns: repeat(4, 14px); gap: 3px"><i style="height: 14px; border-radius: 4px; background: var(--fill)"></i><i style="height: 14px; border-radius: 4px; background: color-mix(in oklab, var(--c1) 32%, transparent)"></i><i style="height: 14px; border-radius: 4px; background: color-mix(in oklab, var(--c1) 64%, transparent)"></i><i style="height: 14px; border-radius: 4px; background: var(--c1)"></i><i style="height: 14px; border-radius: 4px; background: color-mix(in oklab, var(--c1) 64%, transparent)"></i><i style="height: 14px; border-radius: 4px; background: var(--fill)"></i><i style="height: 14px; border-radius: 4px; background: var(--c1)"></i><i style="height: 14px; border-radius: 4px; background: color-mix(in oklab, var(--c1) 32%, transparent)"></i></span>
+</div>
+</div>
+
+<div class="pane">
+<p class="lbl">待ちを伝える部品（スケルトン／スピナー／進行中のトースト）</p>
+<div class="rowx" style="gap: 18px">
+<span aria-hidden="true" style="display: flex; flex-direction: column; gap: 8px; width: 120px"><i style="display: block; width: 46%; height: 22px; border-radius: 8px; background: var(--fill2)"></i><i style="display: block; width: 82%; height: 12px; border-radius: 8px; background: var(--fill2)"></i><i style="display: block; width: 64%; height: 12px; border-radius: 8px; background: var(--fill2)"></i></span>
+<span role="img" aria-label="スピナーの見本" style="display: block; width: 18px; height: 18px; border-radius: 99px; border: 2px solid var(--fill2); border-top-color: var(--text)"></span>
+<span class="tst"><span aria-hidden="true" style="display: block; width: 18px; height: 18px; border-radius: 99px; border: 2px solid var(--fill2); border-top-color: var(--text)"></span><span>同期しています…</span></span>
+</div>
+<p class="cap" style="margin-top: 10px">見本は静止しています。</p>
+</div>
+
+<div class="pane">
+<p class="lbl">下部バーとトースト（操作の層）</p>
+<div class="rowx">
+<span class="navx" role="img" aria-label="下部バーの見本"><span class="nb"><svg class="i" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 11.5L12 4.5l8 7M6.5 9.5V19.5h11V9.5M10 19.5v-5h4v5"></path></svg></span><span class="nb"><svg class="i" aria-hidden="true" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"></path></svg></span><span class="num" style="padding: 0 8px; font-size: 13px">2 / 6</span><span class="nb"><svg class="i" aria-hidden="true" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"></path></svg></span><span class="nb"><svg class="i" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z"></path></svg></span></span>
+<span class="tst"><svg class="i" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18zM8 12.3l2.8 2.8L16 9.6"></path></svg><span>時計 を削除しました</span><strong style="margin-left: 6px">元に戻す</strong></span>
+</div>
+</div>
+
+</div>
+</div>
+
+<h3>下部バーの並び</h3>
+<p>通常は左から、ホームへ（⌂）、前の画面、画面の点（多いときは「2 / 6」の数字）、次の画面、一覧、編集、全体設定。これ以上ボタンを足しません。足したくなったら一覧か全体設定の中に入れます。</p>
+<p>編集モードの間は、同じ位置の中身を編集用に差し替えます。左から、元に戻す、ボードを追加、ウィジェットを追加、完了。編集用の操作は文字付きにし、幅480px未満では「元に戻す」と「ボード」だけアイコンにします。「完了」は常に右端で <code>--a1</code> の塗り。</p>
+<h3>シートの出る位置</h3>
+<p>幅720px以上では画面の右。ウィジェットの設定だけは、選んだウィジェットと反対側に出して対象を隠しません。720px未満では下から出し、選んだウィジェットが下半分にあるときは上から出します。</p>
+<h3>部品の使い場所</h3>
+
+<p>部品ごとの見た目・状態・動きは部品シートが正です。ここには、どこで使うかと振る舞いの決まりだけを書きます。</p>
+<div class="tw"><table>
+<thead><tr><th>部品</th><th>使う場所</th><th>決まり</th></tr></thead>
+<tbody>
+<tr><td>選択メニュー</td><td>ホーム（常に）、日の出・日の入りの場所、追加先と置くボード（ボードが5つ以上のとき）</td><td>選ぶものが5個以上ならこれ、4個までは選択の並び。<kbd>↑</kbd><kbd>↓</kbd>・<kbd>Home</kbd>/<kbd>End</kbd>・頭文字で移動、<kbd>Enter</kbd> で決定、<kbd>Esc</kbd> で閉じて開いたボタンへ戻る。13個以上で先頭に絞り込みの欄。幅520px未満は下からのシート</td></tr>
+<tr><td>その他メニュー</td><td>すべてのウィジェット（右クリック、0.7秒の長押し、<kbd>Shift</kbd>+<kbd>F10</kbd>）。表・スクリプト・画像変換は帯の右端の「…」</td><td>設定、大きく表示（あるものだけ）、位置を固定、大きさを固定、人前では隠す、区切って「ボードから外す」。編集中と入力欄の中では出さない。幅560px以下で優先度の低い帯のボタン（<code>.abb.lo</code>）は「…」の先頭に移る</td></tr>
+<tr><td>画面表示</td><td>下部バー</td><td>8画面以上か、点が入りきらない幅で「3 / 12」と進み具合の線。押すと一覧</td></tr>
+<tr><td>許可のお願い</td><td>現在地（日の出・日の入り）、マイク（録音）、通知（ポモドーロ）、クリップボード（スクリプト）</td><td>ブラウザに問い合わせる前に、ウィジェットの中で理由を説明して押してもらう。断られたら直し方と代わりの手段。許可の状態は Permissions API で読み、保存しない</td></tr>
+<tr><td>数のステッパー</td><td>カウンターの数、割り勘の人数、トーストの表示秒数、スライドの間隔、メモの文字サイズ、ポモドーロの集中時間</td><td>押し続けると0.5秒後から連続。真ん中は数の入力で、範囲外は受け付けない。<kbd>PageUp</kbd>/<kbd>PageDown</kbd> で10段</td></tr>
+<tr><td>入力欄の補足とエラー</td><td>独自の検索URL、税率、リンクのURL、アラームの時刻、カウントダウンの日付</td><td>補足は常に、エラーは欄を離れたあとだけ出す。直ったら消す。<code>aria-invalid</code> と <code>aria-describedby</code></td></tr>
+<tr><td>日付と時刻</td><td>アラームの時刻（ウィジェットの設定に追加）、カウントダウンの日付</td><td>ブラウザの入力を使う。結果を文で添える（「次は明日 7:00」「あと42日」）</td></tr>
+<tr><td>件数バッジ</td><td>一覧のボタンと、一覧の「受け渡し」</td><td>未読の受け取り。ボタンの名前に件数を含め、バッジは読み上げない。99より多いと「99+」</td></tr>
+<tr><td>編集中の固定の印</td><td>編集中のウィジェットの右上</td><td>位置を固定・大きさを固定・人前では隠すを印で出す。見た目だけで、状態は設定とメニューで伝える</td></tr>
+<tr><td>キーの表示</td><td>操作ヒント、一覧・編集・設定のツールチップ</td><td><code>&lt;kbd&gt;</code>。1文字のキー操作を切ったら出さない。ボタンに <code>aria-keyshortcuts</code></td></tr>
+<tr><td>折りたたみの節</td><td>全体の設定</td><td>既定は外観とレイアウトだけ開く。開け閉めはこの端末に覚え、「元に戻す」の対象にしない</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="sec">
+<h2>5. 動きと使いやすさの決まり</h2>
+<ul>
+<li>動きは既定で止めておき、利用者の環境が動きを許可しているときだけ動かします。色や不透明度の変化は残して構いません。</li>
+<li>5秒を超えて自動で動くものには、見える位置に止めるボタンを置きます。</li>
+<li>動かすのは位置・拡大縮小・不透明度に限ります。幅や高さを直接アニメーションさせません。</li>
+<li>ホバーの見た目はマウスのある端末だけに付けます（<code>@media (hover: hover) and (pointer: fine)</code>）。タッチで押したあとに色が残らないようにするためです。</li>
+<li>操作できるものは必ず <code>button</code>、<code>a</code>、<code>input</code> で作ります。アイコンだけのボタンには読み上げ用の名前を付けます。</li>
+<li>日本語入力の変換確定の Enter で送信しません（変換中かどうかを確認してから処理します）。</li>
+<li>通知は読み上げに乗る領域（<code>role="status"</code>）へ出します。</li>
+<li>キーボードのフォーカスは必ず見える枠で示します。</li>
+<li>シート（設定、一覧、追加、操作ヒント、端末をつなぐ）を開いている間は、背後の画面に <code>inert</code> を付けます。ダイアログの間は下部バーとシートにも付けます。閉じたら、開いたボタンへフォーカスを戻します。</li>
+<li>「元に戻す」など操作の付いたトーストは10秒出し、ポインタやフォーカスがトーストの上にある間は消しません。</li>
+<li>画面上部の帯（オフライン、編集中、受け渡しの知らせ）と下部バーは、フォーカスした要素を覆わないよう、ウィジェットの領域の外に置きます（帯が出ている間はその分ウィジェットの領域を縮める）。</li>
+<li>引いて動かす操作（スライダー、将来のドラッグ）には、引かずにできる手段を必ず残します（タップした位置への移動、−／＋、矢印のボタン）。</li>
+<li>利用者の設定に合わせます。<code>prefers-reduced-transparency</code> と <code>prefers-contrast: more</code> では面を不透明にして背景ぼかしを止め、<code>prefers-contrast: more</code> では補助の文字と輪郭を濃くし、<code>forced-colors</code> では面に枠線を引きます。</li>
+</ul>
+</section>
+
+<section class="sec">
+<h2>6. 入力まわりの共通の仕組み</h2>
+<h3>入力欄の原則</h3>
+<ul>
+<li>入力欄は、打つたびに結果を反映します（検索や絞り込みは確定ボタンを待たない）。重い処理だけ、打ち終わってから動かします。</li>
+<li>入力した内容は覚えて、次に候補として出します。覚えるのは「結果を使った」ときだけにし、件数を決めて古いものから捨てます。候補はいつでも消せるようにします。</li>
+<li>パスワード、人前では隠すウィジェットの中の入力、受け渡しの中身は覚えません。</li>
+<li>今これに沿っているのは「ウィジェットを追加」の検索（2章）です。ほかの入力欄（検索ウィジェット、単位換算、翻訳など）は本実装でそろえます。</li>
+</ul>
+
+<h3>入力補助の帯</h3>
+<ul>
+<li>入力を伴うウィジェットは、面の中に高さ44pxの帯を持てます。置く場所は入力欄のすぐ下か、面の最下部です。</li>
+<li>帯に置くのは「いま入力しているものに作用する操作」だけです。設定は置きません。</li>
+<li>並びは左から、入力に作用するボタン、余白、状態の表示（文字数など）、表示の切替、前面表示。収まらない分は帯の中だけ横にスクロールします。</li>
+<li>帯のボタンを押しても入力欄のフォーカスを外しません（スマホでキーボードが閉じないようにします）。</li>
+<li>帯を出すかどうかはウィジェットの設定（スイッチ）で持ちます。前面表示の間は設定に関係なく出します。</li>
+</ul>
+<div class="tw"><table>
+<thead><tr><th>ウィジェット</th><th>帯の中身</th></tr></thead>
+<tbody>
+<tr><td>メモ</td><td>見出し、箇条書き、チェック項目、太字、コード、引用 ／ 文字数 ／ プレビュー切替 ／ 前面表示</td></tr>
+<tr><td>スケッチ</td><td>線の太さ3種、色3種 ／ 1つ戻す、すべて消去 ／ 前面表示</td></tr>
+<tr><td>タイムログ</td><td>定型の言葉（押すとその場で記録）</td></tr>
+<tr><td>TODO</td><td>定型の接頭語（入力欄の先頭に入れる）</td></tr>
+<tr><td>カウンター</td><td>項目の追加 ／ 削除モード</td></tr>
+</tbody></table></div>
+
+<h3>前面表示</h3>
+<ul>
+<li>ウィジェットをその場で大きく開き、背後を暗くします。別画面には移りません。閉じると元の位置と大きさに戻ります。</li>
+<li>スマホでは、キーボードを除いた見えている範囲いっぱいに広げ、帯がキーボードのすぐ上に来るようにします（見えている範囲の高さと上端を取得して追従）。</li>
+<li>入り方は2つ。帯の前面表示ボタン、または幅720px未満でメモにフォーカスしたとき（設定で切替可）。</li>
+<li>閉じ方は3つ。同じボタン、背後の暗い部分をタップ、<code>Esc</code>。</li>
+<li>対象は、長い入力や広い面が要るものに限ります（メモ、スケッチ）。1行の入力には使いません。</li>
+</ul>
+
+<h3>メモのMarkdown</h3>
+<ul>
+<li>入力中は、透明な文字の入力欄の下に同じ書体・同じ行間の色分け層を重ねます。ずれを防ぐため、色分けは色と取り消し線だけで行い、太さや大きさは変えません。</li>
+<li>リストや引用の行で Enter を押すと次の行に記号を引き継ぎ、空の項目で Enter を押すと記号を消します。</li>
+<li>プレビューのチェック項目は押すと本文側の <code>[ ]</code> と <code>[x]</code> が書き換わります。</li>
+</ul>
+
+<h3>メモから予定・TODOへ</h3>
+<p>メモは自由に書けることを優先し、書いたものを勝手に移しません。行を「かたまり」として認識し、追加を提案するだけです。</p>
+<div class="tw"><table>
+<thead><tr><th>かたまり</th><th>認識する書き方</th><th>提案</th></tr></thead>
+<tbody>
+<tr><td>TODO</td><td>未チェックの項目（<code>- [ ] 牛乳を買う</code>）、または行頭が「TODO」「やること」</td><td>TODOに追加</td></tr>
+<tr><td>予定</td><td>日付（今日・明日・明後日、<code>11/20</code>、<code>11月20日</code>）か時刻（<code>14:00</code>、<code>14時</code>、<code>14時半</code>）を含む行。「3時間」のような長さは除く</td><td>予定に追加（日付が無ければ今日、時刻が無ければ終日）</td></tr>
+</tbody></table></div>
+<ul>
+<li>認識した行は、入力中は点線の下線で示します（予定は <code>--c2</code>、TODOは <code>--a1</code>）。</li>
+<li>提案は、いまカーソルがある行には出しません。行を離れるか、入力欄からフォーカスが外れたときに、帯の上に1件だけ出します。</li>
+<li>提案の操作は「追加」と「追加しない」の2つ。どちらを選んでもメモの本文は変えません。選んだ結果は行の文面で覚え、同じ行に再び提案しません。</li>
+<li>追加には「元に戻す」を付けます。</li>
+<li>プレビューでは、認識した行の末尾に追加ボタンを出し、追加後は「追加済み」に変えます。</li>
+<li>認識は行単位です。複数行にまたがる予定や、文中の曖昧な表現（「来週あたり」）は対象にしません。</li>
+</ul>
+
+<h3>項目の編集とアイコン</h3>
+<ul>
+<li>利用者が中身を決めるウィジェット（ハビット、クイックリンク）は、設定パネルに「項目」の一覧を持ちます。1行は、アイコンのボタン、名前、削除。リンクはURLの行が付きます。</li>
+<li>アイコンのボタンを押すと、その行の下に24種のアイコンと「画像を読み込む」が開きます。選ぶと閉じます。</li>
+<li>アイコンは24×24の枠に線幅1.6・角丸の線画で描きます。塗りつぶしの絵や絵文字は使いません。</li>
+<li>画像は中央で正方形に切り抜いて96pxに縮小し、角丸で表示します。</li>
+</ul>
+
+<h3>ツールチップ</h3>
+<ul>
+<li>アイコンだけのボタンにラベルは置きません。代わりに、読み上げ用の名前をそのまま補助表示に使います。名前は「何が起きるか」を書きます（例:「録音を始める」）。</li>
+<li>マウスでは0.55秒乗せたままで表示、離すと消えます。タッチでは0.48秒の長押しで表示し、指を離して1.5秒で消えます。長押しのあとのタップは実行しません。</li>
+<li>位置は対象の上。上端に近いときは下に出します。</li>
+<li>文字つきのボタンには出しません。</li>
+<li><code>Esc</code> で消せます。ポインタをツールチップの上に動かしても消えません（離れてから0.25秒で消す）。本実装では popover と anchor positioning で作ります。</li>
+</ul>
+</section>
+
+<section class="sec">
+<h2>7. 画面の行き来（戻る・閉じる・元に戻す）</h2>
+<p>「どう閉じるか」「閉じたらどこに戻るか」「間違えたらどう戻すか」を画面ごとに変えません。3つの操作をすべての画面で同じ意味に固定します。</p>
+
+<h3>3つの操作</h3>
+<div class="tw"><table>
+<thead><tr><th>操作</th><th>意味</th><th>手段</th></tr></thead>
+<tbody>
+<tr><td>戻る</td><td>いちばん上の1枚だけ閉じ、開く前の画面に戻る</td><td>シート左上の「‹ 親の名前」、<code>Esc</code>、シートの外側のタップ、前面表示の帯の「‹ 戻る」。本実装ではブラウザとスマホの「戻る」操作も同じ扱い</td></tr>
+<tr><td>閉じる（×）</td><td>そのシートを開いた元（ボードか編集モード）まで一度に戻る</td><td>シート右上の ×</td></tr>
+<tr><td>元に戻す</td><td>配置と設定の変更を1手ずつ取り消す。画面の行き来には使わない</td><td>編集モードの「元に戻す」、<code>Ctrl</code>/<code>⌘</code>+<code>Z</code>、変更直後のトーストの「元に戻す」</td></tr>
+</tbody></table></div>
+
+<h3>重なりと戻り先</h3>
+<p>画面は下から次の順に重なります。「戻る」は常にいちばん上を1枚外します。</p>
+<div class="tw"><table>
+<thead><tr><th>層</th><th>例</th><th>戻ると</th></tr></thead>
+<tbody>
+<tr><td>ダイアログ</td><td>削除の確認</td><td>キャンセル扱いで閉じる</td></tr>
+<tr><td>最初の案内</td><td>4手順の案内</td><td>スキップ扱い</td></tr>
+<tr><td>前面表示</td><td>メモを大きく、一時利用</td><td>元の大きさへ。一時利用なら開く前のシート（追加の一覧）へ</td></tr>
+<tr><td>子のシート</td><td>操作ヒント、一覧から開いた追加</td><td>親のシート（設定、一覧）へ</td></tr>
+<tr><td>シート</td><td>設定、一覧、追加、ウィジェットの設定</td><td>開いた元（ボードか編集モード）へ</td></tr>
+<tr><td>編集モード</td><td>ボード上のモード</td><td>通常のボードへ（「完了」と同じ）</td></tr>
+</tbody></table></div>
+<ul>
+<li>子のシートには必ず左上に「‹ 親の名前」を置き、行き先を文字で示します。根のシートには置きません。</li>
+<li>× は常に右上。位置と意味を変えません。</li>
+<li>設定・一覧・追加・操作ヒントは背後を薄く暗くし、外側のタップで戻れるようにします。ウィジェットの設定だけは暗くせず、別のウィジェットをタップすると選び直せます。</li>
+<li>画面の位置は、シートを開いても閉じても変えません。シートの中で移動を選んだときだけ動かします。</li>
+</ul>
+
+<h3>編集モード</h3>
+<ul>
+<li>入ると、下部バーが編集用（元に戻す／ボードを追加／ウィジェットを追加／完了）に変わり、上部に「編集中：ウィジェットをタップすると設定できます」を常設します。抜け方が画面から常に読めることを優先します。</li>
+<li>ウィジェットの設定やウィジェットの追加を閉じると、編集モードに戻ります。編集モードを抜けるのは「完了」か「戻る」だけです。</li>
+<li>編集中に一時利用で開いたウィジェットは、中身を操作できます（選択の対象にしない）。</li>
+</ul>
+
+<h3>元に戻すの履歴</h3>
+<ul>
+<li>対象は、ボード、置き場所、並び順、大きさ、未配置、全体設定、ウィジェット設定、項目（ハビット、クイックリンク）。TODOやメモなどの記録は対象外で、それぞれの操作の中で扱います。</li>
+<li>0.7秒以内に続いた変更（スライダーを動かしている間など）は1手にまとめます。最大40手。再読み込みで履歴は消えます。</li>
+<li>戻したら「元に戻しました」のトーストを出します。戻せるものが無いときは編集モードのボタンを無効にします。</li>
+</ul>
+
+<h3>ウィジェットを追加</h3>
+<ul>
+<li>入口は3つ。編集モードの「ウィジェット」、一覧の「ウィジェットを追加」、空のボードの「ウィジェットを追加」。どこから開いても同じ一覧です。</li>
+<li>全ウィジェットを、時間／予定と記録／情報／道具／データ表示の5分類で、毎回同じ順に並べます。状態によって並びを変えません。一覧が空になることはありません。</li>
+<li>1行は、配置済みの印、名前、操作ボタン。状態を文字で書きません。行の中の文字はウィジェット名だけです。</li>
+</ul>
+<div class="tw"><table>
+<thead><tr><th>状態</th><th>名前の前</th><th>名前を押すと</th><th>右端のボタン</th></tr></thead>
+<tbody>
+<tr><td>置いていない</td><td>なし</td><td>置かずに使う（一時利用）</td><td>▶ 置かずに使う、＋ 追加（<code>--a1</code> の塗り）</td></tr>
+<tr><td>ほかのボードにある</td><td>チェック（<code>--a1</code>）</td><td>置いてあるボードへ移動し、枠で示す</td><td>↓ このボードへ移動</td></tr>
+<tr><td>追加先のボードにある</td><td>チェック（<code>--a1</code>）</td><td>置いてある場所へ移動し、枠で示す</td><td>なし</td></tr>
+</tbody></table></div>
+<ul>
+<li>新しい版で増えたウィジェットは、名前の後ろに小さな点（<code>--a2</code>）を付けます（読み上げでは「新しく追加された道具」）。一覧を閉じたら見たことにして消します。</li>
+<li>どこにあるか（ボード名）は表示しません。名前を押せばその場所へ移動するため、読まなくても辿り着けます。</li>
+<li>上部の「追加先」で行き先のボードを選べます。既定は今見ているボード、空のボードから開いたときはそのボードです。</li>
+<li>追加と移動ではシートを閉じません（続けて追加できるように）。結果はトーストで知らせ、「元に戻す」を付けます。</li>
+<li>同じ種類を複数置く仕組みにする場合は、↓（移動）を「ここにも置く」に変え、置かれた1個ごとに設定と記録を持たせます。</li>
+</ul>
+<h3>文字を減らす判断の基準</h3>
+<p>1章の「言葉は必要最低限」を一覧の行に当てはめたものです。Chrome の Modern Web Guidance（アクセシビリティ、アイコン、ツールチップの各ガイド）を基準に、どの文字を画面から外せるかを決めました。</p>
+<div class="tw"><table>
+<thead><tr><th>ガイドの決まり</th><th>この画面での扱い</th></tr></thead>
+<tbody>
+<tr><td>アイコンだけの操作には、見た目ではなく働きを表す名前を付ける</td><td>▶＋↓ に「時計を置かずに使う」「時計を「ボード 1」に追加」「時計を「ボード 1」へ移動」の名前を付ける</td></tr>
+<tr><td>同じ画面で働きの違う操作に同じ名前を使わない</td><td>名前にウィジェット名と追加先を含め、行ごとに区別する</td></tr>
+<tr><td>名前に説明を詰め込まず、説明は <code>aria-describedby</code> で渡す</td><td>「配置済み、データ」などの状態は見えない説明として名前のボタンに結ぶ</td></tr>
+<tr><td>補足表示（ヒント）には、見逃しても困らない内容だけを入れる</td><td>ボタンの働きはツールチップ（ホバー・長押し）で補う。配置済みかどうかは見逃すと困るので、チェックとして常に見せる</td></tr>
+<tr><td>押せる範囲は24px以上</td><td>アイコンボタンは44px（既存の決まりのまま）</td></tr>
+</tbody></table></div>
+<ul>
+<li>同じ考え方を、ほかの一覧にも当てはめます。行に置く文字は「その行が何か」だけにし、状態は印で、操作はアイコンで示し、意味は読み上げ用の名前と操作ヒントで伝えます。</li>
+<li>例外として、取り消せない操作（削除、解除）と、編集モードの「完了」は文字のまま残します。押す前に結果が読めることを優先するためです。</li>
+</ul>
+
+</section>
+
+<section class="sec">
+<h2>8. ローカルAI（翻訳・AIチャット）</h2>
+<p>文章を生成するウィジェットは、端末の中で動くモデルを使います。入力した内容は外部に送りません。モデルは1つを複数のウィジェットで共有します。</p>
+
+<h3>動かし方の選択</h3>
+<div class="tw"><table>
+<thead><tr><th>動かし方</th><th>ライブラリ</th><th>条件</th><th>補足</th></tr></thead>
+<tbody>
+<tr><td>GPU</td><td>WebLLM</td><td>WebGPU が使えること</td><td>速い。モデルは MLC 形式</td></tr>
+<tr><td>CPU</td><td>wllama</td><td>WebAssembly</td><td>モデルは GGUF 形式。複数スレッドで動かすには、ページに <code>Cross-Origin-Opener-Policy: same-origin</code> と <code>Cross-Origin-Embedder-Policy: require-corp</code> が必要。無いと単一スレッドで遅くなる</td></tr>
+</tbody></table></div>
+<ul>
+<li>既定は「自動」。WebGPU があればGPU、無ければCPU。利用者は全体設定で固定できます。</li>
+<li>GPUを選んだのに使えない端末では、ウィジェットに「この端末ではGPUで動かせません」と「CPUに切替」を出します。黙って切り替えません。</li>
+<li>CPUで単一スレッドになる場合は、全体設定に「遅くなります」と明記します。</li>
+<li>どちらも推論はWebワーカーの中で行い、画面の操作を止めません。</li>
+<li>GPU用とCPU用でモデルの形式が違うため、同じ大きさの区分でも別のファイルになります。保存済みかどうかは、モデルと動かし方の組ごとに持つのが正確です（プロトタイプはモデルごと）。</li>
+</ul>
+
+<h3>モデルの区分</h3>
+<div class="tw"><table>
+<thead><tr><th>区分</th><th>目安の容量</th><th>向く用途</th></tr></thead>
+<tbody>
+<tr><td>軽量</td><td>約0.4GB</td><td>短い翻訳、低性能の端末</td></tr>
+<tr><td>標準（既定）</td><td>約1.0GB</td><td>翻訳と短い相談</td></tr>
+<tr><td>高品質</td><td>約2.2GB</td><td>長めの文章。メモリに余裕のある端末</td></tr>
+</tbody></table></div>
+<p>具体的なモデル名と容量は本実装で決めます。画面には区分名と容量だけを出し、モデル名は全体設定の詳細に限ります。wllama は1ファイルあたりの大きさに上限があるため、大きいモデルは分割して配信します。</p>
+
+<h3>状態</h3>
+<div class="tw"><table>
+<thead><tr><th>状態</th><th>ウィジェット上部の帯</th><th>操作</th></tr></thead>
+<tbody>
+<tr><td>未準備</td><td>「端末内で動くAIです。初回のみ約1.0GB」</td><td>準備する</td></tr>
+<tr><td>ダウンロード中</td><td>進み具合の帯と「モデルを保存中 42%（0.4 / 1.0GB）」</td><td>中止</td></tr>
+<tr><td>読み込み中</td><td>スピナーと「AIを読み込み中…」</td><td>なし</td></tr>
+<tr><td>停止中（保存済み）</td><td>「AIは停止中です」</td><td>読み込む</td></tr>
+<tr><td>使用できる</td><td>帯を出さない</td><td>—</td></tr>
+<tr><td>生成中</td><td>帯は出さず、文字が流れる位置にカーソル状の印</td><td>止める（チャットは送信ボタンが停止に変わる。翻訳は「翻訳」が「止める」に変わる）</td></tr>
+<tr><td>失敗</td><td>「読み込めませんでした。メモリ不足の可能性があります」</td><td>もう一度</td></tr>
+</tbody></table></div>
+<ul>
+<li>帯は2つのウィジェットで同じ内容を出します（状態を共有しているため）。どちらから準備しても、もう一方も使えるようになります。</li>
+<li>ダウンロードは利用者が押したときだけ始めます。ページを開いただけ、ウィジェットを置いただけでは始めません。</li>
+<li>未準備のまま送信や翻訳を押した場合は、その操作を覚えたまま準備を始め、使えるようになったら続けて実行します。チャットには「準備ができしだい答えます」を出します。</li>
+<li>生成は同時に1つだけ。片方が生成している間、もう片方の実行ボタンは押せません。</li>
+<li>全体設定には、状態、モデルの区分、動かし方、「準備する／読み込む／停止してメモリを空ける」、「モデルを削除」（確認ダイアログあり）を置きます。</li>
+</ul>
+
+<h3>翻訳</h3>
+<ul>
+<li>上から、AIの帯、言語の組（翻訳元は「自動」を含む）と入れ替えボタン、入力と訳文、入力補助の帯。</li>
+<li>入力と訳文は、面の幅が520px以上なら左右、未満なら上下に並べます（コンテナクエリで判定）。</li>
+<li>実行は「翻訳」ボタンか <code>Ctrl</code>/<code>⌘</code>+<code>Enter</code>。入力のたびに自動では訳しません（端末の負担と電池のため）。</li>
+<li>入れ替えは、言語の組と、入力と訳文の中身を同時に入れ替えます。</li>
+<li>入力補助の帯: 貼り付け、入力を消す、訳文をコピー、訳文をメモに送る ／ 前面表示、翻訳。</li>
+<li>文体（自然・丁寧・簡潔）はウィジェットの設定に置きます。</li>
+</ul>
+
+<h3>AIチャット</h3>
+<ul>
+<li>上から、AIの帯、会話、入力欄と送信、入力補助の帯。会話は新しいものが下で、下端から積み上げます（縦スクロール）。</li>
+<li>利用者の発言は右寄せの塗りの吹き出し、AIの応答は左寄せの素の文章。名前やアイコンは付けません。</li>
+<li><code>Enter</code> で送信、<code>Shift</code>+<code>Enter</code> で改行。日本語入力の変換中は送信しません。入力欄は内容に合わせて最大120pxまで伸ばします。</li>
+<li>最新の応答の下にだけ、コピー、もう一度答えさせる、メモに送る、の3つを出します。生成中は出しません。</li>
+<li>会話が空のときは、例となる依頼を3つ出し、押すとそのまま送ります。</li>
+<li>入力補助の帯: 定型の依頼（要約、言い換え、箇条書きに、英訳。入力欄の先頭に入れる）／ 新しい会話（元に戻す付き）、前面表示。</li>
+<li>「会話を保存」をオフにすると、会話は再読み込みで消えます。保存する場合も最大60件まで。</li>
+</ul>
+
+</section>
+
+<section class="sec">
+<h2>9. 受け渡し（端末間でクリップボード・URL・画像を送る）</h2>
+<p>アカウントを作らずに、自分の端末どうしで小さな情報を送り合います。設定や配置の同期は扱いません。送るのは「文」「URL」「画像」の3種類だけです。</p>
+
+<h3>参考にした2つの方式</h3>
+<div class="tw"><table>
+<thead><tr><th></th><th>PairDrop</th><th>LocalSend</th></tr></thead>
+<tbody>
+<tr><td>見つけ方</td><td>同じネットワークの端末を自動表示。6桁のコードかQRでペアリングすると、ネットワークが違っても見つかる</td><td>ネイティブ版はUDPマルチキャスト（224.0.0.167:53317）で探す。Web版はシグナリングサーバー経由</td></tr>
+<tr><td>運び方</td><td>WebRTC で直接。つながらなければTURNで中継</td><td>ネイティブ版は各端末のHTTPSサーバー（53317番）へ送る。Web版は WebRTC</td></tr>
+<tr><td>ブラウザから</td><td>そのまま使える方式</td><td>ネイティブの仕組み（マルチキャスト、端末内のサーバー）はブラウザでは使えない。Web版のシグナリングに参加すれば、ネイティブ版の端末とも送り合える</td></tr>
+</tbody></table></div>
+
+<h3>この設計での組み合わせ</h3>
+<div class="tw"><table>
+<thead><tr><th>相手</th><th>見つけ方</th><th>運び方</th><th>受け取り</th></tr></thead>
+<tbody>
+<tr><td>自分の端末（ペアリング済み）</td><td>ペアリングで交わした鍵から部屋を決め、中継サーバーで出会う</td><td>WebRTC で直接。無理なら中継。相手が閉じていれば中継に暗号化したまま最大24時間預ける</td><td>既定は自動。設定で「毎回確認」に変えられる</td></tr>
+<tr><td>近くの端末（同じネットワーク）</td><td>シグナリングサーバーで同じネットワークの端末をまとめて表示</td><td>WebRTC で直接。預かりはしない</td><td>毎回確認（受け取る／断る）</td></tr>
+<tr><td>LocalSend の端末</td><td>LocalSend の Web 用シグナリングに参加して表示（設定で表示を切替）</td><td>WebRTC。LocalSend 側のやり方に合わせる</td><td>毎回確認</td></tr>
+</tbody></table></div>
+<ul>
+<li>中継サーバーとシグナリングサーバーは自前で立てられるようにします（設定に URL 欄）。サーバーが持つのは、部屋の名前（鍵のハッシュ）、接続の仲介、預かり中の暗号文だけです。</li>
+<li>中身はペアリングの鍵で端末どうしが暗号化し、中継は読めません。近くの端末とは WebRTC の暗号化に頼ります。</li>
+<li>大きなファイルは預かりの対象外です。両方が開いている間だけ直接送ります。</li>
+</ul>
+
+<h3>ペアリングと端末の管理</h3>
+<ul>
+<li>全体設定の「端末をつなぐ」（受け渡しの帯からも開ける）にまとめます。並びは、この端末の名前、自分の端末を追加、自分の端末、近くの端末、受け取り方。</li>
+<li>追加は「この端末に表示」（QRと6桁のコード、有効期限5分）か「コードを入力」。どちらの端末から始めてもよい形にします。</li>
+<li>自分の端末の行は、種類のアイコン、名前、接続中かオフライン（最後に見た時刻）、解除。</li>
+<li>解除は確認ダイアログを出します。解除したら鍵を作り直し、残りの端末とはつなぎ直します（鍵を持つ端末なら誰でも送れてしまうため）。</li>
+<li>近くの端末は一覧に出すだけで、ペアリングはしません。種類（LocalSend／ブラウザ）を小さな札で示します。</li>
+</ul>
+
+<h3>受け渡しウィジェット</h3>
+<ul>
+<li>上から、送り先の選択（「自分の端末すべて」、各端末、近くの端末。接続状態の点つき）、入力欄と画像と送るボタン、一覧、入力補助の帯（貼り付け／つながっている台数／前面表示）。</li>
+<li>一覧は新しいものが上。送ったものと届いたものを混ぜ、1行は種類のアイコンか画像の縮小、文の先頭かURLのドメイン、「iPhoneから・18分前・直接」、主な操作、消す。</li>
+<li>主な操作は、文はコピー、URLは開く、画像は保存。消すには「元に戻す」を付けます。</li>
+<li>未読の行は薄く塗り、左に点を付けます。ウィジェットが画面に見えている間、2.6秒で既読にします。</li>
+<li>確認が要る受信は一覧の上にカードで出し、「断る」「受け取る」を置きます。</li>
+<li>相手がオフラインのときは「保管中」と表示し、トーストで「相手が開いたら届きます」と伝えます。</li>
+</ul>
+
+<h3>届いたときの知らせ方</h3>
+<div class="tw"><table>
+<thead><tr><th>状況</th><th>見せ方</th></tr></thead>
+<tbody>
+<tr><td>受け渡しが今の画面に見えている</td><td>行が塗られて入るだけ。ほかには出さない</td></tr>
+<tr><td>見えていない</td><td>上部に帯（例:「iPhoneから文：駅前の店、19時に…」、主な操作、×）。時間では消さず、×か操作まで残す</td></tr>
+<tr><td>続けて届いた</td><td>帯を「2件届きました」と「受け渡しを開く」にまとめる</td></tr>
+<tr><td>確認が要る</td><td>帯「Galaxy Tab（LocalSend）が画像を送ろうとしています」と「確認」</td></tr>
+<tr><td>シート、前面表示、編集中、最初の案内の間</td><td>帯を出さない（終わったら出す）</td></tr>
+<tr><td>タブが裏にある（本実装）</td><td>タブ名に「(1)」。利用者が許可した場合だけ通知</td></tr>
+</tbody></table></div>
+<ul>
+<li>帯の×は帯を隠すだけで、既読にはしません。未読の印は受け渡しに残ります。</li>
+<li>「受け渡しを開く」は、置いてあればそのボードへ移動して枠で示し、置いていなければ一時利用で開きます。</li>
+<li>モーダルは使いません。届いたことで作業を止めないためです。</li>
+</ul>
+
+<h3>ほかのウィジェットから送る</h3>
+<p>受け渡しを開かずに送れる入口を置きます。送り先は受け渡しで最後に選んだものです。</p>
+<ul>
+<li>クリップボード履歴の各行、メモの帯、翻訳の帯（訳文）、AIチャットの応答の下。アイコンは紙飛行機で統一し、名前は「〜を別の端末へ送る」。</li>
+</ul>
+
+<h3>ブラウザの制約（UIの前提）</h3>
+<ul>
+<li>ブラウザは、利用者の操作なしにクリップボードを読み書きできません。自動の同期はできないため、「送る」と「届いたものをタップでコピー」の形にします。</li>
+<li>ほかのアプリの「共有」からダッシュボードへ直接送る機能（Web Share Target）は、Android の Chrome などでPWAとしてインストールした場合だけです。iOS Safari は未対応のため、iPhoneからは開いて貼り付ける形になります。</li>
+<li>受信した画像の保存はダウンロードとして行います。</li>
+</ul>
+
+</section>
+
+<section class="sec">
+<h2>10. 計算の道具と表</h2>
+
+<h3>電卓と分ける理由</h3>
+<p>割り勘と税計算は、電卓に機能を足さず、別のウィジェットにします。</p>
+<div class="tw"><table>
+<thead><tr><th></th><th>電卓</th><th>割り勘・税込・税抜</th></tr></thead>
+<tbody>
+<tr><td>入力</td><td>式をキーで打つ</td><td>決まった項目を埋める（金額、人数、税率）</td></tr>
+<tr><td>答え</td><td>1つの数字</td><td>関係する数字を同時に見せる（1人あたりと端数、税込と税抜と税額）</td></tr>
+<tr><td>設定</td><td>なし</td><td>端数の扱い、税率、1円未満の扱い</td></tr>
+<tr><td>使う場面</td><td>何でも</td><td>会計の場、買い物の場。開いてすぐ答えが欲しい</td></tr>
+</tbody></table></div>
+<p>電卓に入れると、キー配置の上にモード切替や項目欄が増え、どちらの使い方も遅くなります。分けておけば、必要な人だけが置けます（一時利用でも使えます）。</p>
+
+<h3>割り勘</h3>
+<ul>
+<li>端数の単位は帯で選びます（1・10・100・1000円。既定は100円）。</li>
+<li>「多めに集める」: 1人あたりを単位で切り上げ、余る額を表示（例: 4人で13,200円・400円多く集まります）。</li>
+<li>「幹事が払う」: 1人あたりを単位で切り捨て、幹事が足りない分を払う（例: 幹事は4,400円（200円多く払う））。</li>
+<li>人数は1〜99。コピーは「合計12,800円／3人：1人4,200円、幹事4,400円」の形で、そのまま連絡に貼れる文にします。</li>
+</ul>
+
+<h3>税込・税抜</h3>
+<ul>
+<li>向き（税抜 → 税込／税込 → 税抜）を選び、金額を入れると、税込・税抜・消費税の3つを同時に出します。入力していない側を大きく表示します。</li>
+<li>税率はウィジェットの設定でカンマ区切りに書き（既定「10, 8」）、帯に並べて切り替えます。0以上100未満、最大4つ。</li>
+<li>税込から戻すときは、消費税 = 税込 × 税率 ÷ (100 + 税率) を設定の丸め方で整数にし、税抜 = 税込 − 消費税 とします。税抜から出すときは、消費税 = 税抜 × 税率 ÷ 100 を丸めます。</li>
+</ul>
+
+<h3>表</h3>
+<ul>
+<li>セルはすべて1行の入力欄です。列の幅は112px、行の高さは36pxで固定（固定行・固定列の位置計算を単純にするため）。</li>
+<li>固定行（0〜2）と固定列（0〜2）は帯のボタンで順に切り替えます。固定したセルは見出しの面（<code>--tbh</code>）と太字になり、スクロールしても残ります。固定の境目には2pxの線を引きます。</li>
+<li>選んだセルの行と列を薄く塗ります。行・列の追加は選んだセルの下・右に入り、削除は選んだセルの行・列が対象です（選んでいなければ末尾）。削除には「元に戻す」を付けます。最後の1行・1列は消せません。</li>
+<li>キー操作（PC）は次のとおり。日本語入力の変換中は何もしません。</li>
+</ul>
+<div class="tw"><table>
+<thead><tr><th>キー</th><th>動き</th></tr></thead>
+<tbody>
+<tr><td><code>Tab</code> ／ <code>Shift</code>+<code>Tab</code></td><td>右／左のセルへ。行の端では次／前の行へ折り返す。最後のセルで <code>Tab</code> を押すと行を足す</td></tr>
+<tr><td><code>Enter</code> ／ <code>Shift</code>+<code>Enter</code></td><td>下／上のセルへ。最終行で <code>Enter</code> を押すと行を足す</td></tr>
+<tr><td><code>↑</code> <code>↓</code></td><td>上下のセルへ</td></tr>
+<tr><td><code>←</code> <code>→</code></td><td>カーソルが文字の端にあるときだけ左右のセルへ（文字の途中では文字の中を動く）</td></tr>
+<tr><td><code>Esc</code></td><td>セルから抜ける</td></tr>
+</tbody></table></div>
+<ul>
+<li>キー操作はウィジェットの中で止め、画面切替に渡しません。表の中のスクロールは表を先に送り、端まで送ってから画面に渡します。</li>
+<li>書き出し形式（CSV → TSV → Markdown）を帯で切り替え、コピーとファイル保存に使います。Markdownは1行目を見出しにします。CSVは区切り・引用符・改行を含むセルを引用符で囲み、保存時はExcelで文字化けしないよう先頭にBOMを付けます。TSVはセル内のタブと改行を空白にします。</li>
+<li>本実装で足したいもの: 列幅の変更、セル内改行、範囲選択とコピー、貼り付けたCSV/TSVの取り込み、数値列の合計行。</li>
+</ul>
+</section>
+
+<section class="sec">
+<h2>11. 日の出・日の入り</h2>
+<p>傘と同じく「いま知りたい一文 → 時刻 → 横の帯」で組みます。一文で答え、時刻で裏づけ、帯で一日の中の位置を見せます。2つを並べると、同じ骨組みに違う種類のデータを載せたときの見え方を比べられます。</p>
+<div class="stage"><div class="grid2">
+<div class="pane">
+<p class="lbl">傘（2×1）</p>
+<div style="font-size: 18px; font-weight: 500; line-height: 1.3">17時ごろから雨</div>
+<div class="cap" style="margin-bottom: 6px">傘を持って出かけましょう・20時ごろに止む</div>
+<span class="rbar" role="img" aria-label="12時間の降水量の見本"><span style="height: 8%"></span><span style="height: 8%"></span><span style="height: 8%"></span><span style="height: 30%"></span><span style="height: 70%"></span><span style="height: 100%"></span><span style="height: 50%"></span><span style="height: 18%"></span><span style="height: 8%"></span><span style="height: 8%"></span><span style="height: 8%"></span><span style="height: 8%"></span></span>
+</div>
+<div class="pane">
+<p class="lbl">日の出・日の入り（2×1）</p>
+<div style="font-size: 18px; font-weight: 500; line-height: 1.3">日の入りまで 1時間57分</div>
+<div class="cap" style="margin-bottom: 6px">日の出 6:19　日の入り 16:33</div>
+<span class="sunb" role="img" aria-label="日の出6時19分、日の入り16時33分の帯の見本。いまは昼" style="background: linear-gradient(90deg, var(--fill2) 0 23.11%, var(--sun-t) 23.11% 26.32%, var(--sun-d) 26.32% 68.96%, var(--sun-t) 68.96% 70.83%, var(--fill2) 70.83% 100%)"><span class="tk" style="left: 25%"></span><span class="tk" style="left: 50%"></span><span class="tk" style="left: 75%"></span><span class="nw" style="left: 60.8%"></span></span>
+</div>
+</div></div>
+<div class="tw"><table>
+<thead><tr><th></th><th>傘</th><th>日の出・日の入り</th></tr></thead>
+<tbody>
+<tr><td>一文</td><td>傘が要るか（いま雨／何時から／要らない）</td><td>昼なら日の入りまで、夜なら次の日の出までの残り時間</td></tr>
+<tr><td>時刻</td><td>降り始めと止む時刻</td><td>日の出と日の入り（日の入り後は「明日の日の出」）</td></tr>
+<tr><td>帯</td><td>この先12時間、1時間ごとの棒（高さ = 雨量）</td><td>0〜24時の帯。夜 <code>--fill2</code>、薄明 <code>--sun-t</code>、昼 <code>--sun-d</code> の3段。今の位置に縦線、6・12・18時に細線</td></tr>
+<tr><td>データ</td><td>予報（通信が要る）</td><td>端末の中の計算だけ</td></tr>
+<tr><td>未接続のとき</td><td>未接続・オフラインの印を出す</td><td>出さない（通信しないため）</td></tr>
+<tr><td>段階表示</td><td>なし</td><td>縦2・縦3で情報を足す（下表）</td></tr>
+</tbody></table></div>
+<p>帯は色の段だけでなく、読み上げ用に「日の出6時19分、日の入り16時33分、昼の長さ10時間14分。いまは昼」を付けます。</p>
+<h3>大きさで足す情報</h3>
+<div class="tw"><table>
+<thead><tr><th>大きさ</th><th>出すもの</th></tr></thead>
+<tbody>
+<tr><td>2×1</td><td>一文、時刻、24時間の帯</td></tr>
+<tr><td>縦2以上</td><td>太陽の通り道（一日の高さを1本の曲線にし、地平線より上を実線、下を点線。今の位置に丸）、昼の長さと昨日との差、次の薄明、次のゴールデンアワー。場所の名前</td></tr>
+<tr><td>縦3以上・大きく表示</td><td>7日間の帯と日の出・日の入り</td></tr>
+</tbody></table></div>
+<p>小さいときは曲線と7日分を計算もしません（2章の段階表示の決まり）。</p>
+<h3>計算</h3>
+<ul>
+<li>NOAA の近似式で、天頂角 90.833°（日の出・日の入り。大気による浮き上がりと太陽の半径を含む）、96°（市民薄明。太陽が地平線の下6°）、84°（ゴールデンアワーの境。地平線の上6°）の3つを出します。誤差はおおむね1分以内です。</li>
+<li>場所の候補（東京・大阪・札幌・福岡・那覇）は日本時間で計算します。海外から開いても、その都市の時刻で表示されます。「現在地」は端末の時刻帯で計算し、緯度・経度は小数2桁（約1km）に丸めて、保存しません。位置情報を使えないときは東京で表示し、トーストで知らせます。</li>
+<li>一日中沈まない・昇らない日（高緯度）は、一文を「一日中沈みません」などにし、帯を1色にします。</li>
+</ul>
+</section>
+
+<section class="sec">
+<h2>12. スクリプト（ショートカットで動かす小さなJS）</h2>
+<p>文字を受け取り、短いJavaScriptで変換して返す道具です。大文字にする、JSONを整える、URLを分解する、といった小さな変換を新しいタブに置いておき、ボタンか <code>Alt</code>+数字で動かします。</p>
+<h3>決めていること</h3>
+<div class="tw"><table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>言語</td><td>JavaScript</td></tr>
+<tr><td>実行環境</td><td>sandbox の iframe＋Worker か QuickJS（WASM）か、比べたうえで決める。分離と通信の制限は本番側で作り、この資料の画面の決まりはどちらでも変わらない</td></tr>
+<tr><td>操作</td><td>実行、強制停止、再実行（同じ入力でもう一度）。一時停止と、実行中の行を追う表示は持たない</td></tr>
+<tr><td>入力</td><td>手入力、選んだ文字、クリップボードの3つから、スクリプトごとに選ぶ</td></tr>
+<tr><td>出力</td><td>戻り値、ログ、警告、エラー、経過時間。結果のコピーと、エラーの行への移動</td></tr>
+</tbody></table></div>
+<h3>書き方の約束</h3>
+<ul>
+<li><code>input</code> に入力の文字が入り、<code>return</code> した値が結果です。<code>await</code> が使えます。</li>
+<li>使えるもの: <code>console.log</code> <code>info</code> <code>warn</code> <code>error</code> <code>table</code> <code>clear</code>。</li>
+<li>コードに <code>input</code> が出てこなければ、入力の欄を出さず、何も読みません（クリップボードの許可も求めません）。</li>
+</ul>
+<h3>入力</h3>
+<div class="tw"><table>
+<thead><tr><th>取り方</th><th>実行前の表示</th><th>取れなかったとき</th></tr></thead>
+<tbody>
+<tr><td>手入力</td><td>入力欄（等幅、スクリプトごとに保存）。<code>Ctrl</code>／<code>⌘</code>+<code>Enter</code> で実行</td><td>空でも実行する（空文字として渡す）</td></tr>
+<tr><td>選んだ文字</td><td>最後に選んだ文字の先頭と文字数「「hello world」11文字」。まだ無ければ「ページの中の文字を選んでから実行します」</td><td>「文字が選ばれていません」</td></tr>
+<tr><td>クリップボード</td><td>「実行するときにクリップボードを読みます」（中身は実行するまで読まない）</td><td>読めない:「クリップボードを読めません」／空:「クリップボードが空です」</td></tr>
+</tbody></table></div>
+<ul>
+<li>取れなかったときは実行せず、結果の欄の中に警告の行を出し、手入力以外なら「手入力にする」を添えます。状態は「入力を取得できませんでした」。ショートカットで動かしたときはトーストで同じ文を出し、「開く」でウィジェットへ移ります。</li>
+<li>選んだ文字は、ページの中の文字か、入力欄の中で選んだ部分です。スクリプトのコード欄と手入力欄の中の選択は使いません。ショートカットで動かしたときは、押した瞬間の選択を使います。</li>
+<li>何を読んだかは出力の先頭に「入力: クリップボード（17文字）」と出します。再実行では「前回と同じ」を添え、前回と同じ文字を使います。</li>
+</ul>
+<h3>出力</h3>
+<ul>
+<li>ログ・警告・エラー・情報の各行は、アイコンと読み上げ用の文字で種類を示し、右端に開始からの経過（+120ms）を出します。</li>
+<li>結果は最後の行に、戻り値と種類（文字列・12文字、数値、配列など）を出します。帯のボタンでコピーします。</li>
+<li>ショートカットで動かしたときは、結果をクリップボードに書き、トーストで知らせます。書けなかったときは、トーストの「コピー」を押して書きます。</li>
+<li>帯の状態は「実行中 1.2秒」「完了 0.12秒」「4行目でエラー」「強制停止しました」「入力を取得できませんでした」。</li>
+<li>実行時間には上限があります（既定10秒。5・10・60秒・なしから選ぶ）。超えたら止めて「時間切れ」と出します。</li>
+</ul>
+<h3>エラー</h3>
+<ul>
+<li>エラーの行は、行番号を赤くして行を赤く塗ります。出力には「4行目　ReferenceError: sep is not defined」と「4行目へ」のボタンを出します。</li>
+<li>コード欄が見えていない大きさで「4行目へ」を押すと、大きく表示してからその行を選びます。</li>
+<li>書き方の誤り（SyntaxError）は、位置を返さない実行環境に備え、先頭から1行ずつ増やして解析し直して行を求めます。</li>
+</ul>
+<div class="code" role="img" aria-label="エラーの行に印が付いたコードの見本"><span class="ln">1</span><span class="jc">// 書き間違いがあると、その行に印が付きます</span>
+<span class="ln">2</span><span class="jk">const</span> items = [<span class="js">'a'</span>, <span class="js">'b'</span>, <span class="js">'c'</span>];
+<span class="ln">3</span><span class="jb">console</span>.<span class="jf">log</span>(<span class="js">'件数'</span>, items.length);
+<span class="er"><span class="ln" style="color: var(--bad); font-weight: 600">4</span><span class="jk">return</span> items.<span class="jf">map</span>((x) =&gt; x.<span class="jf">toUpperCase</span>()).<span class="jf">join</span>(sep);</span></div>
+<h3>大きさで変わる並び</h3>
+<div class="tw"><table>
+<thead><tr><th>大きさ</th><th>出すもの</th></tr></thead>
+<tbody>
+<tr><td>小さい（横3未満か縦3未満）</td><td>入力・実行・結果を優先。切替チップ（縦2以上）、入力の取り方と手入力欄、結果かエラーの1枠。コード欄とログは作らない。帯の右端は「コードを開く」</td></tr>
+<tr><td>3×3以上</td><td>切替チップ、コード欄（約55%）、入力、出力（ログと結果）</td></tr>
+<tr><td>大きく表示・置かずに使う</td><td>単体の道具の画面として扱う。左にコード欄、右に入力と出力を並べ、どちらも縦いっぱいに使う。幅が640px未満なら縦に積む。置かずに使うときは5×4相当（900×672px、画面に収まる大きさ）で開く</td></tr>
+</tbody></table></div>
+<p>スマホでコード欄か手入力欄に触れると、前面に大きく表示します（6章の前面表示）。</p>
+<h3>帯の並び</h3>
+<p>［▶ 実行／■ 強制停止］［↻ 同じ入力で再実行（一度動かした後）］［状態］……［コピー（結果があるとき）］［消す（コード欄があるとき）］［大きく表示／コードを開く］</p>
+<h3>色分け</h3>
+<p>Markdown の色分け（6章）とは別に、JavaScript 用の字句解析を持ちます。透明にした入力欄の下に色付きの行を重ね、スクロール位置を合わせます（メモと同じ方式）。折り返さずに横へスクロールします。行の高さは20px、タッチ端末では文字16px・行24pxです（入力時の拡大を防ぐため）。</p>
+<div class="tw"><table>
+<thead><tr><th>クラス</th><th>対象</th><th>ライト</th><th>ダーク</th></tr></thead>
+<tbody>
+<tr><td><code>jk</code></td><td>キーワード（const, return, for, await…）</td><td>#7446a8</td><td>#c3a6ee</td></tr>
+<tr><td><code>js</code></td><td>文字列、テンプレート文字列、正規表現</td><td>#2b7650</td><td>#8ccfa6</td></tr>
+<tr><td><code>jn</code></td><td>数値、true / false / null / undefined</td><td>#a85a22</td><td>#e6a874</td></tr>
+<tr><td><code>jf</code></td><td>呼び出している関数の名前</td><td>#2f6f9f</td><td>#82b8de</td></tr>
+<tr><td><code>jb</code></td><td>組み込み（console, Math, JSON, input など）</td><td>#9c3f70</td><td>#e59ac3</td></tr>
+<tr><td><code>jc</code></td><td>コメント（斜体にしない。重ねた入力欄と字幅がずれるため）</td><td colspan="2"><code>--mut</code></td></tr>
+</tbody></table></div>
+<p>正規表現と割り算の <code>/</code> は直前の記号で見分けます。テンプレート文字列の <code>${}</code> は入れ子の深さを数えます。同じ字句解析で、コードが <code>input</code> を使うかも判定します。</p>
+<h3>キー操作</h3>
+<div class="tw"><table>
+<thead><tr><th>キー</th><th>動き</th></tr></thead>
+<tbody>
+<tr><td><code>Ctrl</code>／<code>⌘</code>+<code>Enter</code></td><td>実行（実行中は強制停止）。コード欄と手入力欄で効く</td></tr>
+<tr><td><code>Tab</code> ／ <code>Shift</code>+<code>Tab</code></td><td>2文字の字下げ／戻す。複数行を選んでいれば全部の行</td></tr>
+<tr><td><code>Enter</code></td><td>前の行の字下げを引き継ぐ。<code>{</code> <code>(</code> <code>[</code> で終わる行の次は1段深くする</td></tr>
+<tr><td><code>Esc</code></td><td>コード欄・手入力欄から抜ける（<code>Tab</code> を字下げに使うため、外へ出る手段として必ず用意する）</td></tr>
+<tr><td><code>Alt</code>+<code>1</code>〜<code>9</code></td><td>割り当てたスクリプトを、ページのどこからでも実行</td></tr>
+</tbody></table></div>
+<ul>
+<li>ショートカットはこのページが前面でキーを受けているときだけ効きます。ブラウザのどこからでも使うには拡張機能の commands API が必要です。</li>
+<li>macOS の <code>Option</code>+数字は記号の入力と重なるため、割り当てたキーだけを横取りし、ほかはそのまま通します。キーは文字ではなく位置（<code>KeyboardEvent.code</code>）で判定します。</li>
+</ul>
+</section>
+
+<section class="sec">
+<h2>13. 画像変換と、切り出した部品</h2>
+<p>画像をドロップして、形式の変更と圧縮をします。受け口・進み具合・一覧を1つのウィジェットに持ち、大きさで見せる量が変わる典型として作りました。3つの部品は、ほかのウィジェットでも使えるように切り出しています。</p>
+<h3>大きさで変わるもの</h3>
+<div class="tw"><table>
+<thead><tr><th>大きさ</th><th>出すもの</th></tr></thead>
+<tbody>
+<tr><td>縦1</td><td>受け口（1行）、集計「7.1 MB → 2.0 MB −71%　4件・失敗1」、全体の進捗バー（処理中だけ）。帯で形式の切替</td></tr>
+<tr><td>縦2以上</td><td>何も無いときは受け口を大きくする。項目があればファイル行の一覧</td></tr>
+<tr><td>横3以上×縦2以上・大きく表示</td><td>左に設定（形式・品質・長辺）を並べ、帯の形式ボタンは消す。ファイル行にサムネイルと出力の寸法</td></tr>
+</tbody></table></div>
+<h3>変換</h3>
+<ul>
+<li>端末の中だけで変換します（<code>createImageBitmap</code> → canvas → <code>toBlob</code>）。どこにも送りません。1件ずつ順に処理します。</li>
+<li>JPEG にするときは透明な部分を白で埋めます。長辺の上限は縮めるときだけ使い、拡大はしません。PNG は品質の指定がないため、品質のスライダーを無効にし、理由を添えます。</li>
+<li><code>toBlob</code> は対応していない形式を頼まれると PNG で返します。返ってきた形式を確かめ、違えばその行を「このブラウザはAVIFで書き出せません」にします。読み込めない形式（HEIC など）も行ごとのエラーにし、ほかの行は続けます。失敗した行には理由ごとの次の操作（「選び直す」「長辺2048pxでもう一度」「JPEGでもう一度」）を置きます。</li>
+<li>元より大きくなったときは、割合を「+12%」と出します。</li>
+<li>設定を変えると、変換済みの行と設定が違う場合だけ、帯に「この設定でもう一度」を出します。</li>
+<li>保存は行ごとのボタンか、帯の「すべて保存」（350msずつ間をあけて順にダウンロード。ブラウザが複数のダウンロードの許可を求めることがあります）。本実装では ZIP にまとめる案もあります。</li>
+<li>画像と一覧は保存しません。行を外す、一覧を空にする、ページを閉じるときに、作った object URL を解放します。</li>
+<li>本実装では変換を Worker の <code>OffscreenCanvas</code> と <code>convertToBlob</code> に移し、大きな画像でも画面を止めないようにします。</li>
+</ul>
+<h3>切り出した部品</h3>
+<div class="stage"><div class="grid2">
+<div class="pane">
+<p class="lbl">ドロップ受け <code>.drop</code>（空のとき／項目があるとき／重ねているとき）</p>
+<div class="stack">
+<span class="drop full"><svg class="i" aria-hidden="true" viewBox="0 0 24 24" style="width: 28px; height: 28px"><path d="M4 5h16v14H4zM4 15l4.5-4.5 4 4 2.5-2.5 5 5M15.5 9.5h.1"></path></svg>画像をドロップ</span>
+<span class="drop"><svg class="i" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 12h12M12 6v12"></path></svg>画像を追加</span>
+<span class="drop over"><svg class="i" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 12h12M12 6v12"></path></svg>ここに放す</span>
+</div>
+</div>
+<div class="pane">
+<p class="lbl">進捗バー <code>.prg</code> とファイル行 <code>.frow</code></p>
+<div class="frow"><span class="fth" style="background: linear-gradient(160deg, var(--w1), var(--w2))"></span><div class="cn"><b>海辺.jpg</b><span>4.8 MB・変換中・4032×3024</span><span class="prg" role="progressbar" aria-label="海辺.jpgの進み具合" aria-valuemin="0" aria-valuemax="100" aria-valuenow="64"><i style="scale: .64 1"></i></span></div><span class="nb" role="img" aria-label="外すボタンの見本"><svg class="i" aria-hidden="true" viewBox="0 0 24 24" style="width: 16px; height: 16px"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"></path></svg></span></div>
+<div class="frow"><span class="fth" style="background: linear-gradient(160deg, var(--w2), var(--w1))"></span><div class="cn"><b>ロゴ.webp</b><span>184 KB → 71 KB（−61%）・1024×1024</span></div><span class="nb" role="img" aria-label="保存ボタンの見本"><svg class="i" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14"></path></svg></span><span class="nb" role="img" aria-label="外すボタンの見本"><svg class="i" aria-hidden="true" viewBox="0 0 24 24" style="width: 16px; height: 16px"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"></path></svg></span></div>
+<div class="frow err"><span class="fth"></span><div class="cn"><b>IMG_2041.heic</b><span>このブラウザでは読み込めない形式です</span></div><span class="nb" role="img" aria-label="外すボタンの見本"><svg class="i" aria-hidden="true" viewBox="0 0 24 24" style="width: 16px; height: 16px"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"></path></svg></span></div>
+</div>
+</div></div>
+<div class="tw"><table>
+<thead><tr><th>部品</th><th>決まり</th></tr></thead>
+<tbody>
+<tr><td>ドロップ受け</td><td>中身は file 入力を包んだ label。タップ・クリック・キーボード（フォーカス時に輪郭）でもファイルを選べる。受け口はウィジェット全体で、重ねているあいだは枠を実線にして <code>--a1</code> を薄く塗り、文言を「ここに放す」に変える。マウスのある端末は「画像をドロップ」、タッチ端末は「画像を選ぶ」。画像でないファイルは除いて件数をトーストで知らせる。一度に30件まで</td></tr>
+<tr><td>進捗バー</td><td>高さ4px、<code>role="progressbar"</code> と0〜100の値、何の進み具合かを名前に入れる。途中経過がとれない処理は段階（読み込み15% → 変換50% → 完了）で進め、完了したら消す。動きを減らす設定では伸びのアニメーションをしない</td></tr>
+<tr><td>ファイル行</td><td>［サムネイル40px（広いときだけ）］［名前（完了後は出力の名前）／補足（大きさの変化・状態・エラー）／進捗バー（処理中だけ）］［保存（完了したときだけ）］［外す］。エラーは補足の文字を赤にし、理由を文で書く（色だけに頼らない）。高さは52px以上</td></tr>
+</tbody></table></div>
+<p>ほかで使う場面: 受け渡しの画像送信、項目アイコンの画像読み込み、録音の書き出し、今後の取り込み系のウィジェット。</p>
+</section>
+
+<section class="sec">
+<h2>14. 仕様として残る制限</h2>
+<p>本実装でも残る、ブラウザや方式による制限です。プロトタイプだけの制限は実装ガイドの付録にあります。</p>
+<ul>
+<li>メモからの提案は行の文面で覚えるため、同じ文面の行が2つあると区別できません。</li>
+<li>スマホでキーボードが出たときに画面が押し上げられる動きは OS 側の挙動で、止められません。前面表示は見えている範囲に合わせて追従します（6章）。</li>
+<li>ブラウザは利用者の操作なしにクリップボードを読み書きできません（9章、12章）。</li>
+<li>日の出・日の入りは近似式で計算しているため、実際とは1分ほどずれることがあります。地形や建物、標高は考えていません。</li>
+<li>画像変換の進み具合は段階で示す見積もりで、実際の処理量ではありません。</li>
+<li>キーボードのショートカット（<code>Alt</code>+数字など）は、このページが前面でキーを受けているときだけ効きます。</li>
+<li>アラーム、ポモドーロ、カウントダウンは、ページかアプリを開いている間だけ知らせます（実装ガイド7.2）。</li>
+</ul>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["auto","light","dark"],"default":"auto"},"$preview":{"width":1280,"height":46800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.theme ?? 'auto' };
+  }
+}
+</script>
+</body>
+</html>

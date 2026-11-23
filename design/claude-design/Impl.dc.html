@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>実装ガイド</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=Noto+Sans+JP:wght@400;500&display=swap">
+<style>
+body{margin:0}
+a{color:#2f6f9f}a:hover{color:#1f4f75}
+.spec{
+  color-scheme:light dark;
+  --bg:light-dark(#e8ecf1,#0d1117);--text:light-dark(#18202b,#eef2f6);--mut:light-dark(#4d5969,#a9b3c0);
+  --glass:light-dark(rgba(255,255,255,.42),rgba(255,255,255,.082));--glass2:light-dark(rgba(255,255,255,.3),rgba(255,255,255,.07));
+  --sheet:light-dark(rgba(244,247,250,.8),rgba(26,32,42,.82));
+  --hi:light-dark(rgba(255,255,255,.98),rgba(255,255,255,.46));--hi3:light-dark(rgba(255,255,255,.72),rgba(255,255,255,.2));
+  --rim0:light-dark(rgba(255,255,255,.34),rgba(255,255,255,.07));--edge:light-dark(rgba(20,30,50,.1),rgba(0,0,0,.55));
+  --sh1:light-dark(rgba(20,30,50,.08),rgba(0,0,0,.4));--shadow:light-dark(rgba(38,56,84,.22),rgba(0,0,0,.6));
+  --fill:light-dark(rgba(24,32,43,.07),rgba(255,255,255,.08));--fill2:light-dark(rgba(24,32,43,.14),rgba(255,255,255,.17));
+  --a1:light-dark(#2f6f9f,#82b8de);--a2:light-dark(#c2742d,#e2a46e);--on-a:light-dark(#ffffff,#0d1117);
+  --c1:light-dark(#2f6f9f,#4a8ec6);--c2:light-dark(#c2742d,#c97f3c);
+  --w1:light-dark(#b7cdec,#1b3558);--w2:light-dark(#efcdb6,#57321f);
+  font-family:Inter,"Noto Sans JP",system-ui,sans-serif;font-size:15px;line-height:1.75;color:var(--text);background:var(--bg);
+}
+.spec[data-theme="light"]{color-scheme:light}
+.spec[data-theme="dark"]{color-scheme:dark}
+.spec *{box-sizing:border-box}
+.spec h1{font-size:34px;font-weight:300;line-height:1.25;margin:0;letter-spacing:-0.01em}
+.spec h2{font-size:22px;font-weight:500;line-height:1.35;margin:0 0 14px}
+.spec h3{font-size:15px;font-weight:600;margin:22px 0 8px}
+.spec p{margin:0 0 10px;max-width:72ch;text-wrap:pretty}
+.spec ul{margin:0 0 10px;padding-left:1.2em;max-width:72ch}
+.spec li{margin:2px 0}
+.spec code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--fill);padding:1px 6px;border-radius:6px}
+.sec{padding:36px 0;border-top:1px solid var(--fill2)}
+.spec pre{margin:8px 0 14px;padding:14px 16px;border-radius:14px;background:var(--fill);overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.6;white-space:pre;tab-size:2}
+.spec ol{margin:0 0 10px;padding-left:1.4em;max-width:72ch}
+.lead{color:var(--mut)}
+.tw{overflow-x:auto;margin:8px 0 14px}
+.spec table{border-collapse:collapse;width:100%;min-width:560px;font-size:13.5px;line-height:1.55}
+.spec th{text-align:left;font-weight:600;color:var(--mut);font-size:12.5px;padding:8px 12px 8px 0;border-bottom:1px solid var(--fill2);white-space:nowrap}
+.spec td{padding:8px 12px 8px 0;border-bottom:1px solid var(--fill);vertical-align:top}
+.swt{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.swt i{width:16px;height:16px;border-radius:5px;border:1px solid var(--fill2);flex:none}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:14px}
+.pane{position:relative;border-radius:26px;padding:18px;background:var(--glass);
+  box-shadow:inset 0 0 0 1px var(--rim0),0 0 0 .5px var(--edge),0 1px 2px var(--sh1),0 8px 18px -14px var(--shadow)}
+.pane::before,.navx::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.25px;pointer-events:none;
+  background:linear-gradient(135deg,var(--hi) 0%,transparent 26%,transparent 70%,var(--hi3) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude}
+.stage{position:relative;border-radius:22px;padding:22px;overflow:hidden;
+  background:radial-gradient(circle at 14% 20%,var(--w1) 0 120px,transparent 122px),radial-gradient(circle at 88% 86%,var(--w2) 0 140px,transparent 142px),var(--bg);
+  box-shadow:inset 0 0 0 1px var(--fill2)}
+.lbl{font-size:12px;color:var(--mut);margin:0 0 8px}
+.rowx{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.btn{appearance:none;border:0;background:var(--fill);color:var(--text);border-radius:999px;min-width:44px;min-height:44px;padding:0;display:grid;place-items:center;cursor:pointer;font:inherit}
+.btn.on{background:var(--a1);color:var(--on-a)}
+.chip{appearance:none;border:0;background:var(--fill);color:var(--text);border-radius:999px;min-height:44px;padding:0 16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-size:14px;text-decoration:none}
+.chip.on{background:var(--text);color:var(--bg)}
+.chip.sm{font-size:13px;padding:0 13px;background:none;border:1.5px dashed var(--fill2);color:var(--mut)}
+.chip.sm.on{background:color-mix(in oklab,var(--a1) 24%,transparent);border:1.5px solid transparent;color:var(--text)}
+.seg{display:inline-flex;background:var(--fill);border-radius:999px}
+.sg{appearance:none;border:0;background:none;color:var(--text);border-radius:999px;min-height:44px;min-width:44px;padding:0 13px;cursor:pointer;font:inherit;font-size:14px}
+.sg.on{background:var(--text);color:var(--bg)}
+.sw{appearance:none;border:0;background:none;width:52px;height:44px;padding:0;display:grid;place-items:center;cursor:pointer}
+.sw .tr{width:46px;height:26px;border-radius:99px;background:var(--fill2);position:relative}
+.sw .kn{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:99px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.sw.on .tr{background:var(--a1)}
+.sw.on .kn{translate:20px 0}
+.rg{appearance:none;-webkit-appearance:none;width:180px;height:14px;border-radius:99px;margin:15px 0;border:1px solid var(--rim0);background:var(--fill2)}
+.rg::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:99px;background:#fff;border:1px solid rgba(0,0,0,.18);box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.rg::-moz-range-thumb{width:24px;height:24px;border-radius:99px;background:#fff;border:1px solid rgba(0,0,0,.18);box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.inp{appearance:none;border:0;background:var(--fill);color:var(--text);border-radius:14px;min-height:44px;padding:0 14px;width:200px;font:inherit;font-size:16px}
+.inp::placeholder{color:var(--mut)}
+.fd{position:relative;display:block;width:56px;height:120px;border-radius:16px;background:var(--fill);overflow:hidden}
+.fd span{position:absolute;left:0;right:0;bottom:0;height:60%;background:color-mix(in oklab,var(--text) 24%,transparent)}
+.navx{position:relative;display:inline-flex;align-items:center;padding:0 4px;border-radius:999px;background:var(--glass2);
+  -webkit-backdrop-filter:blur(9px) saturate(190%) brightness(1.06);backdrop-filter:blur(9px) saturate(190%) brightness(1.06);
+  box-shadow:inset 0 0 0 1px var(--rim0),0 0 0 .5px var(--edge),0 2px 4px var(--sh1),0 14px 32px -12px var(--shadow)}
+.nb{width:44px;height:44px;display:grid;place-items:center;border-radius:99px}
+.tst{display:inline-flex;align-items:center;gap:10px;padding:11px 18px 11px 14px;border-radius:999px;background:var(--sheet);
+  box-shadow:inset 0 0 0 1px var(--rim0),0 0 0 .5px var(--edge),0 14px 32px -12px var(--shadow)}
+.num{font-variant-numeric:tabular-nums}
+.cap{font-size:12px;color:var(--mut)}
+.spec{--bad:light-dark(#b3402f,#f09a8a);--sun-d:light-dark(#dfa64f,#c18a3e);--sun-t:light-dark(#9fb5d3,#3e5a7e);--jk:light-dark(#7446a8,#c3a6ee);--js:light-dark(#2b7650,#8ccfa6);--jn:light-dark(#a85a22,#e6a874);--jf:light-dark(#2f6f9f,#82b8de);--jb:light-dark(#9c3f70,#e59ac3)}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.sunb{position:relative;display:block;height:20px;border-radius:6px;overflow:hidden}
+.sunb .nw{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;border-radius:2px;background:var(--text)}
+.sunb .tk{position:absolute;top:0;bottom:0;width:1px;background:color-mix(in oklab,var(--text) 16%,transparent)}
+.rbar{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:2px;align-items:end;height:20px}
+.rbar span{border-radius:3px;background:var(--c1)}
+.code{margin:8px 0 14px;padding:12px 14px;border-radius:14px;background:var(--fill);font:13px/20px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;overflow-x:auto}
+.code .ln{display:inline-block;width:2em;margin-right:10px;text-align:right;color:var(--mut)}
+.code .er{display:inline-block;min-width:100%;background:color-mix(in oklab,var(--bad) 16%,transparent);box-shadow:inset 2px 0 var(--bad)}
+.jk{color:var(--jk)}.js{color:var(--js)}.jn{color:var(--jn)}.jf{color:var(--jf)}.jb{color:var(--jb)}.jc{color:var(--mut);font-style:italic}
+.drop{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 14px;border-radius:14px;border:1.5px dashed var(--fill2);color:var(--mut);text-align:center;font-size:14px}
+.drop.full{min-height:120px;flex-direction:column;gap:6px}
+.drop.over{border-style:solid;border-color:var(--a1);background:color-mix(in oklab,var(--a1) 12%,transparent);color:var(--text)}
+.prg{display:block;height:4px;border-radius:9px;background:var(--fill2);overflow:hidden}
+.prg i{display:block;width:100%;height:100%;transform-origin:left center;background:var(--a1)}
+.frow{display:flex;align-items:center;gap:10px;min-height:52px}
+.frow .cn{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;line-height:1.35}
+.frow .cn b{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frow .cn span{font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frow.err .cn span{color:var(--bad)}
+.fth{width:40px;height:40px;flex:none;border-radius:10px;background:var(--fill)}
+.stack{display:flex;flex-direction:column;gap:10px}
+</style>
+</helmet>
+<div class="spec" data-theme="{{theme}}" style="min-height: 100vh">
+<div style="max-width: 1040px; margin: 0 auto; padding: 48px 24px 96px">
+
+<header style="padding-bottom: 36px">
+<p class="lead" style="margin-bottom: 6px">リキッドグラス・ツールダッシュボード</p>
+<h1>実装ガイド</h1>
+<p class="lead" style="margin-top: 14px">プロトタイプ <code>Main.dc.html</code> を本実装に引き継ぐための資料です。トークン、ウィジェットの登録と作り方、保存、作りの土台、標準への対応、機能ごとの実装要件をまとめています。</p>
+<p class="lead">何をするか・どう振る舞うかは「仕様書」（<code>Spec.dc.html</code>）、部品の見た目と状態は「部品シート」（<code>Parts.dc.html</code>）が正です。色や寸法の細かな値はプロトタイプを正とし、食い違いを見つけたら資料を直してください。</p>
+<a href="Main.dc.html" class="chip" style="margin-top: 10px">ダッシュボードに戻る</a>
+</header>
+
+<section class="sec">
+<h2>1. 層の考え方</h2>
+<p>画面は3つの層でできています。層をまたいで素材を混ぜないことが、見た目の落ち着きを保つ条件です。</p>
+<div class="tw"><table>
+<thead><tr><th>層</th><th>中身</th><th>素材</th><th>影</th></tr></thead>
+<tbody>
+<tr><td>壁紙</td><td>輪郭のある大きな色面</td><td>不透明。動かさない</td><td>なし</td></tr>
+<tr><td>内容（ウィジェット）</td><td>各ツールの面と、その中の操作部品</td><td>薄く色づいた面＋背景ぼかし。縁は左上と右下だけ光る</td><td>接地する小さな影</td></tr>
+<tr><td>操作（バー・シート・トースト）</td><td>画面切替、設定、通知</td><td>バーは透明度の高いガラス。シートとトーストは文字が主役なので濃い面</td><td>浮いて見える大きめの影</td></tr>
+</tbody></table></div>
+<ul>
+<li>ガラスの上にガラスを重ねません。ウィジェットの中の部品は <code>--fill</code> 系の塗りで作ります。</li>
+<li>ウィジェットに斜めの照りや大きな落ち影を付けません。浮いて見える原因になります。</li>
+<li>縁で背景が歪む屈折表現は未実装です。入れる場合は下部バーに限り、対応しないブラウザではぼかしに落とします。</li>
+</ul>
+</section>
+
+<section class="sec">
+<h2>2. デザイントークン</h2>
+<p>色はすべて <code>light-dark()</code> で1か所に定義し、<code>color-scheme</code> の切替だけでライトとダークが入れ替わります。部品側で色を直書きしません。</p>
+
+<h3>色</h3>
+<div class="tw"><table>
+<thead><tr><th>トークン</th><th>役割</th><th>ライト</th><th>ダーク</th></tr></thead>
+<tbody>
+<tr><td><code>--bg</code></td><td>画面の地</td><td><span class="swt"><i style="background:#e8ecf1"></i>#e8ecf1</span></td><td><span class="swt"><i style="background:#0d1117"></i>#0d1117</span></td></tr>
+<tr><td><code>--text</code></td><td>本文、主要な数字</td><td><span class="swt"><i style="background:#18202b"></i>#18202b</span></td><td><span class="swt"><i style="background:#eef2f6"></i>#eef2f6</span></td></tr>
+<tr><td><code>--mut</code></td><td>補助の文字。壁紙のどの色面の上、透明感のどの値でも 4.5:1 以上（計算で確認）</td><td><span class="swt"><i style="background:#4d5969"></i>#4d5969</span></td><td><span class="swt"><i style="background:#bac3ce"></i>#bac3ce</span></td></tr>
+<tr><td><code>--line</code></td><td>入力欄、コード欄、受け口の輪郭。面との差 3:1 以上</td><td><span class="swt"><i style="background:#6f7988"></i>#6f7988</span></td><td><span class="swt"><i style="background:#96a1b1"></i>#96a1b1</span></td></tr>
+<tr><td><code>--hol</code></td><td>カレンダーの祝日（下線と組で使い、色だけにしない）</td><td><span class="swt"><i style="background:#b3402f"></i>#b3402f</span></td><td><span class="swt"><i style="background:#f09a8a"></i>#f09a8a</span></td></tr>
+<tr><td><code>--a1</code></td><td>選択中・実行ボタン。利用者が5色から変更可</td><td><span class="swt"><i style="background:#2f6f9f"></i>#2f6f9f</span></td><td><span class="swt"><i style="background:#82b8de"></i>#82b8de</span></td></tr>
+<tr><td><code>--a2</code></td><td>第2の強調（進行リング、予定の点）</td><td><span class="swt"><i style="background:#c2742d"></i>#c2742d</span></td><td><span class="swt"><i style="background:#e2a46e"></i>#e2a46e</span></td></tr>
+<tr><td><code>--on-a</code></td><td><code>--a1</code> の上の文字</td><td><span class="swt"><i style="background:#ffffff"></i>#ffffff</span></td><td><span class="swt"><i style="background:#0d1117"></i>#0d1117</span></td></tr>
+<tr><td><code>--c1</code></td><td>グラフの系列1。アクセント変更の影響を受けない</td><td><span class="swt"><i style="background:#2f6f9f"></i>#2f6f9f</span></td><td><span class="swt"><i style="background:#4a8ec6"></i>#4a8ec6</span></td></tr>
+<tr><td><code>--c2</code></td><td>グラフの系列2</td><td><span class="swt"><i style="background:#c2742d"></i>#c2742d</span></td><td><span class="swt"><i style="background:#c97f3c"></i>#c97f3c</span></td></tr>
+<tr><td><code>--fill</code></td><td>部品の塗り（弱）</td><td>rgba(24,32,43,.07)</td><td>rgba(255,255,255,.08)</td></tr>
+<tr><td><code>--fill2</code></td><td>部品の塗り（強）、区切り</td><td>rgba(24,32,43,.14)</td><td>rgba(255,255,255,.17)</td></tr>
+<tr><td><code>--glass</code></td><td>ウィジェットの面。「ガラスの透明感」設定で変化</td><td>白 42%（既定）</td><td>白 8.2%（既定）</td></tr>
+<tr><td><code>--glass2</code></td><td>下部バーの面</td><td>白 30%</td><td>白 7%</td></tr>
+<tr><td><code>--sheet</code></td><td>シート、トーストの面</td><td>rgba(244,247,250,.8)</td><td>rgba(26,32,42,.82)</td></tr>
+<tr><td><code>--hi</code> / <code>--hi3</code></td><td>縁の光（左上／右下）</td><td>白 98% / 72%</td><td>白 46% / 20%</td></tr>
+<tr><td><code>--w1</code>〜<code>--w4</code></td><td>壁紙の色面</td><td>#b7cdec #efcdb6 #cdc4ec #bfe3d6</td><td>#1b3558 #57321f #38285a #12434a</td></tr>
+<tr><td><code>--g1</code>〜<code>--g5</code></td><td>時計を全画面にしたときの背景のグラデーション</td><td>#a8c8f6 #c7b6f3 #f6bfd0 #fbdbab #b3e5d5</td><td>#2a5da6 #5946ad #a23d75 #a85c2c #1e7a72</td></tr>
+</tbody></table></div>
+<p>グラフの2色は、色覚特性を考慮した識別と背景との差を検証済みの値です。系列を増やすときは同じ検証を通してください。文字に系列色を使わず、色のついた印を横に置いて区別します。</p>
+
+<h3>形と余白</h3>
+<div class="tw"><table>
+<thead><tr><th>項目</th><th>値</th><th>補足</th></tr></thead>
+<tbody>
+<tr><td>ウィジェットの角丸 <code>--rad</code></td><td>26px（8〜36で可変）</td><td>全体設定「角の丸み」</td></tr>
+<tr><td>中の部品の角丸</td><td>5段：<code>--r1</code> 6px（キー、チェック）・<code>--r2</code> 12px（入力欄、行）・<code>--r3</code> 18px（メニュー、カード）・<code>--r4</code> 26px（シート、ダイアログ）・<code>--rr</code> 丸（ボタン、点、細い線）</td><td>入れ子は「外の角丸 − 余白 = 中の角丸」を目安に、近い段に寄せる</td></tr>
+<tr><td>影</td><td>面の高さで3段：<code>--el1</code> ウィジェット・<code>--el2</code> 下部バー、トースト、メニュー・<code>--el3</code> シート、ダイアログ。ガラスの縁は <code>--rim</code>、つまみは <code>--knob</code></td><td>入力欄の縁やフォーカスの輪は影ではなく線として扱う</td></tr>
+<tr><td>ウィジェットの内側余白</td><td>14px（文字主体は左右18px）</td><td></td></tr>
+<tr><td>ウィジェット間のすき間</td><td>14px（幅600px未満は10px）</td><td></td></tr>
+<tr><td>押せる領域</td><td>44×44px（主な操作）／24×24px以上（行や帯の中に並ぶ補助の操作）</td><td>押せる領域で決め、見た目は小さくてよい。ボタン要素そのものを押せる領域の大きさにし、点や丸はその中に描く。擬似要素で外側に広げない（隣と重なって押し間違えるため）。24px の操作は隣の押せる領域と中心で24px以上離す</td></tr>
+<tr><td>背景ぼかし <code>--blur</code></td><td>21.6px（6〜32で可変）</td><td>全体設定「ガラスの透明感」と連動</td></tr>
+</tbody></table></div>
+
+<h3>文字</h3>
+<div class="tw"><table>
+<thead><tr><th>用途</th><th>大きさ・太さ</th><th>補足</th></tr></thead>
+<tbody>
+<tr><td>書体</td><td>Inter ＋ Noto Sans JP</td><td>フォールバックは system-ui</td></tr>
+<tr><td>単位</td><td>rem（1rem = 16px のとき、下の px と同じ）</td><td>ブラウザの文字サイズ設定に従わせるため。主役の大きな数字だけはコンテナ単位（cqh / cqw）</td></tr>
+<tr><td>段</td><td>8段：<code>--fs-xs</code> 11・<code>--fs-s</code> 12・<code>--fs-m</code> 13・<code>--fs-b</code> 14・<code>--fs-l</code> 16・<code>--fs-xl</code> 18・<code>--fs-2xl</code> 22・<code>--fs-3xl</code> 30（px）</td><td>これ以外の大きさを直書きしない。主役の数字だけはコンテナ単位</td></tr>
+<tr><td>本文</td><td>14px（<code>--fs-b</code>）/ 行間1.35 / 400</td><td></td></tr>
+<tr><td>補助</td><td>12px、色は <code>--mut</code></td><td>11pxは軸の目盛りと曜日だけ</td></tr>
+<tr><td>主役の数字</td><td>太さ200〜300、等幅数字</td><td>大きさはウィジェットの寸法に比例（コンテナクエリ単位 <code>cqh</code> / <code>cqw</code>）</td></tr>
+<tr><td>入力欄</td><td>タッチ端末では16px固定</td><td>フォーカス時の自動拡大を防ぐため</td></tr>
+</tbody></table></div>
+
+<h3>動き</h3>
+<div class="tw"><table>
+<thead><tr><th>場面</th><th>値</th></tr></thead>
+<tbody>
+<tr><td>シート、トーストの出入り</td><td>不透明度 ease-out。移動（10px）は動きを許可している環境だけ</td></tr>
+<tr><td>メニューの出入り</td><td>開いたボタンの側から 0.95倍→等倍＋不透明度、<code>--dur-3</code>。起点は位置の計算で決めたボタンの中心（<code>transform-origin</code>）。下からのシートになるときは下端中央</td></tr>
+<tr><td>ダイアログの出入り</td><td>0.97倍→等倍＋不透明度、<code>--dur-4</code>。縮むのは出る途中だけで、止まった状態の文字やボタンは小さくならない。動きを減らす設定では不透明度だけ</td></tr>
+<tr><td>時間のトークン</td><td><code>--dur-1</code> 100ms 押した反応／<code>--dur-2</code> 150ms ホバーと色／<code>--dur-3</code> 200ms 小さな出入り（トースト、メニュー、スイッチ）／<code>--dur-4</code> 250ms 大きな面と量（シート、ダイアログ、進み具合）。受け取った行の光（600ms）だけ例外</td></tr>
+<tr><td>押したときの反応</td><td>0.96倍に縮小、<code>--dur-1</code></td></tr>
+<tr><td>時刻に連動する進行（秒の帯、リング）</td><td>1s linear</td></tr>
+<tr><td>画面切替</td><td>どこへ移っても最後の1画面分だけ動かす（離れた先は隣まで即時に移り、残り1画面をスムーズに送る）。距離で時間を変えない。動きを減らす設定では即時移動</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="sec">
+<h2>3. 見た目を作り直すためのレシピ</h2>
+<p>ここにある値をそのまま使えば、プロトタイプの面と層を再現できます。色はすべて2章のトークンです。</p>
+
+<h3>ウィジェットの面</h3>
+<pre>.w {
+  position: relative; overflow: hidden;
+  border-radius: var(--rad);            /* 26px */
+  container-type: size;                 /* 中身を面の寸法に比例させるため */
+  background: var(--glass);
+  backdrop-filter: blur(var(--blur)) saturate(180%);
+  box-shadow:
+    var(--rim),                         /* 全周の薄い縁と外側の極細の輪郭 */
+    var(--el1);                         /* 接地の影と広がる影 */
+}
+.w::before {                            /* 左上と右下だけ光る縁 */
+  content: ""; position: absolute; inset: 0;
+  border-radius: inherit; padding: 1.25px; pointer-events: none;
+  background: linear-gradient(135deg,
+    var(--hi) 0%, transparent 26%, transparent 70%, var(--hi3) 100%);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;              /* 枠の部分だけ残す */
+}</pre>
+
+<h3>下部バー（操作の層）</h3>
+<pre>.nav {
+  background: var(--glass2);
+  backdrop-filter: blur(9px) saturate(190%) brightness(1.06);
+  box-shadow: var(--rim), var(--el2);
+}
+.nav::after {                           /* 縁5pxの帯だけ、背後を明るく鮮やかに */
+  content: ""; position: absolute; inset: 0;
+  border-radius: inherit; padding: 5px; pointer-events: none;
+  backdrop-filter: blur(1.5px) saturate(230%) brightness(1.16);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}</pre>
+<p>シートとトーストは <code>--sheet</code> の面に同じ影の考え方（シートとダイアログは <code>--el3</code>、トーストは <code>--el2</code>）で、背景ぼかしは 26〜30px です。</p>
+
+<h3>補助のトークン</h3>
+<div class="tw"><table>
+<thead><tr><th>トークン</th><th>役割</th><th>ライト</th><th>ダーク</th></tr></thead>
+<tbody>
+<tr><td><code>--rim0</code></td><td>面の全周の薄い縁</td><td>白 34%</td><td>白 7%</td></tr>
+<tr><td><code>--edge</code></td><td>面の外側の輪郭</td><td>rgba(20,30,50,.1)</td><td>rgba(0,0,0,.55)</td></tr>
+<tr><td><code>--sh1</code></td><td>接地の影</td><td>rgba(20,30,50,.08)</td><td>rgba(0,0,0,.4)</td></tr>
+<tr><td><code>--shadow</code></td><td>広がる影</td><td>rgba(38,56,84,.22)</td><td>rgba(0,0,0,.6)</td></tr>
+<tr><td><code>--bgA</code> / <code>--bgB</code></td><td>壁紙の地（160度の線形）</td><td>#eef1f5 → #e1e6ee</td><td>#0b0f15 → #111722</td></tr>
+</tbody></table></div>
+
+<h3>利用者設定から決まる値</h3>
+<div class="tw"><table>
+<thead><tr><th>設定</th><th>範囲（既定）</th><th>計算</th></tr></thead>
+<tbody>
+<tr><td>ガラスの透明感 v</td><td>0〜100（60）</td><td><code>--glass</code> の白の不透明度 = ライト 0.78 − 0.48×v/100、ダーク 0.09 − 0.06×v/100（補助の文字と輪郭のコントラストを保つ範囲に絞った値）。<code>--blur</code> = 6 + 26×v/100 px。v が0のときは背景ぼかしを止める（<code>--bf: none</code>。重さと電池のため）</td></tr>
+<tr><td>角の丸み</td><td>8〜36（26）</td><td><code>--rad</code> にそのまま</td></tr>
+<tr><td>アクセント</td><td>5色</td><td><code>--a1</code> をライト／ダークの組で差し替え: ブルー #2f6f9f / #82b8de、ティール #1f7a6c / #6fcbb9、バイオレット #6a58b8 / #b3a6ee、ローズ #b0486e / #eda0bb、スレート #4a5565 / #c3ccd8</td></tr>
+<tr><td>テーマ</td><td>自動／ライト／ダーク</td><td>ルート要素の <code>color-scheme</code> を切替えるだけ</td></tr>
+</tbody></table></div>
+
+<h3>壁紙と全画面の時計</h3>
+<ul>
+<li>壁紙は円の色面4つを固定位置に置きます。中心と半径は、(15%, 22%) 26vmin、(86%, 30%) 20vmin、(40%, 60%) 11vmin、(63%, 98%) 34vmin。輪郭は2pxだけぼかします。画面を送っても壁紙は動きません。</li>
+<li>全画面の時計は、地の色の上に、5色の斜めグラデーションで塗った円8個を置き、ぼかし（標準偏差30）と不透明度の引き締め（係数28、切片−12）で円同士をつなげます。グラデーションは画面基準で固定し、円だけを15〜31秒周期で往復させます。表示中の画面でだけ動かします。</li>
+<li>時計は面の幅の31%か高さの52%の小さいほう、太さ200。</li>
+</ul>
+
+<h3>重なりの順</h3>
+<div class="tw"><table>
+<thead><tr><th>要素</th><th>z-index</th></tr></thead>
+<tbody>
+<tr><td>壁紙、ウィジェット</td><td>指定なし</td></tr>
+<tr><td>選択中の枠</td><td>2</td></tr>
+<tr><td>下部バー</td><td>7</td></tr>
+<tr><td>シート</td><td>8</td></tr>
+<tr><td>前面表示の暗幕／前面表示のウィジェット／一時利用の帯</td><td>20 / 21 / 22</td></tr>
+<tr><td>ページ読み込みの帯</td><td>45</td></tr>
+<tr><td>ダイアログの暗幕／ダイアログ</td><td>59 / 60</td></tr>
+<tr><td>トースト</td><td>40</td></tr>
+<tr><td>ツールチップ</td><td>50</td></tr>
+</tbody></table></div>
+
+<h3>画面幅の境目</h3>
+<div class="tw"><table>
+<thead><tr><th>条件</th><th>変わること</th></tr></thead>
+<tbody>
+<tr><td>幅600px未満</td><td>ウィジェット間のすき間が10px</td></tr>
+<tr><td>幅720px未満</td><td>シートが下（または上）から出る。メモはフォーカスで前面表示。前面表示は画面いっぱい</td></tr>
+<tr><td>幅720px以上</td><td>シートは左右。前面表示は中央に最大760px幅</td></tr>
+<tr><td>タッチ端末</td><td>入力欄の文字は16px固定。長押しでツールチップ</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="sec">
+<h2>4. 新しいウィジェットを足す手順</h2>
+<ol>
+<li><strong>役割を1文で書く。</strong> 「何を一目で見せ、何を1操作でさせるか」。2つ以上の役割があるなら分けます。</li>
+<li><strong>主役を決める。</strong> 数字、図、リスト、入力のどれが主役かを決め、仕様書4章の部品から選びます。既存の部品で表せないときだけ新しい部品を作り、この資料に追記します。</li>
+<li><strong>既定の大きさを決める。</strong> 下の目安に従い、1×1でも破綻しないかを確認します。</li>
+<li><strong>登録する。</strong> 下の「登録の項目」を埋めて登録表に足し、初期の置き場所（ボード）を決めます。</li>
+<li><strong>面の中身を書く。</strong> 下の骨組みから始めます。</li>
+<li><strong>保存するものを決める。</strong> 利用者が入力したものは保存対象の一覧に足します（6章）。</li>
+<li><strong>確認表を通す。</strong></li>
+</ol>
+
+<h3>大きさの目安</h3>
+<div class="tw"><table>
+<thead><tr><th>中身</th><th>既定</th></tr></thead>
+<tbody>
+<tr><td>数字1つ、ボタン1つ</td><td>1×1</td></tr>
+<tr><td>数字＋補足、横一列の操作、3要素の型</td><td>2×1</td></tr>
+<tr><td>横に長い時間軸や7列</td><td>3×1 か 4×1</td></tr>
+<tr><td>3〜5行のリスト、入力＋リスト、操作盤</td><td>2×2</td></tr>
+<tr><td>グラフ＋凡例、横に並ぶ2つの領域</td><td>3×2</td></tr>
+<tr><td>縦に長いリストやキーの並び</td><td>2×3</td></tr>
+</tbody></table></div>
+
+<h3>登録の項目</h3>
+<p>プロトタイプの UI・UX から必要になった項目をすべて挙げます。「足りない」はプロトタイプにまだ無く、本実装で足すものです。</p>
+<div class="tw"><table>
+<thead><tr><th>項目</th><th>中身</th><th>使うところ</th><th>プロトタイプ</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>種類のID（英小文字）。置いた1個のIDは <code>id#2</code> の形（7.4）</td><td>保存、<code>data-w</code></td><td>あり（種類＝1個）</td></tr>
+<tr><td><code>n</code></td><td>表示名</td><td>一覧、見出し、読み上げ、設定パネル</td><td>あり</td></tr>
+<tr><td><code>cat</code></td><td>分類（時間、予定と記録、情報、道具、ローカルAI、データ表示）</td><td>一覧の見出し</td><td>あり</td></tr>
+<tr><td><code>kw</code></td><td>検索語（読み、別名、英語）</td><td>一覧の検索</td><td>あり</td></tr>
+<tr><td><code>s</code></td><td>既定の大きさ [横, 縦]</td><td>追加したとき</td><td>あり</td></tr>
+<tr><td><code>min</code> / <code>max</code></td><td>収まる最小・最大の大きさ。既定は [1, 1] と [4, 3]</td><td>大きさのマス目、表示時の縮め</td><td>あり</td></tr>
+<tr><td><code>pg</code></td><td>全画面にできるか。<code>true</code> なら全画面用の表示を用意する</td><td>大きさの「全画面」</td><td>あり</td></tr>
+<tr><td><code>ts</code></td><td>置かずに使うときの大きさ（既定と違うときだけ）</td><td>一時利用</td><td>あり</td></tr>
+<tr><td><code>vd</code></td><td>入力が主役で、スマホで前面表示できるか</td><td>前面表示、入力補助の帯</td><td>あり</td></tr>
+<tr><td><code>multi</code></td><td>同じ種類を複数置けるか</td><td>一覧の ＋／↓</td><td>項目だけ（動作は未対応）</td></tr>
+<tr><td><code>net</code></td><td>通信の種類。<code>data</code>（中身を取ってくる）／<code>dl</code>（最初にだけダウンロード）／<code>own</code>（つながり自体が機能）／なし</td><td>接続の点、オフラインと古い内容の知らせ（下の表）</td><td>あり</td></tr>
+<tr><td><code>perm</code></td><td>必要な許可（<code>geo</code> <code>notify</code> <code>mic</code> <code>clipboard</code>）</td><td>許可のお願い（仕様書3章）</td><td>あり</td></tr>
+<tr><td><code>f</code></td><td>固有設定（型は下の表）</td><td>設定パネル</td><td>あり</td></tr>
+<tr><td><code>icon</code></td><td>線のアイコン1つ</td><td>一覧、全画面の点、知らせ</td><td>足りない</td></tr>
+<tr><td><code>priv</code></td><td>「人前では隠す」の既定</td><td>中身を隠す</td><td>足りない（今は全ツール共通の既定）</td></tr>
+<tr><td><code>states</code></td><td>出しうる状態（読み込み中、更新中、空、失敗、古い内容、許可待ち）</td><td>知らせの部品、表示テスト</td><td>足りない（天気・GitHub PR・RSS だけ）</td></tr>
+<tr><td><code>refresh</code></td><td>更新の間隔と、表示中だけ更新するか</td><td>更新の段（仕様書3章）</td><td>足りない</td></tr>
+<tr><td><code>keys</code></td><td>ウィジェットの中だけで使うキー</td><td>キーの衝突の確認、操作ヒント</td><td>足りない</td></tr>
+<tr><td><code>store</code></td><td>保存する記録の名前と版（7.5）</td><td>保存、書き出し、元に戻す</td><td>足りない（全体の並びに直書き）</td></tr>
+<tr><td><code>share</code></td><td>複数置いたときに記録を共有するか</td><td>7.4</td><td>足りない</td></tr>
+</tbody></table></div>
+<h3>固有設定の型</h3>
+<p>設定パネルは型ごとに同じパーツで出します。型を増やすときは、パーツを先に部品シートに足します。</p>
+<div class="tw"><table>
+<thead><tr><th>型</th><th>パーツ</th><th>項目</th></tr></thead>
+<tbody>
+<tr><td><code>tg</code></td><td>スイッチ</td><td><code>d</code>（既定）</td></tr>
+<tr><td><code>sg</code></td><td>選択の並び。5個以上は選択メニュー（仕様書4章）</td><td><code>o</code>（選択肢）、<code>d</code></td></tr>
+<tr><td><code>st</code></td><td>数のステッパー</td><td><code>min</code> <code>max</code> <code>step</code> <code>u</code>（単位）、<code>d</code></td></tr>
+<tr><td><code>rg</code></td><td>横スライダー</td><td><code>min</code> <code>max</code>、<code>d</code></td></tr>
+<tr><td><code>tx</code></td><td>1行の入力欄</td><td><code>d</code></td></tr>
+<tr><td><code>tm</code> / <code>dt</code></td><td>時刻 / 日付の入力欄</td><td><code>d</code></td></tr>
+<tr><td>項目の編集</td><td>仕様書6章の一覧の編集（名前・アイコン・画像・URL）</td><td>ツールごと</td></tr>
+</tbody></table></div>
+<h3>通信と許可の出し方</h3>
+<p>登録の <code>net</code> と <code>perm</code> があれば、ツールの中身に関係なく次の場所に出します。ツール側で別の出し方を作りません。</p>
+<div class="tw"><table>
+<thead><tr><th>登録</th><th>出すもの</th><th>場所</th></tr></thead>
+<tbody>
+<tr><td><code>net: 'data'</code></td><td>接続の点（未接続は輪、オフラインは塗り）と、読み上げ用の文</td><td>面の右上（全画面では <code>.fsw-act</code>）</td></tr>
+<tr><td><code>net: 'data'</code> ＋オフライン</td><td>前回の内容をそのまま出し、点を塗る。前回の内容が無ければ「失敗」の知らせ（仕様書3章）</td><td>面の中</td></tr>
+<tr><td><code>net: 'dl'</code></td><td>はじめてのダウンロードの帯（大きさと「準備する」）。押すまで通信しない</td><td>面の上端の帯</td></tr>
+<tr><td><code>net: 'own'</code></td><td>つながりの状態をツール自身の文で出す（受け渡しの「2台とつながっています」など）。接続の点は出さない</td><td>ツールの中</td></tr>
+<tr><td><code>perm</code></td><td>許可のお願い（何のために要るかを1文＋「許可する」）。断られたら、使える範囲で動かして理由を出す</td><td>面の中身と置き換え。1×1 はトースト（仕様書3章）</td></tr>
+</tbody></table></div>
+<h3>骨組み</h3>
+<p>登録（1行）。<code>n</code> は表示名、<code>s</code> は既定の横×縦、<code>f</code> は固有設定です。ほかの項目は上の表のとおりです。全画面で出せるものは <code>pg: true</code> を足し、全画面用の表示を上の共通の形（仕様書2章）で用意します。</p>
+<pre>stretch: {
+  n: 'ストレッチ', cat: '時間', kw: 'すとれっち 体操', s: [2, 1], min: [1, 1], perm: ['notify'],
+  f: [ { k: 'notify', t: 'tg', l: '完了を通知', d: true } ]
+}</pre>
+<p>面の中身。外側の <code>section</code> と内側の <code>.in</code> は全ウィジェット共通で、変えません。</p>
+<pre>&lt;section class="w" data-w="stretch" aria-label="ストレッチ"&gt;   ← 配置は grid-area で外から与える
+  &lt;div class="in" style="align-items: center; gap: 14px"&gt;      ← 内側余白14pxの入れ物
+    &lt;div class="num" style="font-size: min(48cqh, 23cqw); font-weight: 300"&gt;05:00&lt;/div&gt;
+    &lt;button class="btn on" aria-label="スタート"&gt;…アイコン…&lt;/button&gt;
+  &lt;/div&gt;
+&lt;/section&gt;</pre>
+
+<h3>クラスの早見表</h3>
+<div class="tw"><table>
+<thead><tr><th>クラス</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>.w</code> / <code>.in</code></td><td>面と、その内側の入れ物</td></tr>
+<tr><td><code>.num</code> / <code>.cap</code> / <code>.mut</code></td><td>等幅数字 / 12pxの補助文字 / 補助の色</td></tr>
+<tr><td><code>.i</code></td><td>線のアイコン（20px、線幅1.6）</td></tr>
+<tr><td><code>.btn</code>（<code>.on</code>）</td><td>丸ボタン（選択・実行）</td></tr>
+<tr><td><code>.chip</code>（<code>.on</code>、<code>.sm</code>）</td><td>文字つきボタン、選択チップ、出し入れ用の小チップ</td></tr>
+<tr><td><code>.seg</code> / <code>.sg</code></td><td>選択の並びとその1個</td></tr>
+<tr><td><code>.sw</code></td><td>スイッチ</td></tr>
+<tr><td><code>.rg</code> / <code>.fd</code> + <code>.vr</code></td><td>横スライダー / 縦の太いスライダー</td></tr>
+<tr><td><code>.inp</code> / <code>.cnn</code></td><td>入力欄 / 行の中に溶け込む入力欄</td></tr>
+<tr><td><code>.row</code> / <code>.todo</code> / <code>.cnr</code></td><td>読むだけの行 / 押せる行 / 操作つきの行</td></tr>
+<tr><td><code>.ab</code> / <code>.abb</code> / <code>.abs</code></td><td>入力補助の帯、その中のボタン、余白</td></tr>
+<tr><td><code>.big</code></td><td>前面表示の状態（<code>.w</code> に付ける）</td></tr>
+<tr><td><code>.off</code></td><td>未配置で非表示</td></tr>
+</tbody></table></div>
+
+<h3>確認表</h3>
+<ul>
+<li>見出しの文字を置いていない。読み上げ用の名前は付いている。</li>
+<li>1×1に縮めても、主役が読めるか、切り落とされて害がない。</li>
+<li>色を直書きしていない。<code>--a1</code> で塗った要素は1つだけ。</li>
+<li>押せるものはすべて44px以上で、<code>button</code> か <code>a</code> か <code>input</code>。</li>
+<li>アイコンだけのボタンに名前がある（ツールチップにそのまま出ます）。</li>
+<li>入力欄の Enter は変換中を除外している。入力中のキーが画面切替に漏れない。</li>
+<li>自動で動く・鳴るものに止めるボタンがある。</li>
+<li>ライトとダークの両方で、補助文字が読める。</li>
+<li>外部の情報を使うなら5つの状態（通常・読み込み中・更新中・空・失敗）を用意した。利用者が書きためるものなら空の状態を用意した。</li>
+<li>消す操作に「元に戻す」がある。</li>
+</ul>
+</section>
+
+<section class="sec">
+<h2>5. データと保存</h2>
+<ul>
+<li>保存先はブラウザ内（<code>localStorage</code> のキー <code>lgdash.v1</code>）。保存するのは、配置（ボード、並び順、大きさ、未配置）、全体設定、ウィジェット設定、利用者が入力した記録（TODO、メモ、タイムログ、打刻など）です。</li>
+<li>書き出しは同じ内容を1つのJSONとして渡し、読み込みは項目ごとに検証してから反映します。知らない項目は捨て、足りない項目は既定値で補います。</li>
+<li>形式を変えるときはキーの版を上げ、旧版からの移行を用意します。更新で記録が消えることを最優先で避けます。</li>
+<li>本実装で外部サービスにつなぐ場合、接続はウィジェットごとに利用者が明示的に行い、鍵や認証情報は書き出しに含めません。</li>
+<li>書き出しは「コピー」と「ファイルに保存」（<code>dashboard-年月日.json</code>）の2つ。最後に書き出した日を全体設定に出し、30日たったら一度だけトーストで知らせます（同じ知らせは7日あける）。</li>
+<li>保存に失敗したとき（容量不足など）は黙らず、理由と「ファイルに保存」をトーストで出します。</li>
+</ul>
+</section>
+
+<section class="sec">
+<h2>6. 状態と保存の一覧</h2>
+<p>保存するのは次の項目だけです。画面の一時的な状態（開いているシート、今の画面、前面表示、再生中かどうか、録音）は保存しません。</p>
+<div class="tw"><table>
+<thead><tr><th>キー</th><th>中身</th></tr></thead>
+<tbody>
+<tr><td><code>groups</code></td><td>ボードの並び（IDと名前）</td></tr>
+<tr><td><code>place</code></td><td>ウィジェットIDごとの置き場所（ボードID）</td></tr>
+<tr><td><code>order</code></td><td>ウィジェットの並び順（IDの配列）</td></tr>
+<tr><td><code>sizes</code></td><td>既定から変えた大きさ（横、縦）</td></tr>
+<tr><td><code>off</code></td><td>未配置のウィジェット</td></tr>
+<tr><td><code>gs</code></td><td>全体設定（テーマ、アクセント、透明感、角丸、大きさ、ホイール、開いたら検索欄に入力、1文字のキー操作、ホーム、中身を隠す）</td></tr>
+<tr><td><code>pins</code> <code>lockSz</code></td><td>位置を固定したウィジェットの [何画面目, 列, 行] と、大きさを固定したもの</td></tr>
+<tr><td><code>pgW</code></td><td>大きさを「全画面」にしたウィジェット（対応しているものだけ）</td></tr>
+<tr><td><code>catHist</code></td><td>「ウィジェットを追加」の最近の検索（5件まで）</td></tr>
+<tr><td><code>seenW</code></td><td>「ウィジェットを追加」で見たことのあるウィジェット（新しい印のため）</td></tr>
+<tr><td><code>lastExp</code> <code>since</code> <code>nagAt</code></td><td>最後に書き出した日時、使い始めた日時、書き出しを知らせた日時</td></tr>
+<tr><td><code>tourDone</code></td><td>はじめての案内を見終えたか</td></tr>
+<tr><td><code>cfg</code></td><td>ウィジェットごとの固有設定</td></tr>
+<tr><td><code>todos</code> <code>memo</code> <code>logs</code> <code>punch</code> <code>clips</code> <code>counters</code> <code>events</code></td><td>利用者が入力した記録</td></tr>
+<tr><td><code>chat</code></td><td>AIチャットの会話（「会話を保存」がオフなら空で保存）。生成途中の応答は保存しない</td></tr>
+<tr><td><code>aiCfg</code> <code>aiHave</code></td><td>ローカルAIのモデルと動かし方、モデルごとの保存済みの有無</td></tr>
+<tr><td><code>trFrom</code> <code>trTo</code></td><td>翻訳の言語の組</td></tr>
+<tr><td><code>split</code> <code>tax</code></td><td>割り勘と税計算の最後の入力（金額、人数、端数の単位、向き、選んだ税率）</td></tr>
+<tr><td><code>scripts</code> <code>scrSel</code></td><td>スクリプト（ID、名前、コード、ショートカット、入力の取り方、手入力の文字）と選んでいるもの</td></tr>
+<tr><td><code>table</code></td><td>表の中身（文字列の2次元配列）、固定行と固定列の数、書き出し形式</td></tr>
+<tr><td><code>share</code></td><td>送受信の一覧（最大50件。画像は長辺480pxに縮小したもの）</td></tr>
+<tr><td><code>devices</code> <code>myName</code> <code>recvAuto</code> <code>lsOn</code> <code>relay</code> <code>shareTo</code></td><td>ペアリング済みの端末、この端末の名前、受け取り方、LocalSend の表示、中継サーバー、最後に選んだ送り先。本実装では鍵は書き出しに含めない</td></tr>
+<tr><td><code>memoDone</code></td><td>メモの行ごとの提案の結果（追加した／追加しない）</td></tr>
+<tr><td><code>habitItems</code> <code>linkItems</code></td><td>利用者が決めた項目（名前、アイコン、画像、URL、達成）</td></tr>
+<tr><td><code>alarms</code> <code>mix</code> <code>hue</code> <code>sat</code> <code>lit</code></td><td>操作部品の最後の状態</td></tr>
+</tbody></table></div>
+<p>並べ方は、<code>groups</code> の順にボードを処理し、各ボードで <code>order</code> の順に <code>off</code> でないウィジェットを取り出して、仕様書2章の方式で詰めます。</p>
+<p>新しいウィジェットを足した版を、保存済みの利用者が開いたときは、保存された <code>order</code> に無いIDを未配置（<code>off</code>）にし、<code>place</code> には既定の置き場所を入れておきます。ボードには勝手に増えず、「ウィジェットを追加」の一覧にだけ現れ、追加したときは既定のボードに入ります。</p>
+<p>画像変換の一覧と画像、現在地、スクリプトの実行結果は保存しません。</p>
+</section>
+
+<section class="sec">
+<h2>7. 作りの土台で決めたこと</h2>
+<h3>7.1 配り方</h3>
+<ul>
+<li>URL で公開する版と、GitHub でソースを公開して各自が立てる版の2つ。スマホは PWA としてホーム画面に置いて使う前提にします。</li>
+<li>新しいタブを置き換える拡張機能としては配りません。ポップオーバーやサイドパネルに出す拡張機能版は、作る場合も別の包みとして扱います。</li>
+<li>URL の版では、PC の新しいタブにはそのままではなりません。ブラウザの「起動時に開くページ」や「ホームページ」に設定する案内を、全体設定の操作ヒントに置きます。開いた直後の検索欄へのフォーカスは、普通のページとして開くので効きます。</li>
+<li>URL の版で外すか条件付きにする機能: 外部の情報を取りに行くもの（RSS はブラウザから直接読めないサイトが多く中継が要る、GitHub は認証が要る、天気は取得先の利用条件による）、受け渡しの中継。自分で立てる版は、取得先や中継のURLを設定で変えられるようにします（仕様書9章）。</li>
+</ul>
+<h3>7.2 PWA として足りないもの</h3>
+<div class="tw"><table>
+<thead><tr><th>項目</th><th>決めること・作ること</th><th>プロトタイプ</th></tr></thead>
+<tbody>
+<tr><td>マニフェスト</td><td>値は下の「マニフェストに入れる値」で決定。ファイルを作って配信するのは実装側</td><td>値とアイコンは決定</td></tr>
+<tr><td>オフラインで開く</td><td>画面の部品をキャッシュし、オフラインでも開けるようにする。開いたあとの見せ方（オフラインの帯、ウィジェットの印、前回の内容）は仕様書2章で決定済み</td><td>見せ方は反映済み。キャッシュは実装側</td></tr>
+<tr><td>新しい版</td><td>下の「新しい版が届いたとき」で決定</td><td>反映済み（表示テスト「新しい版」）</td></tr>
+<tr><td>使い始めの案内</td><td>下の「使い始めの準備」で決定。最初の案内の5手順目と操作ヒントに出す。インストールを呼び出せる環境（Android と PC の Chrome など）では全体設定の先頭に「アプリとして入れる」を出す</td><td>反映済み（表示テスト「案内」で環境を切替）</td></tr>
+<tr><td>画面の端</td><td>全画面で開くと、上は時刻や通知の帯（カメラの切り欠きを含む）、下はホームバーに重なる。上下の余白を <code>env(safe-area-inset-top / bottom)</code> の分だけ広げ、行の数もその分を引いて計算する。上の帯（トースト、受け渡しの知らせ、編集中、読み込みの帯）、シート、前面表示も同じ分だけ下げる。横向きの左右の切り欠きは、画面幅の計算に含める必要があるため本実装で対応</td><td>上下は反映済み（表示テスト「画面の切り欠き」で上59px・下34pxを模擬）</td></tr>
+<tr><td>戻る</td><td>ホーム画面から開くとブラウザの戻るボタンが無い。画面上の「戻る」で全部の層を閉じられる今の形を保ち、Android の戻る操作は仕様書7章のとおり履歴と連動させる</td><td>画面上の戻るは反映済み</td></tr>
+<tr><td>保存</td><td>iPhone では、ホーム画面のアプリと Safari のタブで保存場所が別になる。Safari で使っていた内容は書き出しと読み込みで移す、と案内する。保存の永続化（<code>navigator.storage.persist()</code>）は起動時に求める</td><td>案内は反映済み。永続化は実装側</td></tr>
+<tr><td>閉じている間の知らせ</td><td>iPhone のホーム画面のアプリでも Web Push は使えるが、送るサーバーが要る。アカウントを持たない方針のため、アラーム・ポモドーロ・カウントダウンは開いている間だけと決め、アラームの設定パネルにそのことを書く</td><td>なし</td></tr>
+<tr><td>共有の受け口</td><td>Android では共有の受け口（Web Share Target）にして、受け渡しやメモへ送れるようにする。iPhone は対応していない</td><td>なし</td></tr>
+<tr><td>未読の数</td><td>受け渡しの未読をアプリのバッジ（<code>navigator.setAppBadge</code>）に出す（対応する環境だけ）</td><td>なし</td></tr>
+<tr><td>複数のウィンドウ</td><td>PC の PWA は複数のウィンドウで開ける。7.3 と同じ扱い</td><td>7.3</td></tr>
+</tbody></table></div>
+<h3>マニフェストに入れる値</h3>
+<div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="アプリのアイコンの見本" width="120" height="120" style="border-radius: 26px; display: block">
+  <defs>
+    <linearGradient id="ibg" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#0b0f15"/>
+      <stop offset="1" stop-color="#111722"/>
+    </linearGradient>
+    <filter id="isoft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
+    <linearGradient id="irim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".75"/>
+      <stop offset=".3" stop-color="#fff" stop-opacity="0"/>
+      <stop offset=".72" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#fff" stop-opacity=".35"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#ibg)"/>
+  <g filter="url(#isoft)">
+    <circle cx="96" cy="120" r="150" fill="#1b3558"/>
+    <circle cx="452" cy="170" r="118" fill="#38285a"/>
+    <circle cx="214" cy="330" r="64" fill="#12434a"/>
+    <circle cx="340" cy="520" r="190" fill="#57321f"/>
+  </g>
+  <g>
+    <rect x="136" y="140" width="240" height="100" rx="30" fill="#fff" fill-opacity=".14"/>
+    <rect x="137" y="141" width="238" height="98" rx="29" fill="none" stroke="url(#irim)" stroke-width="2.5"/>
+    <rect x="166" y="183" width="96" height="14" rx="7" fill="#eef2f6" fill-opacity=".9"/>
+    <rect x="276" y="183" width="70" height="14" rx="7" fill="#82b8de"/>
+    <rect x="136" y="264" width="108" height="108" rx="30" fill="#fff" fill-opacity=".14"/>
+    <rect x="137" y="265" width="106" height="106" rx="29" fill="none" stroke="url(#irim)" stroke-width="2.5"/>
+    <circle cx="190" cy="318" r="24" fill="none" stroke="#e2a46e" stroke-width="9" stroke-linecap="round" stroke-dasharray="110 151" transform="rotate(-90 190 318)"/>
+    <rect x="268" y="264" width="108" height="108" rx="30" fill="#fff" fill-opacity=".14"/>
+    <rect x="269" y="265" width="106" height="106" rx="29" fill="none" stroke="url(#irim)" stroke-width="2.5"/>
+    <path d="M300 330l14 14 30-32" fill="none" stroke="#eef2f6" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
+
+<div class="tw" style="flex: 1; min-width: 280px; margin-top: 0"><table>
+<thead><tr><th>項目</th><th>値</th></tr></thead>
+<tbody>
+<tr><td><code>name</code> ／ <code>short_name</code></td><td>リキッドグラス・ダッシュボード ／ ダッシュボード</td></tr>
+<tr><td><code>display</code></td><td><code>standalone</code></td></tr>
+<tr><td><code>start_url</code> ／ <code>scope</code></td><td><code>./</code> ／ <code>./</code>（開くボードは全体設定「ホーム」に従う。URLに画面番号を入れない）</td></tr>
+<tr><td><code>background_color</code></td><td><code>#0d1117</code>（起動画面。ライトの利用者にも暗い地で出るため、アイコンの地と揃える）</td></tr>
+<tr><td><code>theme-color</code></td><td>マニフェストは <code>#0d1117</code>。ページの <code>meta</code> で、ライト <code>#e8ecf1</code> とダーク <code>#0d1117</code> を <code>media</code> で分ける</td></tr>
+<tr><td>アイコン</td><td>見本は <code>app-icon.svg</code>（512×512）。192px と 512px の PNG に書き出す。暗い地に壁紙の色面4つと、ガラスの板3枚（横長1、正方形2）。板はすべて中央の半径40%（マスク可能なアイコンの安全域）の内側に収めてあるため、同じ絵をマスク可能な版にも使える</td></tr>
+<tr><td><code>viewport</code></td><td><code>width=device-width, initial-scale=1, viewport-fit=cover</code>。拡大を禁じる指定（<code>user-scalable=no</code> など）は入れない</td></tr>
+<tr><td>iPhone の上の帯</td><td><code>apple-mobile-web-app-status-bar-style</code> は <code>black-translucent</code>（壁紙を上の帯の裏まで広げ、中身は上の余白で下げる）</td></tr>
+</tbody></table></div>
+</div>
+<h3>新しい版が届いたとき</h3>
+<ul>
+<li>勝手に再読み込みしません。画面上部に帯「新しい版があります」と「再読み込み」「あとで（×）」を出します。時間では消しません。</li>
+<li>「あとで」を選んだら、その起動の間は出しません。次に開いたときは新しい版で開きます（Service Worker の更新の仕組みに任せる）。</li>
+<li>実行中のもの（スクリプト、ローカルAIのダウンロードや生成、録音、画像の変換）があるときに「再読み込み」を押すと、何が止まるかを書いた確認を出します（「スクリプトの実行、録音が止まります。入力した内容は保存されています。」）。</li>
+<li>受け渡しの知らせが出ているときは、その下に重ねて出します。最初の案内の間は出しません。</li>
+<li>再読み込みのあとは「新しい版にしました」をトーストで出します。増えたウィジェットは「ウィジェットを追加」の新しい印で知らせます（仕様書7章）。</li>
+</ul>
+<h3>使い始めの準備</h3>
+<div class="tw"><table>
+<thead><tr><th>開いている環境</th><th>見出し</th><th>伝えること</th><th>ボタン</th></tr></thead>
+<tbody>
+<tr><td>PC のブラウザ</td><td>新しいタブ・起動時に使う</td><td>新しいタブの代わりに使うなら、ブラウザの「起動時に開くページ」か「ホームページ」にこのページのURLを設定する。インストールできる環境では、設定からアプリとして入れられること</td><td>URLをコピー</td></tr>
+<tr><td>iPhone・iPad の Safari</td><td>ホーム画面に置く</td><td>共有ボタンから「ホーム画面に追加」。Safari とホーム画面のアプリは記録が別々なので、使い始める前に置くのがおすすめ</td><td>なし（呼び出す仕組みが無い）</td></tr>
+<tr><td>Android のブラウザ</td><td>ホーム画面に置く</td><td>アプリとして全画面で使えること。呼び出せない場合はメニューから追加する手順</td><td>アプリとして入れる（呼び出せるときだけ）</td></tr>
+<tr><td>アプリとして開いている</td><td>アプリとして使っています</td><td>保存の注意だけ</td><td>なし</td></tr>
+</tbody></table></div>
+<p>どの環境でも最後に保存の注意を添えます:「記録はこの端末の、このブラウザ（アプリ）の中だけに保存します。ときどき『設定』の『ファイルに保存』で書き出してください。」環境は <code>display-mode</code>、端末の種類、インストールの呼び出しが使えるかで判定します。</p>
+<h3>7.3 タブやウィンドウを何枚も開いたとき</h3>
+<p>同じダッシュボードを何枚も開き、それぞれで別の画面を表示する使い方を正式に扱います。</p>
+<ul>
+<li>今見ている画面はタブごとに持ち、保存しません。URL の <code>#p=番号</code> でタブごとの画面が残ります（仕様書2章）。</li>
+<li>保存した内容が別のタブで変わったら、<code>storage</code> イベントで受け取り、すぐ画面に反映します。ただし、いま入力している欄の項目（メモを書いている間のメモなど）と、設定パネルで編集中の項目は上書きしません。</li>
+<li>同時に1つだけ動けばよいもの（アラームの音と通知、受け渡しの受信と既読、AIモデルの読み込み、中継サーバーへの接続）は、Web Locks API で担当のタブを1枚に決め、閉じたら別のタブが引き継ぎます。</li>
+<li>本実装では、保存を項目ごとに分けて（IndexedDB の項目単位）、同時に書いても互いを消さないようにします。プロトタイプは全体を1つで保存し、変わった内容をほかのタブへ配るところまでです。</li>
+<li>「元に戻す」の履歴はタブごとです。ほかのタブから届いた変更は、このタブの履歴に積みません。</li>
+</ul>
+<h3>7.4 同じ種類を複数置く</h3>
+<p>置けるかどうかはウィジェットによるため、保存の形は最初から複数前提にします。</p>
+<ul>
+<li>置いた1個ごとに ID（例: <code>links#2</code>）を持ち、設定・記録・位置・大きさはその ID で持ちます。登録表には種類ごとに「複数置けるか」を持たせます。</li>
+<li>「ウィジェットを追加」では、複数置ける種類は置いてあっても ＋（ここにも置く）を出し、1つだけの種類は今の ↓（移動）のままにします。</li>
+<li>記録を共有するか（同じTODOを2か所に出すか、別のTODOにするか）は種類ごとに決めます。既定は別々にします。</li>
+<li>全画面は大きさの1つなので、置いた1個ごとに選べます（時計を2つ置いて、片方だけ全画面にするなど）。全画面にするために同じ種類を2つ置く必要はありません。</li>
+<li>プロトタイプは1種類1個の保存の形で、複数置くことには対応していません。</li>
+</ul>
+<div class="tw"><table>
+<thead><tr><th>区分</th><th>種類</th></tr></thead>
+<tbody>
+<tr><td>複数置ける</td><td>クイックリンク、スクリプト（1個に1つのスクリプトを出す使い方）、メモ、カウンター、カウントダウン、世界時計、RSS、表、ハビット、メーターなどデータ表示の部品、時計（別の時刻帯）、日の出・日の入り（別の場所）</td></tr>
+<tr><td>1つだけ</td><td>検索、受け渡し、AIチャット、翻訳、ポモドーロ、画像変換、録音、環境音ミキサー、打刻</td></tr>
+</tbody></table></div>
+<h3>7.5 保存先</h3>
+<ul>
+<li>設定は localStorage、画像（受け渡し、項目の画像）、会話、表、スクリプトなど大きくなるものは IndexedDB に分けます。</li>
+<li>保存の永続化（<code>navigator.storage.persist()</code>）を記録全体に求めます。</li>
+<li>本実装では保存のキーを区画に分けます。全体（ボード、置き場所、並び順、全体設定）と、置いた1個ごとの区画（<code>w:&lt;ID&gt;</code> に設定 <code>cfg</code> と記録 <code>data</code>）です。プロトタイプは全部を1つの並びで持っていて（6章）、ツールを足すたびに全体のキーが増える形です。これをやめ、ツールは自分の区画だけを読み書きします。</li>
+<li>区画には版番号を持たせ、形を変えるときは読み込み時に移し替えます。外したウィジェットの区画は残し、「元に戻す」と書き出しの対象にします。</li>
+<li>Safari などの WebKit 系では、サイトを使わない期間が続くとスクリプトで書いた保存が消されることがあります。書き出しの知らせ（5章）で備えます。</li>
+</ul>
+<h3>7.6 残っている未決定</h3>
+<div class="tw"><table>
+<thead><tr><th>項目</th><th>どこ</th></tr></thead>
+<tbody>
+<tr><td>スクリプトの実行環境（sandbox の iframe＋Worker か QuickJS か）</td><td>仕様書12章</td></tr>
+<tr><td>縁の屈折表現を下部バーに入れるか</td><td>1章</td></tr>
+<tr><td>ローカルAIのモデル名と容量</td><td>仕様書8章</td></tr>
+<tr><td>複数置いたときに記録を共有する種類</td><td>7.4</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="sec">
+<h2>8. 標準の決まりと照らして決めたこと</h2>
+<p>WCAG 2.2、WAI-ARIA Authoring Practices、Chrome の Modern Web Guidance に照らして見直し、すべて採用しました。Modern Web Guidance は本実装の決まりとして採用します（表の最後の4行）。「反映済み」はプロトタイプに入っているもの、「本実装」は資料で確定して本実装で作るものです。</p>
+<div class="tw"><table>
+<thead><tr><th>箇所</th><th>決めたこと</th><th>根拠</th><th>状況</th></tr></thead>
+<tbody>
+<tr><td>1文字のキー操作</td><td>全体設定でまとめて止められる（既定オン）</td><td>WCAG 2.1.4</td><td>反映済み</td></tr>
+<tr><td>取り消せない操作の確認</td><td>開いたときのフォーカスは「キャンセル」（仕様書3章）</td><td>APG Alert Dialog</td><td>反映済み</td></tr>
+<tr><td>シート・ダイアログ</td><td>背後に <code>inert</code>、閉じたら開いたボタンへ戻す（仕様書5章）。ダイアログは本実装で <code>&lt;dialog&gt;</code> の <code>showModal()</code></td><td>APG Dialog、WCAG 2.4.3</td><td>inert と戻し先は反映済み。<code>&lt;dialog&gt;</code> は本実装</td></tr>
+<tr><td>文字の大きさ</td><td>文字は rem。マスの目標寸法もルートの文字サイズに比例させ、拡大すると列と行が減って画面が増える（2章）</td><td>WCAG 1.4.4、1.4.10</td><td>反映済み</td></tr>
+<tr><td>ガラスの上の文字</td><td>透明感の式を絞り、ダークの補助の文字を明るくした。計算で全色面・全範囲 4.5:1 以上（2章、3章）。透明度を下げる・コントラストを上げる・強制カラーの設定に従う（仕様書5章）</td><td>WCAG 1.4.3</td><td>反映済み</td></tr>
+<tr><td>入力欄の輪郭</td><td><code>--line</code> の1pxの縁を常に付ける（3:1以上）</td><td>WCAG 1.4.11</td><td>反映済み</td></tr>
+<tr><td>押せる大きさ</td><td>押せる領域で決める。主な操作 44px、行や帯の中の補助 24px 以上と間隔（2章）</td><td>WCAG 2.5.8</td><td>決まりに合わせて確認済み</td></tr>
+<tr><td>11pxの文字</td><td>軸の目盛りと曜日だけ。それ以外は12px</td><td>2章</td><td>反映済み</td></tr>
+<tr><td>ツールチップ</td><td><code>Esc</code> で消える、上に乗っている間は消えない（仕様書6章）</td><td>WCAG 1.4.13</td><td>反映済み。popover は本実装</td></tr>
+<tr><td>操作の付いたトースト</td><td>10秒、乗っている間は消さない（仕様書5章）</td><td>WCAG 2.2.1</td><td>反映済み</td></tr>
+<tr><td>上下の帯と下部バー</td><td>ウィジェットの領域の外に置く（仕様書5章）</td><td>WCAG 2.4.11</td><td>本実装</td></tr>
+<tr><td>ウィジェットの見出し</td><td>共通の枠が見えない見出しを持つ（仕様書3章）。画面を送ったら「ボード 2、3 / 6」（またがるボードは「ボード 1の2、2 / 6」）を読み上げる</td><td>WCAG 1.3.1、2.4.6</td><td>反映済み</td></tr>
+<tr><td>引いて動かす操作</td><td>引かずにできる手段を残す（仕様書5章）。位置の固定は矢印で動かす（仕様書2章）</td><td>WCAG 2.5.7</td><td>反映済み</td></tr>
+<tr><td>長押しと横スワイプ</td><td>ボタンでは長押しメニューと文字選択を止める。画面の横送りは端で外へ抜けない（<code>overscroll-behavior</code>）</td><td>—</td><td>反映済み</td></tr>
+<tr><td>使う機能の範囲</td><td>Baseline の Widely available（主要ブラウザで30か月以上）を基準にする。新しい機能（<code>@starting-style</code> など）は、無くても使える飾りにだけ使う</td><td>Modern Web Guidance</td><td>本実装</td></tr>
+<tr><td>ダイアログとメニュー</td><td>ダイアログは <code>&lt;dialog&gt;</code>、メニューとツールチップはポップオーバー（<code>popover</code>）で作る。フォーカスの移動と戻しはブラウザに任せる</td><td>Modern Web Guidance（HTML）</td><td>本実装</td></tr>
+<tr><td>見えていないときの処理</td><td>タブが隠れている間と、表示中でない画面の更新・動き・ポーリングを止める。時間を測るツール（ポモドーロ、ストップウォッチ、アラーム）は終わる時刻から計算し、1秒ごとに数えない</td><td>Modern Web Guidance（バックグラウンド処理）</td><td>隠れている間の知らせの確認とストップウォッチの描き直しは反映済み。残りは本実装</td></tr>
+<tr><td>長い処理</td><td>50ms を超える処理は途中で手を離す（<code>scheduler.yield()</code> など）。描き直しは置いてあるウィジェットだけにする</td><td>Modern Web Guidance（INP）</td><td>本実装</td></tr>
+</tbody></table></div>
+<h3>実装で使う標準の仕組み</h3>
+<div class="tw"><table>
+<thead><tr><th>場面</th><th>仕組み</th></tr></thead>
+<tbody>
+<tr><td>確認とお知らせ</td><td><code>&lt;dialog&gt;</code>＋<code>showModal()</code></td></tr>
+<tr><td>シート、ダイアログの背後</td><td><code>inert</code></td></tr>
+<tr><td>ツールチップ、メニュー</td><td>popover と CSS anchor positioning</td></tr>
+<tr><td>見ていない画面</td><td>画面ごとの入れ物に <code>content-visibility: auto</code>（影が切れないよう入れ物に余白を持たせる）</td></tr>
+<tr><td>戻る操作</td><td>Navigation API（未対応の環境は History API）</td></tr>
+<tr><td>タブ間</td><td><code>storage</code> イベント、<code>BroadcastChannel</code>、Web Locks API（7.3）</td></tr>
+<tr><td>画面の切り替わり</td><td>View Transitions（動きを減らす設定では使わない）</td></tr>
+</tbody></table></div>
+<h3>使う側から見て足したもの</h3>
+<div class="tw"><table>
+<thead><tr><th>場面</th><th>決めたこと</th><th>状況</th></tr></thead>
+<tbody>
+<tr><td>人前で開く</td><td>「中身を隠す」とウィジェットごとの「人前では隠す」（仕様書3章）</td><td>反映済み</td></tr>
+<tr><td>自分の記録が空</td><td>空のときの表示（仕様書3章）</td><td>反映済み</td></tr>
+<tr><td>新しく増えた道具</td><td>一覧で新しい印（仕様書7章）</td><td>反映済み</td></tr>
+<tr><td>書き出しの習慣</td><td>ファイルに保存、最後の書き出しの表示、30日での知らせ（5章）</td><td>反映済み</td></tr>
+<tr><td>検索</td><td>検索先の選択と独自の検索URL（仕様書3章）</td><td>反映済み</td></tr>
+<tr><td>カレンダー</td><td>日本の祝日（振替休日、国民の休日を含む）。月間・週間で <code>--hol</code> と下線、読み上げで祝日名。月間の見出しに今月の次の祝日</td><td>反映済み（春分・秋分は計算式で 2099年まで）</td></tr>
+<tr><td>はじめの移行</td><td>クイックリンクの設定に「まとめて追加」（URLの一覧、ブックマークを書き出したHTML）</td><td>反映済み</td></tr>
+<tr><td>電池と重さ</td><td>透明感0でぼかしを止める（3章）。見ていない画面のぼかしと描画は本実装で止める</td><td>前半は反映済み</td></tr>
+<tr><td>開く速さ</td><td>最初の描画までの目標時間を決めて計測する。重いもの（ローカルAI、画像、録音）は、そのウィジェットが見えるまで読み込まない</td><td>本実装</td></tr>
+<tr><td>配置が動く</td><td>ホーム、位置を固定、大きさを固定（仕様書2章）</td><td>反映済み</td></tr>
+<tr><td>何枚も開く</td><td>タブごとの画面、変更の反映、担当のタブ（7.3）</td><td>反映済み（項目ごとの保存は本実装）</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="sec">
+<h2>9. 機能ごとの実装要件</h2><p>仕様書の各章のうち、本実装で足す・作り直すものです。</p>
+<h3>画面の行き来（仕様書7章）</h3>
+<ul>
+<li>シートや前面表示を開くたびに履歴に1件積み、ブラウザとスマホの「戻る」で1枚閉じるようにします。画面上の「戻る」で閉じたときは、積んだ履歴も1件戻して数を合わせます。プロトタイプでは未実装です。</li>
+<li>シートとダイアログを開いている間は、キーボードのフォーカスをその中に閉じ込め、閉じたら開いたボタンへ戻します。</li>
+</ul>
+<h3>ローカルAI（仕様書8章）</h3>
+<ul>
+<li>モデルは Cache Storage か OPFS に保存し、保存領域の永続化（<code>navigator.storage.persist()</code>）を求めます。保存の前に空き容量（<code>navigator.storage.estimate()</code>）を確かめ、足りなければダウンロードを始めずに伝えます。</li>
+<li>モデルのファイルは整合性を確かめてから使います。</li>
+<li>しばらく使わなければモデルをメモリから外します（目安10分）。外したあとは「停止中」の状態に戻ります。</li>
+<li>オフラインでも、保存済みのモデルなら使えます。未準備のままオフラインなら、準備ボタンを無効にして理由を出します。</li>
+<li>応答は事実と異なることがあります。初回の応答の前に一度だけ、その旨を短く伝えます。</li>
+</ul>
+<h3>受け渡し（仕様書9章）</h3>
+<ul>
+<li>鍵はブラウザ標準の暗号機能で作り、書き出し（5章）には含めません。端末を移すときはペアリングし直します。</li>
+<li>中継サーバーが預かる暗号文には期限（24時間）と上限（1件あたりの大きさ、件数）を設けます。</li>
+<li>LocalSend の Web 用シグナリングへの参加は、LocalSend のプロトコルの版に合わせて作り、対応する版を設定に表示します。</li>
+<li>テキストは受信時にHTMLとして解釈せず、URLは http/https 以外を開きません。</li>
+</ul>
+<h3>部品の直し</h3>
+<ul>
+<li>重なりの順を数字の直書きから層のトークンにする（3章の「重なりの順」）。</li>
+<li>小さなチップ（<code>.chip.sm</code>）の縁を <code>--line</code> にして 3:1 以上にする。</li>
+<li>選択の並びを選択メニューにする基準を、選ぶものの数だけでなく、シートの幅に入るかでも判断する（全体設定の「検索先」など）。</li>
+<li>行の中に直接書いた見た目（<code>style</code> 属性、プロトタイプで約440か所）を、部品シートのクラスとトークンに置き換える。</li>
+</ul>
+</section>
+
+<section class="sec">
+<h2>付録. プロトタイプだけにあるもの</h2>
+<p>本実装には入れないもの、または見本として置いているものです。</p>
+<h3>確認用の機能（本実装に入れない）</h3>
+<ul>
+<li>全体設定の「表示テスト」: オフライン、状態（読み込み中・更新中・空・失敗）を天気・GitHub PR・RSS に当てる、お知らせと削除の確認のダイアログ、受け渡しの受信の模擬、新しい版の帯、画面の切り欠き（上59px・下34px）、案内の環境の切替（自動・PC・iPhone・Android・アプリ）。</li>
+<li>全体設定の「すべて並べる」: 全ウィジェットを4ボードに並べた見本の構成。</li>
+<li>画像変換の「見本で試す」: 時間で模擬した4件を足す。</li>
+<li>傘のウィジェット設定「サンプル」: 降り方を3通りに切り替える。</li>
+</ul>
+<h3>見本のデータと模擬の動き</h3>
+<ul>
+<li>天気、予定の初期値、PR、RSS、グラフの数値、メーターはサンプルです。「今日は何の日」は11月17日分だけです。天気の段は約1秒の下書きのあとに出す模擬です。</li>
+<li>音楽プレイヤーは音を出しません。環境音はその場で合成した簡易なノイズです。</li>
+<li>受け渡しは送信で一覧に足すだけです。QRコードは見た目だけで読み取れません。</li>
+<li>翻訳とAIチャットは、ダウンロードと読み込みを時間で模擬し、決まった文を流します。</li>
+<li>スクリプトはブラウザの中でそのまま動きます（実行環境の分離はありません）。外から貼ったコードは動かさないでください。</li>
+<li>検索は Google の結果を新しいタブで開きます。新しいタブとして使う本実装では同じタブで移動します。</li>
+</ul>
+<h3>プロトタイプで作っていない範囲</h3>
+<ul>
+<li>メモのMarkdownは一部だけです（入力中の色分けは行頭の記号、プレビューは太字・コード・区切り線まで）。リンク、表、入れ子のリストは本実装で範囲を決めます。</li>
+<li>録音は保存せず、再読み込みで消えます（最大6件）。項目の画像は96pxにして設定と一緒に保存しています（本実装は IndexedDB に分ける。7.5）。</li>
+<li>定型ボタンの文言（タイムログ、TODO）は固定です。ドラッグでの並べ替えはありません。ボードは通し番号で、改名はありません。</li>
+<li>ブラウザやスマホの「戻る」との連動、ダイアログの <code>&lt;dialog&gt;</code> 化、上下の帯をウィジェットの領域の外に出す処理はありません（仕様書7章、8章）。</li>
+<li>同じ種類の複数配置（7.4）、PWA のマニフェストと Service Worker（7.2）、IndexedDB への保存（7.5）はありません。</li>
+<li>検索の「新しいタブで開く」は、プロトタイプでは既定をオンにしています（画面の確認中に表示が移動しないように）。</li>
+<li>描画は目で確認しないまま組んでいます。実装前に、主な画面幅（390、768、1280、1440）とライト・ダークの両方で表示を確認してください。</li>
+</ul>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["auto","light","dark"],"default":"auto"},"$preview":{"width":1280,"height":28500}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.theme ?? 'auto' };
+  }
+}
+</script>
+</body>
+</html>

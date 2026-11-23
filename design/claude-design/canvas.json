@@ -1,0 +1,66 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Main.dc.html": {
+      "expand": "fill",
+      "h": 900,
+      "is_interactive": true,
+      "title": "ダッシュボード",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "Spec.dc.html": {
+      "expand": "fill",
+      "h": 46800,
+      "title": "仕様書",
+      "w": 1280,
+      "x": 1520,
+      "y": 0
+    },
+    "Parts.dc.html": {
+      "expand": "fill",
+      "h": 47500,
+      "title": "部品シート",
+      "w": 1440,
+      "x": 4240,
+      "y": 0
+    },
+    "Impl.dc.html": {
+      "expand": "fill",
+      "h": 28500,
+      "title": "実装ガイド",
+      "w": 1280,
+      "x": 2880,
+      "y": 0
+    },
+    "Review.dc.html": {
+      "expand": "fill",
+      "h": 9400,
+      "title": "レビュー",
+      "w": 1280,
+      "x": 5760,
+      "y": 0
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-11-17T00:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "file": "Main.dc.html",
+    "view": "focused"
+  },
+  "notes": {},
+  "order": [
+    "Main.dc.html",
+    "Spec.dc.html",
+    "Impl.dc.html",
+    "Parts.dc.html",
+    "Review.dc.html"
+  ],
+  "pages": [],
+  "title": "リキッドグラス・ツールダッシュボード"
+}
