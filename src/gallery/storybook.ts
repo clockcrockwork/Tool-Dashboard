@@ -10,7 +10,7 @@
 import { defineComponent, h, watch, type Component } from 'vue';
 import type { Decorator } from '@storybook/vue3-vite';
 import type { Dashboard } from '../app/store/store';
-import { makeDash } from './dash';
+import { makeDash, solo } from './dash';
 import StoryShell from './StoryShell.vue';
 import type { ShellLayout, ShellTheme } from './types';
 
@@ -51,3 +51,17 @@ export const withDashboard: Decorator = (storyFn, ctx) => {
     },
   });
 };
+
+/** ウィジェットのストーリー用: args の w・h（マス数）と edit（編集モード）を受け、そのウィジェットだけを左上に置く。 */
+export function widgetLgd(id: string, more?: (d: Dashboard, args: StoryArgs) => void): LgdParams {
+  const size = (a: StoryArgs): readonly [number, number] => [Number(a.w) || 1, Number(a.h) || 1];
+  return {
+    layout: 'grid',
+    grid: size,
+    setup: (d, a) => {
+      solo(d, id, size(a));
+      d.ui.edit = !!a.edit;
+      more?.(d, a);
+    },
+  };
+}
