@@ -41,7 +41,7 @@ const meta = {
 } satisfies Meta<NavArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<NavArgs>;
 
 /** ホームの画面（⌂ は押せない）。画面の点が3つ。 */
 export const Normal: Story = { name: '通常' };

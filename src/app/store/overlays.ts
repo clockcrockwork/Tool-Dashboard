@@ -299,7 +299,7 @@ export function noticeQuiet(d: Dashboard): boolean {
 }
 export function noticeOpen(d: Dashboard): boolean {
   const r = d.ui.rcv;
-  return !!r && !noticeQuiet(d) && !((d.ui.rcvHide ?? 0) > r.t);
+  return !!r && !noticeQuiet(d) && !((d.ui.rcvHide ?? -1) >= r.t);
 }
 export function showNotice(d: Dashboard, bar: NoticeBar | null): void {
   d.ui.rcv = bar;

@@ -22,9 +22,9 @@ const props = withDefaults(defineProps<{
   grid?: readonly [number, number];
   /** bar: 箱の高さ(px) */
   height?: number;
-  /** bar: 箱の幅(px)。省略時は列いっぱい */
+  /** bar: 箱の幅(px)。0 は列いっぱい */
   width?: number;
-}>(), { theme: 'both', layout: 'stage', grid: () => [2, 1] as const, height: 120, width: undefined });
+}>(), { theme: 'both', layout: 'stage', grid: () => [2, 1] as const, height: 120, width: 0 });
 
 provideDash(props.dash);
 

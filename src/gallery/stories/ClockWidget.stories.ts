@@ -43,7 +43,7 @@ const meta = {
 } satisfies Meta<ClockArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<ClockArgs>;
 
 /** 標準の大きさ 2×1。 */
 export const Normal: Story = { name: '通常 2×1' };

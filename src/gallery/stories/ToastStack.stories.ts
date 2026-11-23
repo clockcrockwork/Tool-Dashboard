@@ -45,7 +45,7 @@ const meta = {
 } satisfies Meta<ToastArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<ToastArgs>;
 
 /** 知らせ（info）。 */
 export const Info: Story = { name: 'info' };

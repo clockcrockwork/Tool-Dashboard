@@ -23,12 +23,12 @@ const props = withDefaults(defineProps<{
   prepare?: DashSetup;
   /** まだ無いときの文言 */
   missing?: string;
-}>(), { edit: false, marks: () => [], missing: 'P1 で追加' });
+}>(), { edit: false, marks: () => [], prepare: () => {}, missing: 'P1 で追加' });
 
 const comp = computed(() => WIDGETS[props.id]);
 const setup: DashSetup = d => {
   solo(d, props.id, [props.cols, props.rows]);
-  props.prepare?.(d);
+  props.prepare(d);
 };
 </script>
 
