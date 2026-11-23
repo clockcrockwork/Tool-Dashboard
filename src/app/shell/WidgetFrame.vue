@@ -23,11 +23,11 @@ const props = withDefaults(defineProps<{
   net?: boolean;
   /** Render the shared state overlay `.sto` (widgets with loading/empty/error states). */
   states?: boolean;
-}>(), { stateClass: '', stMsg: '', stAct: '', stSub: '', net: false, states: false });
+}>(), { heading: '', stateClass: '', stMsg: '', stAct: '', stSub: '', net: false, states: false });
 const emit = defineEmits<{ retry: [] }>();
 
 const d = useDash();
-const name = computed(() => props.heading ?? REGISTRY[props.id]?.n ?? props.id);
+const name = computed(() => props.heading || (REGISTRY[props.id]?.n ?? props.id));
 const pos = computed(() => d.layout.value);
 const style = computed(() => {
   const L = pos.value;

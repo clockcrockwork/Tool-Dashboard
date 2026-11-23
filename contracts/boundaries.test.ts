@@ -41,7 +41,5 @@ it('rejects dynamic imports in core', async () => {
   expect(result?.messages.some(m => m.ruleId === 'no-restricted-syntax')).toBe(true);
 });
 
-it('rejects direct access to target records outside persistence adapters', async () => {
-  const [result] = await eslint.lintText('<script setup lang="ts">\nconst probe = repository.records;\nvoid probe;\n</script>\n<template><main>Probe</main></template>', { filePath: 'src/App.vue' });
-  expect(result?.messages.some(m => m.ruleId === 'no-restricted-syntax')).toBe(true);
-});
+// The v0 Dexie repository and its 'records' lint guard were removed with the Stage 1b board
+// (widget-schema-v0 §0 R8): persistence is now sectioned through src/app/store/persist.ts.

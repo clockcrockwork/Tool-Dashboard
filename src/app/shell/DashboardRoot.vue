@@ -167,7 +167,14 @@ onMounted(() => {
   if (start > 0) d.go(start, false);
   // Focus the search box on open for mouse users (仕様書 2章).
   if (mqFine.matches && d.g.gs.autoq && d.ui.tour < 0 && !d.g.off.search) {
-    requestAnimationFrame(() => { root.value?.querySelector<HTMLInputElement>('[data-w="search"] input')?.focus({ preventScroll: true }); });
+    // Widgets load asynchronously; wait (up to ~2s) until the search box exists.
+    let tries = 0;
+    const tryFocus = (): void => {
+      const q = root.value?.querySelector<HTMLInputElement>('[data-w="search"] input');
+      if (q) { q.focus({ preventScroll: true }); return; }
+      if (++tries < 120) requestAnimationFrame(tryFocus);
+    };
+    requestAnimationFrame(tryFocus);
   }
 });
 onBeforeUnmount(() => { cleanups.forEach(f => { f(); }); d.onGo = null; });
