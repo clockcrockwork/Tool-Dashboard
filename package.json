@@ -15,7 +15,13 @@
     "check": "npm run lint && npm run typecheck && npm run test:unit && npm run test:contracts",
     "build": "vite build",
     "preview": "vite preview",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "vrt:baseline": "node vrt/baseline.ts",
+    "vrt": "node vrt/compare.ts",
+    "storybook": "storybook dev -p 6006 --no-open",
+    "build-storybook": "storybook build -o storybook-static",
+    "typecheck:storybook": "vue-tsc --noEmit -p .storybook/tsconfig.json",
+    "gallery": "vite --port 4184 --open /gallery.html"
   },
   "dependencies": {
     "@fontsource/inter": "5.3.0",
