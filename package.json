@@ -21,7 +21,7 @@
     "storybook": "storybook dev -p 6006 --no-open",
     "build-storybook": "storybook build -o storybook-static",
     "typecheck:storybook": "vue-tsc --noEmit -p .storybook/tsconfig.json",
-    "gallery": "vite --port 4184 --open /gallery.html"
+    "gallery": "echo 'Design Pattern Gallery: http://localhost:4184/gallery.html' && vite --port 4184 --strictPort"
   },
   "dependencies": {
     "@fontsource/inter": "5.3.0",
