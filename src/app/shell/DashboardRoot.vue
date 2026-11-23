@@ -7,11 +7,13 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { provideDash } from '../context';
 import type { Dashboard } from '../store/store';
 import { REGISTRY } from '../registry/registry';
-import { WIDGETS } from '../../widgets';
+import { FULLSCREEN, WIDGETS } from '../../widgets';
 import { IC } from '../parts/icons';
 import Icon from '../parts/LineIcon.vue';
 import BottomNav from './BottomNav.vue';
 import ToastStack from './ToastStack.vue';
+import SheetsHost from './sheets/SheetsHost.vue';
+import OverlaysHost from './overlays/OverlaysHost.vue';
 
 const props = defineProps<{ dash: Dashboard }>();
 const d = props.dash;
@@ -44,6 +46,7 @@ const marks = computed(() => {
   })).filter(m => m.p || m.l || m.v);
 });
 const empties = computed(() => L.value.empty.map((e, gi) => (e ? { gi, area: '1 / ' + String((L.value.first[gi] ?? 0) * L.value.cols + 1) + ' / span ' + String(L.value.rows) + ' / span ' + String(L.value.cols) } : null)).filter(x => x !== null));
+const fullScreenIds = computed(() => Object.keys(FULLSCREEN));
 const sheetModal = computed(() => ['global', 'index', 'add', 'help', 'devices'].includes(d.ui.panel));
 const scrimOpen = computed(() => !!d.ui.big && (!d.g.off[d.ui.big] || d.ui.temp === d.ui.big));
 
@@ -212,11 +215,14 @@ watch(() => d.ui.page, p => {
         <button class="chip" @click="openAddFor(em.gi)"><Icon :d="IC.plus" :size="18" />ウィジェットを追加</button>
       </div>
       <component :is="WIDGETS[id]" v-for="id in shown" :key="id" />
+      <component :is="FULLSCREEN[id]" v-for="id in fullScreenIds" :key="'fs-' + id" />
     </div>
 
     <div class="sscrim" :class="{ open: sheetModal }" aria-hidden="true" @click="d.back()" />
     <div class="epill" :class="{ open: d.ui.edit && d.ui.panel === 'none' && !d.ui.big }" role="status">編集中：ウィジェットをタップすると設定できます</div>
+    <SheetsHost />
     <ToastStack />
+    <OverlaysHost />
     <BottomNav />
   </div>
 </template>

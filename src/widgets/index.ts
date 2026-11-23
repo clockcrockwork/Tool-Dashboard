@@ -10,5 +10,8 @@ export const WIDGETS: Readonly<Record<string, Component>> = {
   clock: defineAsyncComponent(() => import('./clock/ClockWidget.vue')),
 };
 
+/** Full-screen views (仕様書 2章「全画面ウィジェット」 `.fsw`). Always rendered; the view hides itself with `.off` when not full-screen. */
+export const FULLSCREEN: Readonly<Record<string, Component>> = {};
+
 /** Per-widget saved records (区画 `w:<id>` の data). */
 export const WIDGET_DATA: Readonly<Record<string, WidgetDataDef<unknown>>> = {};
