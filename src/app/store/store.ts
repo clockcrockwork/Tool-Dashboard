@@ -210,6 +210,9 @@ export class Dashboard {
   /** 戻る: close only the top layer. */
   back(): void {
     const u = this.ui;
+    // Menus close first; a dialog closes as キャンセル (仕様書 7章「重なりと戻り先」).
+    if (u.mn) { Object.assign(u, { mn: null, mnQ: '', mnAt: null }); return; }
+    if (u.dlg) { this.dialogCancel(); return; }
     if (u.dlg) { u.dlg = null; return; }
     if (u.tour >= 0) { u.tour = -1; this.g.tourDone = true; return; }
     if (u.mn) { u.mn = null; return; }

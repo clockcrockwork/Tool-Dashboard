@@ -11,3 +11,18 @@ export function clockParts(now: Date, h12: boolean, sec: boolean): { hm: string;
     dateLine: String(now.getMonth() + 1) + '.' + String(now.getDate()) + ' ' + (DOWS[now.getDay()] ?? ''),
   };
 }
+
+/** Seconds progress bar of the full-screen clock: 0 → 1 over a minute (prototype `secScale`). */
+export function secScale(now: Date): string {
+  return (now.getSeconds() / 59).toFixed(3);
+}
+
+/** grid-area of a full-screen view on screen `idx` (prototype `focusArea`). */
+export function fullScreenArea(idx: number, cols: number, rows: number): string {
+  return '1 / ' + String(Math.max(0, idx) * cols + 1) + ' / span ' + String(rows) + ' / span ' + String(cols);
+}
+
+/** Negative margin that lets the view reach the screen edges past the grid padding (prototype `focusMargin`). */
+export function fullScreenMargin(padT: number, halfGap: number, padB: number): string {
+  return '-' + String(padT) + 'px -' + String(halfGap) + 'px -' + String(padB) + 'px';
+}

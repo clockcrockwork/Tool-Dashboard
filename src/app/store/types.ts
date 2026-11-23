@@ -72,6 +72,30 @@ export type MenuSpec = {
   dock: '' | 'sheet';
 };
 
+/** Where a menu was opened from, in `.dash` coordinates, plus the root size (prototype `mn.a`, `rw`, `rh`). */
+export type MenuAnchor = {
+  l: number;
+  t: number;
+  w: number;
+  h: number;
+  rw: number;
+  rh: number;
+  /** listbox name for the select menu (「ホーム」「場所」…) */
+  al: string;
+};
+
+/** 上部の帯 `.rcv` (受け渡しの知らせ). The share widget fills this in P2. */
+export type NoticeBar = {
+  /** icon path */
+  d: string;
+  text: string;
+  /** main action label (「確認」「コピー」「受け渡しを開く」…) */
+  al: string;
+  act: () => void;
+  /** time of the newest item; closing hides the bar until something newer arrives */
+  t: number;
+};
+
 /** Ephemeral UI state (not persisted). */
 export type UiState = {
   t: number;
@@ -98,6 +122,14 @@ export type UiState = {
   /** 新しい版の帯 */
   upd: boolean;
   updLater: boolean;
+  /** Menu anchor (overlays). Set together with `mn`. */
+  mnAt?: MenuAnchor | null;
+  /** ページ読み込みの帯 `.pgb` */
+  pageLoad?: boolean;
+  /** 受け渡しの知らせ `.rcv` */
+  rcv?: NoticeBar | null;
+  /** ×で閉じた時刻 (prototype `rcvHide`) */
+  rcvHide?: number;
 };
 
 export type PersistedSnapshot = {
