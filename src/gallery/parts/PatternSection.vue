@@ -1,11 +1,14 @@
 <script setup lang="ts">
 /**
  * 部品シートの1項目 `.ps-pt`（見出し・クラス名・使う場面・見本・決まり）。
- * kind は見本の描き方: 'vue' = 実際の Vue 部品、'markup' = プロトタイプのクラスを付けた素の要素、'todo' = まだ無い。
+ * kind は見本の描き方: 'vue' = 実際の Vue 部品、'mix' = 一部が Vue 部品（残りはクラスだけ）、
+ * 'markup' = プロトタイプのクラスを付けた素の要素、'todo' = まだ無い。
  */
-defineProps<{ id: string; title: string; code?: string; kind?: 'vue' | 'markup' | 'todo' }>();
-const LABEL = { vue: 'Vue 部品', markup: 'クラスだけ', todo: 'P1 で追加' } as const;
-const CLS = { vue: 'fx', markup: 'ex', todo: 'nw' } as const;
+import { KIND_CLS, KIND_LABEL, type PatternKind } from './kinds';
+
+defineProps<{ id: string; title: string; code?: string; kind?: PatternKind }>();
+const LABEL = KIND_LABEL;
+const CLS = KIND_CLS;
 </script>
 
 <template>

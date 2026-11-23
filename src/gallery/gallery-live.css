@@ -1,0 +1,23 @@
+/* 本物の Vue 部品を、部品シートの見本の置き方に合わせるための追加（ギャラリーだけ）。
+   gallery.css は原本（Parts.dc.html の <style>）の写しなので手で変えず、足りない分をここに書く。 */
+
+/* 重なる層の部品を見本の箱の中に置く（原本の「static placement of overlay parts」と同じ考え） */
+.stage .toasts{position:relative;top:auto;bottom:auto;left:auto;transform:none;width:auto;max-width:none;align-items:flex-start}
+.stage :is(.dscrim,.tscrim){display:none !important}
+.stage .mnuw{position:static;inset:auto}
+.stage .mnuw .mnu{position:relative;left:0 !important;top:0 !important;max-height:none}
+
+/* 本物の部品に、原本の見本と同じ「状態のまね」を付ける（部品の中の要素なので is-* を直接付けられないもの） */
+.g-hov3 .sg:nth-child(3){background:var(--fill)}
+.g-foc2 .sg:nth-child(2){outline:2px solid var(--a1);outline-offset:2px}
+.g-foc-first .dla .chip:first-child{outline:2px solid var(--a1);outline-offset:2px}
+
+/* 11章: 本物の DashboardRoot を縮めて並べる */
+.shot{position:relative;overflow:hidden;border-radius:14px;box-shadow:0 0 0 1px var(--fill2),0 18px 40px -24px var(--shadow)}
+.shf.m .shot{border-radius:22px}
+.shot-in{position:absolute;left:0;top:0;transform-origin:0 0}
+.shot-in>.dash{height:100% !important;min-height:0 !important}
+
+/* ギャラリーの見出し（.ds h2・.ps-pt h3）が、本物の部品の中の見出しに効かないようにする（原本の見本の見た目に合わせる） */
+.ps-pt .stage h3.dsh{margin:0;font:inherit}
+.ds .stage .dlg h2{margin:0 0 8px;padding-top:0;border-top:0;font-size:var(--fs-xl);font-weight:600;line-height:1.4}

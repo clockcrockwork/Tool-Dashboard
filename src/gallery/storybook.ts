@@ -6,10 +6,13 @@
  * - Dashboard はストーリーごとにメモリ上に作る（`makeDash`）。時刻は 2026-11-19 10:24:36 JST に固定。
  * - `setup` は args が変わるたびに呼び直す（Controls で変えた値がそのまま映る）。何度呼んでも同じ結果になるように書く。
  * - ツールバーの「テーマ」（globals.theme）: 両方並べる / ライト / ダーク。
+ * - `bare: true` は入れ物（StoryShell）で包まず、Dashboard を渡すだけ（DashboardRoot 全体のように自分で `.dash` を描くもの）。
+ *   テーマは Dashboard の全体設定（`gs.theme`）に入れる（両方並べるときは「自動」）。ストーリーの側は `useDash()` で受け取る。
  */
 import { defineComponent, h, watch, type Component } from 'vue';
 import type { Decorator } from '@storybook/vue3-vite';
 import type { Dashboard } from '../app/store/store';
+import { provideDash } from '../app/context';
 import { makeDash, solo } from './dash';
 import StoryShell from './StoryShell.vue';
 import type { ShellLayout, ShellTheme } from './types';
@@ -26,6 +29,8 @@ export type LgdParams = Readonly<{
   setup?: (d: Dashboard, args: StoryArgs) => void;
   /** トーストが消えるなど、本物のタイマーで動かす */
   timers?: boolean;
+  /** 入れ物で包まない（DashboardRoot 全体など）。Storybook の `layout: 'fullscreen'` と組で使う */
+  bare?: boolean;
 }>;
 
 const THEMES: readonly ShellTheme[] = ['both', 'light', 'dark'];
@@ -40,6 +45,11 @@ export const withDashboard: Decorator = (storyFn, ctx) => {
       const dash = makeDash(undefined, { timers: !!p.timers });
       // ctx.args / ctx.globals は Storybook が reactive にしている（@storybook/vue3 render.ts）。
       watch(() => ({ ...ctx.args }), args => { p.setup?.(dash, args); }, { immediate: true, deep: true });
+      if (p.bare) {
+        provideDash(dash);
+        watch(() => themeOf(ctx.globals.theme), t => { dash.g.gs.theme = t === 'both' ? null : t; }, { immediate: true });
+        return () => h(Story);
+      }
       return () => h(StoryShell, {
         dash,
         theme: themeOf(ctx.globals.theme),

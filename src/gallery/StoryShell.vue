@@ -8,6 +8,7 @@
  *              位置は本物のレイアウト計算（`d.layout`）から来るので、`solo()` で左上に1つだけ置いておく。
  *  - 'stage' … 部品をそのまま置く（余白つき）。
  *  - 'bar'   … 下部バーやトーストのように `.dash` の端に絶対配置される部品用。高さ `height` の箱。
+ *              `position: fixed` の部品（ダイアログ・一時利用の帯・暗幕）もこの箱に収まるよう、`contain: layout` にしている。
  */
 import { computed } from 'vue';
 import { provideDash } from '../app/context';
@@ -40,7 +41,7 @@ const gridStyle = computed(() => ({
   gap: String(GAP) + 'px',
 }));
 const boxStyle = computed(() => {
-  if (props.layout === 'bar') return { position: 'relative' as const, height: String(props.height) + 'px', ...(props.width ? { width: String(props.width) + 'px' } : {}) };
+  if (props.layout === 'bar') return { position: 'relative' as const, contain: 'layout', height: String(props.height) + 'px', ...(props.width ? { width: String(props.width) + 'px' } : {}) };
   if (props.layout === 'grid') return gridStyle.value;
   return { display: 'flex', flexWrap: 'wrap' as const, alignItems: 'flex-start', gap: '18px 22px' };
 });

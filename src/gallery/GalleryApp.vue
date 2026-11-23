@@ -30,7 +30,7 @@ const rootCls = computed(() => ['th-' + s.th, reducedMotion(s) ? 'rmo' : '']);
   <div class="dash ds" :class="rootCls" data-theme="auto" :style="{ '--sf': s.slow ? '4' : '1' }">
     <h1>部品シート</h1>
     <p class="lead">ダッシュボードのデザインパターンギャラリーです。部品を1つずつ状態と振る舞いと一緒に並べ（1〜8章）、ウィジェットの表示・動き・画面・状態の流れを横に並べて比べています（9〜12章）。決まりの背景は仕様書、値と作り方は実装ガイド、実際の動きはダッシュボードで確かめてください。</p>
-    <p class="lead2">これは実装（Vue 部品）で描いた版です。原本は <code>design/claude-design/Parts.dc.html</code>。各項目の見出しの横の印: <span class="tag fx">Vue 部品</span> 本物の部品、<span class="tag ex">クラスだけ</span> プロトタイプのクラスを付けた素の要素、<span class="tag nw">P1 で追加</span> まだ見本なし。</p>
+    <p class="lead2">これは実装（Vue 部品）で描いた版です。原本は <code>design/claude-design/Parts.dc.html</code>。各項目の見出しの横の印: <span class="tag fx">Vue 部品</span> 本物の部品、<span class="tag fx">一部 Vue 部品</span> 本物の部品と素の要素が混ざる、<span class="tag ex">クラスだけ</span> プロトタイプのクラスを付けた素の要素（部品がまだ無いもの。多くは P2 のウィジェットに属する）。</p>
     <GalleryControls />
     <nav aria-label="目次">
       <ul class="toc">
