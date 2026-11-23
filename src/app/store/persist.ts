@@ -51,7 +51,10 @@ export function sanitizeGlobal(raw: unknown, now: number): GlobalSection {
   const ids = Object.keys(REGISTRY);
   const out: GlobalSection = { ...d };
   if (isObj(raw.gs)) {
-    const gs = { ...defaultSettings(), ...raw.gs };
+    const def = defaultSettings();
+    const src = raw.gs;
+    const gs = { ...def };
+    for (const k of Object.keys(def) as (keyof typeof def)[]) if (k in src) (gs as Record<string, unknown>)[k] = src[k];
     if (gs.theme !== 'light' && gs.theme !== 'dark') gs.theme = null;
     for (const [k, lo, hi] of [['acc', 0, 4], ['glass', 0, 100], ['rad', 8, 36], ['dens', 0, 2]] as const) {
       const v = Number(gs[k]);

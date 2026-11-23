@@ -4,6 +4,8 @@
 
 以下の `presentation`、source の形、追加の component ID、action ID は**提案**。現行 `UtilityDefinition` の実装に全項目が存在するわけではない。製品実装では既存 TypeScript / Zod の正本に接続する。新しいサイズは仮の例示値で、実画面の最小寸法ではない。寸法は Shell を除いた内容領域の CSS px。
 
+> **改訂（2026-11-23）:** 下の例は v0 の記法のまま残す。デザインとの照合（[設計案 §0](./widget-schema-v0.md#0-デザインとの照合による改訂2026-11-23)）により、`ui.standalone` によるページ単一表示（R1・R12）、CSS px のサイズ（R2）、`compact` / `detailed` のバリアント（R5）は使わない。実際の登録は `src/app/registry/registry.ts` の形（例: 時計は `{ n: '時計', pg: true, s: [2, 1], min: [1, 1], max: [4, 3], multi: true, f: [秒を表示, 12時間表示] }`、天気は `{ s: [2, 1], min: [1, 1], net: 'data', perm: ['geo'] }` に段階表示「基本／3時間ごと（縦2以上）／週間（縦2以上かつ横3以上、または縦3以上）」）。データソースと状態の考え方（§3 天気の後半、§4 スクリプト）はそのまま有効。
+
 ## 1. 共通の読み方
 
 - `kind` と対応画面は既存 catalog に接続する。MCP 公開はこの表示例から決まらない。
