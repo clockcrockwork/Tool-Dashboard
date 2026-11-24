@@ -46,4 +46,6 @@ async function saveFile(json: string, filename: string): Promise<SaveResult> {
 
 const dash = new Dashboard({ store: localStore(), dataDefs: WIDGET_DATA, implemented: Object.keys(WIDGETS) });
 dash.onExport = saveFile;
+// Development only (removed from production builds): e2e tests and the display test reach the store.
+if (import.meta.env.DEV) (window as Window & { __lgdDash?: Dashboard }).__lgdDash = dash;
 createApp(App, { dash }).mount('#app');

@@ -167,10 +167,13 @@ const STATES: Readonly<Record<string, readonly WidgetState[]>> = {
 };
 
 const VISIBLE_ONLY = (every: number | null): Refresh => ({ every, visible: true });
-/** `refresh` per kind: clocks tick every second; external data has no interval until the real source (P4). */
+/**
+ * `refresh` per kind: clocks tick every second. Weather uses a provisional 30-minute freshness for its sample data
+ * (no value in the design; revisit with the real source in P4). Other external data has no interval until P4.
+ */
 const REFRESH: Readonly<Record<string, Refresh>> = {
   clock: VISIBLE_ONLY(1), world: VISIBLE_ONLY(1), gantt: VISIBLE_ONLY(60), countdown: VISIBLE_ONLY(60),
-  weather: VISIBLE_ONLY(null), rain: VISIBLE_ONLY(null), rss: VISIBLE_ONLY(null), github: VISIBLE_ONLY(null), today: VISIBLE_ONLY(null),
+  weather: VISIBLE_ONLY(30 * 60), rain: VISIBLE_ONLY(null), rss: VISIBLE_ONLY(null), github: VISIBLE_ONLY(null), today: VISIBLE_ONLY(null),
 };
 
 /** `keys` per kind (仕様書 10章「表」, 12章「キー操作」). Inputs that only use Enter need no entry. */

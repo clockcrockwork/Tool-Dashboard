@@ -11,6 +11,7 @@
  *  - 部品が外れたら（unmount、`useWeatherTiers` の scope の終わり）timer と取得を止める。
  * 寿命の区別: 表示（段の要素は出ている間だけ）・取得（表示中で必要な間だけ）・データ（runtime に残る。保存はしない）。
  */
+import { REGISTRY } from '../../app/registry/registry';
 import { onScopeDispose, reactive, watch } from 'vue';
 import type { Dashboard } from '../../app/store/store';
 import { isShown } from '../../app/store/visibility';
@@ -18,7 +19,8 @@ import { sampleAdapter, type WeatherAdapter, type WxTier } from './adapter';
 import type { Tiers, WxState } from './weather';
 
 /** Data older than this is refreshed when (and only while) it is shown. */
-export const WX_REFRESH_MS = 30 * 60_000;
+/** Freshness of the weather tiers; single source: the registry `refresh` (実装ガイド 4章). */
+export const WX_REFRESH_MS = (REGISTRY.weather?.refresh?.every ?? 30 * 60) * 1000;
 
 /** One placement's tier data: arrival time per tier (0 = none yet) and whether a fetch is running. */
 export type WeatherPlace = {

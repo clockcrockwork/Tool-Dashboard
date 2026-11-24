@@ -68,7 +68,8 @@ describe('refresh / keys / lazy / icon / share', () => {
   it('every refresh happens only while shown (仕様書 3章「段階表示」)', () => {
     for (const r of defs) if (r.refresh) expect(r.refresh.visible, r.id).toBe(true);
     expect(def('clock').refresh).toEqual({ every: 1, visible: true });
-    expect(def('weather').refresh).toEqual({ every: null, visible: true });
+    expect(def('weather').refresh).toEqual({ every: 30 * 60, visible: true });
+    expect(def('rss').refresh).toEqual({ every: null, visible: true });
     expect(def('todo').refresh).toBeUndefined();
   });
   it('keys are written as key names and never take a shell key outside the widget without being listed', () => {

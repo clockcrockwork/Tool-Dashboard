@@ -7,6 +7,7 @@
 import Icon from '../../app/parts/LineIcon.vue';
 import { IC } from '../../app/parts/icons';
 import WidgetFrame from '../../app/shell/WidgetFrame.vue';
+import PendingWidget from '../../app/shell/PendingWidget.vue';
 import BottomNav from '../../app/shell/BottomNav.vue';
 import { GIC } from '../icons';
 import { boards, solo, type DashSetup } from '../dash';
@@ -18,6 +19,8 @@ import ThemeStages from '../parts/ThemeStages.vue';
 const only = (id: string, more?: DashSetup): DashSetup => d => { solo(d, id, [1, 1]); more?.(d); };
 const veil: DashSetup = d => { d.g.gs.veil = true; d.setCfg('memo', 'veil', true); };
 const offline: DashSetup = d => { d.ui.online = false; };
+/** 人前では隠すが優先: 失敗の状態でも覆いを作らない（review #6）。 */
+const veilErr: DashSetup = d => { d.g.gs.veil = true; d.setCfg('weather', 'veil', true); };
 const STATES = [
   ['s-load', '読み込み', '', '', ''],
   ['s-stale', '更新中', '', '', ''],
@@ -41,6 +44,9 @@ const navMany: DashSetup = d => { boards(d, 12); d.ui.page = 2; };
         <figure class="smp"><div class="box"><DashScope :prepare="only('rss')"><div class="snapf" style="width: 170px; height: 150px"><div class="snapi"><WidgetFrame id="rss"><div class="in"><span class="cap">RSS</span></div></WidgetFrame></div></div></DashScope></div><figcaption>未接続の印</figcaption></figure>
         <figure class="smp"><div class="box"><DashScope :prepare="only('rss', offline)"><div class="snapf" style="width: 170px; height: 150px"><div class="snapi"><WidgetFrame id="rss"><div class="in"><span class="cap">RSS</span></div></WidgetFrame></div></div></DashScope></div><figcaption>オフラインの印</figcaption></figure>
         <figure v-for="st in STATES" :key="st[0]" class="smp"><div class="box"><DashScope :prepare="only('weather')"><div class="snapf" style="width: 170px; height: 150px"><div class="snapi"><WidgetFrame id="weather" :state-class="st[0]" :st-msg="st[2]" :st-act="st[3]" :st-sub="st[4]"><div class="in"><div class="num" style="font-size: 2.2rem; font-weight: 200">18°</div></div></WidgetFrame></div></div></DashScope></div><figcaption>{{ st[1] }}（{{ st[0] }}）</figcaption></figure>
+        <figure class="smp"><div class="box"><DashScope :prepare="only('weather', veilErr)"><div class="snapf" style="width: 170px; height: 150px"><div class="snapi"><WidgetFrame id="weather" state-class="s-err" st-msg="取得できませんでした" st-act="もう一度" st-sub="最終更新 09:42"><div class="in"><div class="num" style="font-size: 2.2rem; font-weight: 200">18°</div></div></WidgetFrame></div></div></DashScope></div><figcaption>隠す＋失敗（覆いを出さない）</figcaption></figure>
+        <figure class="smp"><div class="box"><DashScope :prepare="only('alarm')"><div class="snapf" style="width: 344px; height: 150px"><div class="snapi"><PendingWidget id="alarm" /></div></div></DashScope></div><figcaption>準備中（未実装の種類）</figcaption></figure>
+        <figure class="smp"><div class="box"><DashScope :prepare="only('alarm')"><div class="snapf" style="width: 170px; height: 150px"><div class="snapi"><PendingWidget id="alarm" /></div></div></DashScope></div><figcaption>準備中（1×1: 薄く残してトースト）</figcaption></figure>
       </ThemeStages>
       <dl class="beh"><div><dt>読み上げ</dt><dd>枠は <code>role="group"</code> で、見えない見出し（登録名）で名付ける。</dd></div><div><dt>大きさ</dt><dd>1マス 170×150px（標準の密度）を基準に、横1〜4、縦1〜3。</dd></div><div><dt>状態</dt><dd>オフラインの印と、状態の覆い（読み込み・更新中・空・失敗）は部品シートの 12章 の見本を、枠の部品だけで並べたもの。</dd></div></dl>
     </PatternSection>
