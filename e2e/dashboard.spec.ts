@@ -74,6 +74,8 @@ test('TODO changes are saved and survive a reload', async ({ page }) => {
 test('single-key shortcuts open the index and edit mode (仕様書 2章「画面切替の手段」)', async ({ page, isMobile }) => {
   test.skip(isMobile, 'keyboard shortcuts are a desktop path');
   await open(page);
+  // Mouse devices focus the search box right after opening (仕様書 2章); wait for it so it cannot steal focus later.
+  await expect(page.locator('.w[data-w="search"] input')).toBeFocused();
   await page.locator('.dash').focus();
   await page.keyboard.press('/');
   await expect(page.locator('.sheet.open[aria-label="ウィジェット一覧"]')).toBeVisible();
