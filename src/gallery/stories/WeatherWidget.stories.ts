@@ -24,7 +24,7 @@ const meta = {
     edit: { description: '編集モード' },
   },
   parameters: { lgd: widgetLgd('weather', (d, a) => { d.setCfg('weather', 'unit', String(a.unit)); setWeatherState(d, a.st as WxState); }) },
-  render: () => ({ components: { WeatherWidget }, template: '<WeatherWidget />' }),
+  render: () => ({ components: { WeatherWidget }, template: '<WeatherWidget id="weather" />' }),
 } satisfies Meta<Args>;
 
 export default meta;

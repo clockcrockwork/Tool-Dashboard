@@ -2,45 +2,53 @@
 /**
  * 時計の全画面 `.fsw` (仕様書 2章「全画面ウィジェット」). Prototype: Main.dc.html `<section class="fsw {{focusCls}}" data-w="clock">`
  * (markup 1656–1688), `focusCls`, `focusArea`, `focusMargin`, `secScale`, `fx*` in `renderVals()`.
- * Always rendered by DashboardRoot; hides itself with `off` when the clock is not full-screen.
+ * DashboardRoot renders it for each full-screen screen of the layout (`layout.fullScreens`: a placement of a kind with
+ * `pg` whose size is 「全画面」); it hides itself with `off` when its placement is not full-screen.
  * The background moves only on the visible screen (`run`) and has a pause button; reduced motion stops it in CSS.
  */
 import { computed, ref } from 'vue';
-import { useDash } from '../../app/context';
+import { useDash, useWidget } from '../../app/context';
+import { instanceNo } from '../../app/registry/instances';
 import { clockParts, fullScreenArea, fullScreenMargin, secScale } from './clock';
 
+const props = defineProps<{ id: string }>();
 const d = useDash();
+const w = useWidget(props.id);
+/** SVG ids stay `focusGrad`/`focusGoo` for the first placement; later ones get a suffix so ids stay unique. */
+const sfx = w.id === w.kind ? '' : '-' + String(instanceNo(w.id));
 /** 背景の動きを一時停止 (not saved, like the prototype `fxPause`). */
 const paused = ref(false);
 const L = computed(() => d.layout.value);
-const on = computed(() => d.pgOn('clock') && L.value.focusIdx >= 0);
-const cls = computed(() => (on.value ? '' : 'off') + (on.value && d.page === L.value.focusIdx && !paused.value ? ' run' : ''));
+const screen = computed(() => L.value.fullScreens.find(s => s.id === w.id) ?? null);
+const page = computed(() => screen.value?.page ?? -1);
+const on = computed(() => d.pgOn(w.id) && page.value >= 0);
+const cls = computed(() => (on.value ? '' : 'off') + (on.value && d.page === page.value && !paused.value ? ' run' : ''));
 const style = computed(() => ({
-  gridArea: fullScreenArea(L.value.focusIdx, L.value.cols, L.value.rows),
+  gridArea: fullScreenArea(page.value, L.value.cols, L.value.rows),
   margin: fullScreenMargin(14 + d.env.sat, L.value.gap / 2, 66 + d.env.sab),
 }));
 const now = computed(() => new Date(d.ui.t));
-const v = computed(() => clockParts(now.value, !!d.cfgOf('clock', 'h12'), false));
+const v = computed(() => clockParts(now.value, !!w.cfg('h12'), false));
 const scale = computed(() => secScale(now.value));
 </script>
 
 <template>
-  <section class="fsw" :class="cls" data-w="clock" aria-label="時計" :style="style">
+  <section class="fsw" :class="cls" :data-w="w.kind" :data-wid="w.id" :aria-label="w.def.n" :style="style">
     <svg class="blobs fsw-bg" aria-hidden="true" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
       <defs>
-        <linearGradient id="focusGrad" gradientUnits="userSpaceOnUse" x1="0" y1="200" x2="1000" y2="800">
+        <linearGradient :id="'focusGrad' + sfx" gradientUnits="userSpaceOnUse" x1="0" y1="200" x2="1000" y2="800">
           <stop offset="0" style="stop-color: var(--g1)" />
           <stop offset="0.28" style="stop-color: var(--g2)" />
           <stop offset="0.52" style="stop-color: var(--g3)" />
           <stop offset="0.76" style="stop-color: var(--g4)" />
           <stop offset="1" style="stop-color: var(--g5)" />
         </linearGradient>
-        <filter id="focusGoo" filterUnits="userSpaceOnUse" x="-400" y="-400" width="1800" height="1800" color-interpolation-filters="sRGB">
+        <filter :id="'focusGoo' + sfx" filterUnits="userSpaceOnUse" x="-400" y="-400" width="1800" height="1800" color-interpolation-filters="sRGB">
           <feGaussianBlur in="SourceGraphic" stdDeviation="30" result="b" />
           <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 28 -12" />
         </filter>
       </defs>
-      <g filter="url(#focusGoo)" fill="url(#focusGrad)">
+      <g :filter="'url(#focusGoo' + sfx + ')'" :fill="'url(#focusGrad' + sfx + ')'">
         <circle class="mb" cx="330" cy="420" r="170" />
         <circle class="mb m2" cx="560" cy="540" r="190" />
         <circle class="mb m3" cx="700" cy="400" r="150" />

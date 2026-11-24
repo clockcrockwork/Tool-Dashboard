@@ -30,7 +30,7 @@ const meta = {
       setup: (d, a) => {
         d.g.pgW = { clock: true };
         d.setCfg('clock', 'h12', !!a.h12);
-        d.ui.page = a.page ? d.layout.value.focusIdx : 0;
+        d.ui.page = a.page ? d.layout.value.fullScreens[0]?.page ?? 0 : 0;
       },
     } satisfies LgdParams,
   },
@@ -40,15 +40,16 @@ const meta = {
       const d = useDash();
       const grid = computed(() => {
         const L = d.layout.value;
+        const page = L.fullScreens[0]?.page ?? 0;
         return {
           position: 'absolute', inset: '14px 7px 66px', display: 'grid',
-          gridTemplateColumns: 'repeat(' + String(Math.max(1, L.focusIdx * L.cols)) + ', 0px) repeat(' + String(L.cols) + ', 1fr)',
+          gridTemplateColumns: 'repeat(' + String(Math.max(1, page * L.cols)) + ', 0px) repeat(' + String(L.cols) + ', 1fr)',
           gridTemplateRows: 'repeat(' + String(L.rows) + ', 1fr)',
         };
       });
       return { grid };
     },
-    template: '<div :style="grid"><ClockFullScreen /></div>',
+    template: '<div :style="grid"><ClockFullScreen id="clock" /></div>',
   }),
 } satisfies Meta<Args>;
 

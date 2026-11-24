@@ -24,7 +24,7 @@ const meta = {
   parameters: {
     lgd: widgetLgd('memo', (d, a) => { d.setCfg('memo', 'size', Number(a.size)); d.setCfg('memo', 'bar', !!a.bar); d.setCfg('memo', 'count', !!a.count); }),
   },
-  render: () => ({ components: { MemoWidget }, template: '<MemoWidget />' }),
+  render: () => ({ components: { MemoWidget }, template: '<MemoWidget id="memo" />' }),
 } satisfies Meta<Args>;
 
 export default meta;

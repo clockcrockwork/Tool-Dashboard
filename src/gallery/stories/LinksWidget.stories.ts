@@ -16,7 +16,7 @@ const meta = {
     edit: { description: '編集モード' },
   },
   parameters: { lgd: widgetLgd('links') },
-  render: () => ({ components: { LinksWidget }, template: '<LinksWidget />' }),
+  render: () => ({ components: { LinksWidget }, template: '<LinksWidget id="links" />' }),
 } satisfies Meta<Args>;
 
 export default meta;

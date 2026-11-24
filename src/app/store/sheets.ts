@@ -5,8 +5,9 @@
  */
 import { reactive } from 'vue';
 import { DEFAULT_ORDER, REGISTRY, REGISTRY_ORDER, STARTER, type FieldValue, type Size, type WidgetDef } from '../registry/registry';
+import { defOf, kindOf, nameOf } from '../registry/instances';
 import { defaultPlace, defaultSettings, fullGroups, renumber } from './defaults';
-import type { Dashboard } from './store';
+import { IMPORT_REASONS, type Dashboard } from './store';
 import type { GlobalSettings } from './types';
 
 // ---------------------------------------------------------------- search (仕様書 2章「ウィジェットを探す」)
@@ -72,6 +73,8 @@ export type SheetState = {
   pick: number | null;
   /** Fields the user has left once (errors show only after blur). */
   touched: Record<string, boolean>;
+  /** Field input the check refused (`<id>.<key>` → value); shown with its error, never saved. */
+  draft: Record<string, FieldValue>;
   bulkTx: string;
   /** DEV display test: environment override for 操作ヒント. */
   simEnv: '' | EnvKind;
@@ -100,7 +103,7 @@ function newPairCode(): string {
 /** Sample data = prototype initial state (Main.dc.html 2245–2269). */
 export function initialSheetState(now: number): SheetState {
   return {
-    lastSel: null, pick: null, touched: {}, bulkTx: '', simEnv: '', demo: 'ok', ai: { model: '標準', engine: '自動' },
+    lastSel: null, pick: null, touched: {}, draft: {}, bulkTx: '', simEnv: '', demo: 'ok', ai: { model: '標準', engine: '自動' },
     myName: 'MacBook',
     devices: [
       { id: 'd1', n: 'iPhone', type: 'phone', on: true, last: now },
@@ -187,7 +190,7 @@ export function placeAt(d: Dashboard, id: string, gid: string, stay: boolean): v
   d.g.order = [...d.g.order.filter(x => x !== id), id];
   if (!stay) follow(d, id);
   flashOn(d, id);
-  d.undoable((REGISTRY[id]?.n ?? id) + ' を「' + boardNameOf(d, gid) + '」に' + (wasOff ? '追加' : '移動') + 'しました');
+  d.undoable(nameOf(id) + ' を「' + boardNameOf(d, gid) + '」に' + (wasOff ? '追加' : '移動') + 'しました');
 }
 
 // ---------------------------------------------------------------- boards and presets
@@ -203,7 +206,7 @@ export function deleteBoard(d: Dashboard, gid: string): void {
   if (d.g.groups.length <= 1) return;
   const name = boardNameOf(d, gid);
   const off = { ...d.g.off };
-  for (const id of Object.keys(REGISTRY)) if (d.g.place[id] === gid) off[id] = true;
+  for (const id of d.g.order) if (d.g.place[id] === gid) off[id] = true;
   d.g.off = off;
   d.g.groups = renumber(d.g.groups.filter(x => x.id !== gid));
   d.go(0, false);
@@ -215,7 +218,7 @@ export function presetMinimal(d: Dashboard): void {
   const off: Record<string, boolean> = {};
   const place = { ...d.g.place };
   const first = d.g.groups[0]?.id ?? 'g0';
-  for (const id of Object.keys(REGISTRY)) { if (!STARTER.includes(id)) off[id] = true; else place[id] = first; }
+  for (const id of d.g.order) { if (!STARTER.includes(id)) off[id] = true; else place[id] = first; }
   d.g.off = off;
   d.g.place = place;
   d.go(0, false);
@@ -224,7 +227,10 @@ export function presetMinimal(d: Dashboard): void {
 
 /** すべて並べる (display test only; not in production builds). */
 export function presetAll(d: Dashboard): void {
-  Object.assign(d.g, { groups: fullGroups(), place: defaultPlace(), off: {}, order: [...DEFAULT_ORDER], pgW: {} });
+  // Extra placements (`links#2`) keep their place in the order and their records.
+  const extra = d.g.order.filter(id => !DEFAULT_ORDER.includes(id));
+  const place = { ...defaultPlace(), ...Object.fromEntries(extra.map(id => [id, 'g0'])) };
+  Object.assign(d.g, { groups: fullGroups(), place, off: {}, order: [...DEFAULT_ORDER, ...extra], pgW: {} });
   d.go(0, false);
   d.undoable('すべてのウィジェットを並べました');
 }
@@ -233,7 +239,7 @@ export function presetAll(d: Dashboard): void {
 export function resetAll(d: Dashboard): void {
   d.resetLayout();
   d.g.gs = defaultSettings();
-  for (const id of Object.keys(REGISTRY)) d.cfg[id] = {};
+  for (const id of d.g.order) d.cfg[id] = {};
   d.go(0, false);
   d.undoable('初期状態に戻しました');
 }
@@ -244,21 +250,36 @@ function clip(): Clipboard | null {
   return typeof navigator !== 'undefined' && navigator.clipboard ? navigator.clipboard : null;
 }
 
-export function exportCopy(d: Dashboard): void {
-  try { void clip()?.writeText(d.exportJson()).catch(() => undefined); } catch { /* ignore */ }
+/**
+ * 書き出し（コピー）. 「コピーしました」 and the last-export date only after the clipboard accepted the text;
+ * without a clipboard, or when writing is refused, a warning is shown and the date stays.
+ */
+export async function exportCopy(d: Dashboard): Promise<boolean> {
+  const c = clip();
+  const fail = (): false => { d.toast('コピーできませんでした。「ファイルに保存」を使ってください', 'warn'); return false; };
+  if (!c || typeof c.writeText !== 'function') return fail();
+  try { await c.writeText(d.exportJson()); } catch { return fail(); }
   d.toast('設定と記録をコピーしました', 'ok');
   d.g.lastExp = d.now();
+  return true;
 }
 
-export function importFromClipboard(d: Dashboard): void {
-  const fail = (): void => { d.toast('読み込めるデータがクリップボードにありません', 'warn'); };
+/** 読み込み. The whole text is checked before anything changes (`Dashboard.importJson`); a refusal says why. */
+export async function importFromClipboard(d: Dashboard): Promise<boolean> {
+  const empty = (): false => { d.toast('読み込めるデータがクリップボードにありません', 'warn'); return false; };
   const c = clip();
-  if (!c) { fail(); return; }
-  c.readText().then(txt => {
-    if (!d.importJson(txt)) { fail(); return; }
-    d.go(0, false);
-    d.undoable('読み込みました');
-  }).catch(fail);
+  if (!c || typeof c.readText !== 'function') return empty();
+  let txt: string;
+  try { txt = await c.readText(); } catch { return empty(); }
+  const r = d.importJson(txt);
+  if (!r.ok) {
+    if (r.reason === IMPORT_REASONS.format) return empty();
+    d.toast(r.reason, 'warn');
+    return false;
+  }
+  d.go(0, false);
+  d.undoable('読み込みました');
+  return true;
 }
 
 export function lastExportText(d: Dashboard): string {
@@ -417,7 +438,7 @@ export function widgetDock(d: Dashboard, id: string | null): 'left' | 'right' | 
 }
 
 export function setWidgetSize(d: Dashboard, id: string, w: number, h: number): void {
-  const def = REGISTRY[id];
+  const def = defOf(id);
   if (!def || d.g.lockSz[id]) return;
   if (w < def.min[0] || h < def.min[1] || w > def.max[0] || h > def.max[1]) return;
   d.setSize(id, [w, h] as Size);
@@ -499,19 +520,20 @@ export type FieldCheck = { hint?: string; err?: string };
 /** 入力欄の補足とエラー (prototype `fChk`). */
 export function fieldCheck(id: string, k: string, raw: FieldValue | undefined, now: number): FieldCheck {
   const v = raw === undefined ? '' : String(raw).trim();
-  if (id === 'search' && k === 'url') {
+  const kind = kindOf(id);
+  if (kind === 'search' && k === 'url') {
     if (!v) return { hint: '空のときは「検索先」で選んだサービスを使います' };
     if ((!v.startsWith('https://') && !v.startsWith('http://')) || v.includes(' ')) return { err: '「https://」で始まるURLを入れてください' };
     if (!v.includes('%s')) return { err: '%s が入っていません。検索語を入れる場所に %s を書いてください' };
     return { hint: '%s のところに検索語が入ります' };
   }
-  if (id === 'tax' && k === 'rates') {
+  if (kind === 'tax' && k === 'rates') {
     const p = v.split(/[,、 ]+/).filter(Boolean);
     if (!p.length || p.some(y => !Number.isFinite(Number(y)) || Number(y) < 0 || Number(y) >= 100)) return { err: '0〜99の数を、カンマで区切って入れてください（例: 10, 8）' };
     if (p.length > 4) return { err: '税率は4つまでです。5つ目からは使いません' };
     return { hint: 'カンマで区切って4つまで（例: 10, 8）' };
   }
-  if (id === 'countdown' && k === 'date') {
+  if (kind === 'countdown' && k === 'date') {
     const m = v.split('-');
     if (m.length !== 3) return { err: '日付を選んでください' };
     const n = new Date(now);
@@ -521,7 +543,7 @@ export function fieldCheck(id: string, k: string, raw: FieldValue | undefined, n
     const md = String(Number(m[1])) + '月' + String(Number(m[2])) + '日';
     return { hint: dd > 0 ? 'あと' + String(dd) + '日（' + md + '）' : dd === 0 ? '今日です（' + md + '）' : md + 'は' + String(-dd) + '日前に過ぎました' };
   }
-  if (id === 'alarm') {
+  if (kind === 'alarm') {
     const m = v.split(':');
     if (m.length < 2 || !Number.isFinite(Number(m[0])) || !Number.isFinite(Number(m[1])) || m[0] === '' || m[1] === '') return { err: '時刻を入れてください' };
     const n = new Date(now);
@@ -555,7 +577,7 @@ export function itemsOf(d: Dashboard, id: string): EditItem[] {
   const v = d.data[id];
   if (Array.isArray(v)) return v as EditItem[];
   if (v && typeof v === 'object' && Array.isArray((v as { items?: unknown }).items)) return (v as { items: EditItem[] }).items;
-  return [...(FALLBACK_ITEMS[id] ?? [])];
+  return [...(FALLBACK_ITEMS[kindOf(id)] ?? [])];
 }
 
 export function setItems(d: Dashboard, id: string, items: EditItem[]): void {
@@ -599,12 +621,13 @@ export function parseBulkLinks(txt: string): { url: string; label: string }[] {
   return out.slice(0, 40);
 }
 
-export function bulkAddLinks(d: Dashboard): void {
+/** Adds the pasted links to quick-link placement `id` (default: the first one). */
+export function bulkAddLinks(d: Dashboard, id = 'links'): void {
   const s = sheetState(d);
   const got = parseBulkLinks(s.bulkTx);
   if (!got.length) return;
   const at = d.now();
-  setItems(d, 'links', [...itemsOf(d, 'links'), ...got.map((g, i) => ({ id: at + i, label: g.label.slice(0, 24), ic: 'doc', url: g.url }))]);
+  setItems(d, id, [...itemsOf(d, id), ...got.map((g, i) => ({ id: at + i, label: g.label.slice(0, 24), ic: 'doc', url: g.url }))]);
   s.bulkTx = '';
   d.undoable(String(got.length) + '件のリンクを追加しました');
 }
@@ -663,7 +686,7 @@ export function selectOptions(d: Dashboard, key: string): SelectOption[] {
   if (key.startsWith('f:')) {
     const sel = settingsTarget(d);
     const fk = key.slice(2);
-    const f = sel ? REGISTRY[sel]?.f.find(x => x.k === fk) : undefined;
+    const f = sel ? defOf(sel)?.f.find(x => x.k === fk) : undefined;
     if (!sel || !f) return [];
     const cur = d.cfgOf(sel, fk);
     return (f.o ?? []).map(o => ({ n: o, on: o === cur, tap: () => { d.setCfg(sel, fk, o); } }));

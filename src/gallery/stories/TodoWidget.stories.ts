@@ -24,7 +24,7 @@ const meta = {
   parameters: {
     lgd: widgetLgd('todo', (d, a) => { d.setCfg('todo', 'hide', !!a.hide); d.setCfg('todo', 'bar', !!a.bar); d.g.gs.veil = !!a.veil; }),
   },
-  render: () => ({ components: { TodoWidget }, template: '<TodoWidget />' }),
+  render: () => ({ components: { TodoWidget }, template: '<TodoWidget id="todo" />' }),
 } satisfies Meta<Args>;
 
 export default meta;

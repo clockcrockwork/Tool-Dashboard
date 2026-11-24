@@ -142,6 +142,8 @@ export const REGISTRY_ORDER: readonly string[] = Object.keys(META);
 export const DEFAULT_ORDER: readonly string[] = Object.keys(REGISTRY);
 export const CATEGORIES: readonly Category[] = ['時間', '予定と記録', '情報', '道具', 'ローカルAI', 'データ表示'];
 export const STARTER: readonly string[] = ['clock', 'search', 'weather', 'rain', 'todo', 'links', 'memo'];
+/** The kind whose input gets the focus on open (全体設定「開いたら検索欄に入力」, 仕様書 2章). Its first placement is used. */
+export const AUTO_FOCUS_KIND = 'search';
 
 export function widgetDef(id: string): WidgetDef {
   const def = REGISTRY[id];
@@ -149,6 +151,7 @@ export function widgetDef(id: string): WidgetDef {
   return def;
 }
 
-export function fieldDefault(id: string, key: string): FieldValue | undefined {
-  return widgetDef(id).f.find(f => f.k === key)?.d;
+/** Default of setting `key` of a kind (`kind` is a kind ID, not a placement ID). */
+export function fieldDefault(kind: string, key: string): FieldValue | undefined {
+  return widgetDef(kind).f.find(f => f.k === key)?.d;
 }

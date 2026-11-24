@@ -5,13 +5,13 @@
  * are provided here so tool content never re-implements them. Grid placement comes from the shell.
  */
 import { computed } from 'vue';
-import { useDash } from '../context';
-import { REGISTRY } from '../registry/registry';
+import { useDash, useWidget, widgetContext } from '../context';
 import { IC } from '../parts/icons';
 import Icon from '../parts/LineIcon.vue';
 
 const props = withDefaults(defineProps<{
-  id: string;
+  /** Placement ID. Omit inside a widget: the frame then uses the widget's own context (`useWidget()`). */
+  id?: string | undefined;
   /** Override heading (prototype uses longer names for a few widgets). */
   heading?: string;
   /** State classes: s-load / s-stale / s-empty / s-err (仕様書 3章「状態」). */
@@ -23,16 +23,19 @@ const props = withDefaults(defineProps<{
   net?: boolean;
   /** Render the shared state overlay `.sto` (widgets with loading/empty/error states). */
   states?: boolean;
-}>(), { heading: '', stateClass: '', stMsg: '', stAct: '', stSub: '', net: false, states: false });
+}>(), { id: undefined, heading: '', stateClass: '', stMsg: '', stAct: '', stSub: '', net: false, states: false });
 const emit = defineEmits<{ retry: [] }>();
 
 const d = useDash();
-const name = computed(() => props.heading || (REGISTRY[props.id]?.n ?? props.id));
+const w = props.id !== undefined ? widgetContext(d, props.id) : useWidget();
+/** Placement ID (grid area, heading id, peek, selection); `data-w` keeps the kind ID for kind-wide CSS. */
+const wid = w.id;
+const name = computed(() => props.heading || w.def.n);
 const pos = computed(() => d.layout.value);
 const style = computed(() => {
   const L = pos.value;
-  const s: Record<string, string> = { gridArea: L.area[props.id] ?? '1 / 1 / span 1 / span 1' };
-  const ww = L.ww[props.id], wh = L.wh[props.id];
+  const s: Record<string, string> = { gridArea: L.area[wid] ?? '1 / 1 / span 1 / span 1' };
+  const ww = L.ww[wid], wh = L.wh[wid];
   if (ww !== undefined) s['--ww'] = String(ww);
   if (wh !== undefined) s['--wh'] = String(wh);
   return s;
@@ -43,17 +46,18 @@ const offline = computed(() => !d.ui.online);
 <template>
   <section
     class="w"
-    :class="[d.frameClass(id), stateClass]"
-    :data-w="id"
+    :class="[d.frameClass(wid), stateClass]"
+    :data-w="w.kind"
+    :data-wid="wid"
     role="group"
-    :aria-labelledby="'wh-' + id"
+    :aria-labelledby="'wh-' + wid"
     :style="style"
   >
-    <h2 :id="'wh-' + id" class="vh">{{ name }}</h2>
+    <h2 :id="'wh-' + wid" class="vh">{{ name }}</h2>
     <slot name="before" />
     <div class="veilc">
       <Icon :d="IC.eyeOff" />
-      <button class="chip sm" :aria-label="name + 'を表示する'" @click="d.ui.peek = { ...d.ui.peek, [id]: true }">表示する</button>
+      <button class="chip sm" :aria-label="name + 'を表示する'" @click="d.ui.peek = { ...d.ui.peek, [wid]: true }">表示する</button>
     </div>
     <template v-if="net">
       <span class="cdot" :class="offline ? 'offl' : ''" aria-hidden="true" />

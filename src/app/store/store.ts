@@ -1,24 +1,26 @@
 /**
  * Dashboard store. One reactive state for the shell (boards, sheets, toasts, history) plus one
- * `{cfg, data}` section per widget. Ported from the prototype component (design/claude-design/Main.dc.html).
- * Components get it through `useDash()` (provide/inject); widgets read their own section only.
+ * `{cfg, data}` section per placement. Ported from the prototype component (design/claude-design/Main.dc.html).
+ * Components get it through `useDash()` (provide/inject); widgets read their own section through `useWidget()`.
+ *
+ * IDs: registry entries are keyed by kind (`links`); everything a placement owns — layout entries, settings, records,
+ * the saved section `w:<配置ID>` — is keyed by placement ID (`links`, `links#2`). See `registry/instances.ts`.
+ * Saving: see the header of `persist.ts` (versions, locked sections, writing only changed sections).
  */
-import { computed, reactive, watch, type ComputedRef } from 'vue';
+import { computed, reactive, watch, type ComputedRef, type WatchStopHandle } from 'vue';
 import { REGISTRY, fieldDefault, type FieldValue, type Size } from '../registry/registry';
+import { defOf, isInstanceId, kindOf, nameOf, nextInstanceId, sortInstances } from '../registry/instances';
 import { computeLayout, isFullScreen, sizeOf, type Layout, type Pin } from '../layout/layout';
 import { ACCENTS, defaultGlobal, defaultUi, renumber } from './defaults';
-import { GLOBAL_KEY, WIDGET_KEY_PREFIX, SECTION_VERSION, readGlobal, readSection, sanitizeCfg, sanitizeGlobal, type SectionStore } from './persist';
-import type { DialogSpec, GlobalSection, GlobalSettings, Panel, Toast, ToastAct, ToastKind, UiState, WidgetCfg } from './types';
+import {
+  EXPORT_FORMAT, EXPORT_VERSION, GLOBAL_KEY, GLOBAL_VERSION, SECTION_VERSION, WIDGET_KEY_PREFIX, parseGlobalSection,
+  parseWidgetSection, readGlobal, readWidget, sanitizeCfg, sanitizeGlobal, widgetKey,
+  type LockReason, type SectionStore, type WidgetSection,
+} from './persist';
+import { checkField, envelopeHeader } from './validate';
+import type { DialogSpec, GlobalSection, GlobalSettings, Panel, Toast, ToastAct, ToastKind, UiState, WidgetCfg, WidgetDataDef } from './types';
 
-/** Per-widget record definition (実装ガイド 4章 `store`). */
-export type WidgetDataDef<T> = Readonly<{
-  version: number;
-  initial: (now: number) => T;
-  /** Return null to fall back to `initial`. Unknown fields must be dropped. */
-  sanitize: (raw: unknown, now: number) => T | null;
-  /** Records excluded from saving (e.g. chat when 「会話を保存」 is off). */
-  toSaved?: (data: T, cfg: (key: string) => FieldValue | undefined) => unknown;
-}>;
+export type { WidgetDataDef } from './types';
 
 export type Env = {
   width: number;
@@ -32,15 +34,38 @@ export type Env = {
 
 export type DashOptions = Readonly<{
   store: SectionStore;
+  /** Record definitions keyed by kind (`WIDGET_DATA`). */
   dataDefs: Readonly<Record<string, WidgetDataDef<unknown>>>;
   now?: () => number;
   /** Timer hooks (tests). */
   setTimeout?: (fn: () => void, ms: number) => unknown;
 }>;
 
+/** Result of reading a file or the clipboard (実装ガイド 5章). Nothing changes unless `ok`. */
+export type ImportResult = { ok: true } | { ok: false; reason: string };
+
+/**
+ * Result of saving the export file: `saved` = the user picked a place and the file was written
+ * (`showSaveFilePicker`); `started` = a download was started (completion cannot be confirmed); `cancel`; `fail`.
+ */
+export type SaveResult = 'saved' | 'started' | 'cancel' | 'fail';
+export type FileSaver = (json: string, filename: string) => SaveResult | Promise<SaveResult>;
+
+/** User-facing reasons for a rejected import. */
+export const IMPORT_REASONS: Readonly<Record<'format' | LockReason, string>> = {
+  format: '読み込めるデータではありません',
+  future: '新しい版で書き出したデータのため読み込めません',
+  broken: 'データの一部が壊れているため読み込めません',
+  migrate: '古い形式の記録を移せないため読み込めません',
+};
+
 const HIST_KEYS = ['off', 'place', 'groups', 'order', 'sizes', 'gs', 'pins', 'lockSz', 'pgW'] as const;
-/** Widget data that is part of undo history (項目: habit, links). */
-const HIST_DATA = ['habit', 'links'] as const;
+/** Kinds whose records are part of undo history (項目: habit, links). */
+const HIST_DATA_KINDS: readonly string[] = ['habit', 'links'];
+
+const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+
+type ImportPlan = { ok: true; g: GlobalSection; sections: Record<string, WidgetSection> } | { ok: false; reason: string };
 
 export class Dashboard {
   readonly g: GlobalSection;
@@ -50,6 +75,8 @@ export class Dashboard {
   readonly env: Env;
   readonly layout: ComputedRef<Layout>;
   readonly dark: ComputedRef<boolean>;
+  /** All placement IDs in registry order, then by number (DOM order of the widgets). */
+  readonly ids: ComputedRef<string[]>;
   readonly now: () => number;
   private readonly store: SectionStore;
   private readonly defs: Readonly<Record<string, WidgetDataDef<unknown>>>;
@@ -59,10 +86,18 @@ export class Dashboard {
   private histSig = '';
   private histLast = 0;
   private undoing = false;
+  /** Per key: the serialization last read (load baseline) or written. A section is written only when it differs. */
   private saved: Record<string, string> = {};
+  /** Writes that failed (quota…); retried on the next write. */
+  private pending = new Map<string, string>();
+  private saveFailing = false;
+  /** Keys never written this session (newer or broken sections); value = the parsed saved JSON, if any. */
+  private locked = new Map<string, { reason: LockReason; raw: unknown }>();
   private toastHold = false;
   /** Called when the active screen changes; the shell scrolls the pager. */
   onGo: ((page: number, smooth: boolean) => void) | null = null;
+  /** Saves the export file (set by `main.ts`; see `SaveResult`). */
+  onExport: FileSaver | null = null;
 
   constructor(opts: DashOptions) {
     this.now = opts.now ?? (() => Date.now());
@@ -70,48 +105,72 @@ export class Dashboard {
     this.defs = opts.dataDefs;
     this.later = opts.setTimeout ?? ((fn, ms) => setTimeout(fn, ms));
     const t = this.now();
-    const global = sanitizeGlobal(readGlobal(this.store), t);
+    const gr = readGlobal(this.store, t);
+    const global = gr.state === 'ok' ? gr.value : defaultGlobal(t);
+    if (gr.state === 'locked') this.locked.set(GLOBAL_KEY, { reason: gr.reason, raw: gr.raw });
     const cfg: Record<string, WidgetCfg> = {};
     const data: Record<string, unknown> = {};
-    for (const id of Object.keys(REGISTRY)) {
-      const sec = readSection(this.store, id);
-      cfg[id] = sanitizeCfg(id, sec?.cfg);
-      const def = this.defs[id];
-      if (def) data[id] = (sec && sec.v <= SECTION_VERSION ? def.sanitize(sec.data, t) : null) ?? def.initial(t);
+    for (const id of global.order) {
+      const def = this.dataDefOf(id);
+      const r = readWidget(this.store, id, def, t);
+      if (r.state === 'locked') this.locked.set(widgetKey(id), { reason: r.reason, raw: r.raw });
+      cfg[id] = r.state === 'ok' ? r.value.cfg : {};
+      if (def) data[id] = r.state === 'ok' ? r.value.data : def.initial(t);
     }
     this.g = reactive(global);
     this.cfg = reactive(cfg);
     this.data = reactive(data);
     this.ui = reactive({ ...defaultUi(t), tour: global.tourDone ? -1 : 0 });
     this.env = reactive<Env>({ width: 1440, height: 900, fontScale: 1, sat: 0, sab: 0, prefersDark: false, finePointer: true });
+    this.ids = computed(() => sortInstances(this.g.order));
     this.layout = computed(() => computeLayout(
       { width: this.env.width, height: this.env.height, fontScale: this.env.fontScale, sat: this.env.sat, sab: this.env.sab },
       { dens: this.g.gs.dens, groups: this.g.groups, place: this.g.place, order: this.g.order, off: this.g.off, pins: this.g.pins, sizes: this.g.sizes, pgW: this.g.pgW },
     ));
     this.dark = computed(() => this.g.gs.theme === 'dark' || (this.g.gs.theme === null && this.env.prefersDark));
     this.histSig = this.histSignature();
+    // Baseline: what was loaded counts as saved, so only sections changed from now on are written.
+    this.saved[GLOBAL_KEY] = this.serializeGlobal();
+    for (const id of this.g.order) this.saved[widgetKey(id)] = this.serializeWidget(id);
+    if (this.locked.size) this.toast('この版では読めない保存データがあります。上書きせずに残しています', 'warn');
   }
 
-  /** Starts persistence/history watchers. Call once from the root component. */
+  /** Starts persistence/history watchers (one per section). Call once from the root component. */
   start(): () => void {
+    const per = new Map<string, WatchStopHandle>();
+    const watchSection = (id: string): void => {
+      if (per.has(id)) return;
+      // immediate: a placement added later (no baseline yet) gets its section written right away.
+      per.set(id, watch(() => this.serializeWidget(id), v => { this.write(widgetKey(id), v); this.track(); }, { immediate: true }));
+    };
     const stops = [
       watch(() => this.serializeGlobal(), v => { this.write(GLOBAL_KEY, v); this.track(); }),
-      watch(() => Object.keys(REGISTRY).map(id => this.serializeWidget(id)), list => {
-        Object.keys(REGISTRY).forEach((id, i) => { const v = list[i]; if (v !== undefined) this.write(WIDGET_KEY_PREFIX + id, v); });
-        this.track();
-      }),
+      watch(() => [...this.g.order], ids => { ids.forEach(watchSection); }, { immediate: true }),
     ];
-    return () => { stops.forEach(s => { s(); }); };
+    return () => { stops.forEach(s => { s(); }); per.forEach(s => { s(); }); per.clear(); };
   }
 
   // ---------- settings ----------
+  /** Record definition of a placement (by its kind: `links#2` → links). */
+  dataDefOf(id: string): WidgetDataDef<unknown> | undefined {
+    return this.defs[kindOf(id)];
+  }
   cfgOf(id: string, key: string): FieldValue | undefined {
     const c = this.cfg[id];
     const v = c?.[key];
-    return v !== undefined ? v : fieldDefault(id, key);
+    if (v !== undefined) return v;
+    return REGISTRY[kindOf(id)] ? fieldDefault(kindOf(id), key) : undefined;
   }
-  setCfg(id: string, key: string, v: FieldValue): void {
-    this.cfg[id] = { ...(this.cfg[id] ?? {}), [key]: v };
+  /**
+   * Sets one setting of a placement after the same check used for restoring and importing (`checkField`).
+   * Returns false (and changes nothing) for an invalid value or an unknown placement/setting.
+   */
+  setCfg(id: string, key: string, v: FieldValue): boolean {
+    if (!isInstanceId(id)) return false;
+    const ok = checkField(kindOf(id), key, v);
+    if (ok === undefined) return false;
+    this.cfg[id] = { ...(this.cfg[id] ?? {}), [key]: ok };
+    return true;
   }
   setG<K extends keyof GlobalSettings>(key: K, v: GlobalSettings[K]): void {
     this.g.gs[key] = v;
@@ -153,7 +212,7 @@ export class Dashboard {
   }
   veilOf(id: string): boolean {
     const c = this.cfg[id]?.veil;
-    return typeof c === 'boolean' ? c : !!REGISTRY[id]?.vd;
+    return typeof c === 'boolean' ? c : !!defOf(id)?.vd;
   }
   /** `.w` class modifiers (prototype `k[id]`). */
   frameClass(id: string): string {
@@ -167,12 +226,12 @@ export class Dashboard {
   boardName(gi: number): string {
     return this.g.groups[gi]?.n ?? '';
   }
-  /** Screen label: 「ボード 1」 or 「ボード 1の2」/「ボード 1-2」 for boards spanning screens. */
+  /** Screen label: 「ボード 1」, 「ボード 1の2」/「ボード 1-2」 for boards spanning screens, or the kind name of a full-screen view. */
   screenLabel(i: number, sep: 'の' | '-'): string {
     const L = this.layout.value;
-    const gi = L.phys[i] ?? 0;
-    if (gi === -1) return '時計';
-    if (gi === -2) return 'スケッチ';
+    const full = L.full[i];
+    if (full) return nameOf(full);
+    const gi = Math.max(0, L.phys[i] ?? 0);
     const f = L.first[gi] ?? 0;
     const many = L.phys.filter(x => x === gi).length > 1;
     const n = this.boardName(gi);
@@ -294,7 +353,7 @@ export class Dashboard {
     const o: Record<string, unknown> = {};
     for (const k of HIST_KEYS) o[k] = this.g[k];
     o.cfg = this.cfg;
-    for (const id of HIST_DATA) o['d:' + id] = this.data[id];
+    for (const id of this.g.order) if (HIST_DATA_KINDS.includes(kindOf(id))) o['d:' + id] = this.data[id];
     return JSON.stringify(o);
   }
   private restoreSignature(sig: string): void {
@@ -302,9 +361,9 @@ export class Dashboard {
     const g = sanitizeGlobal({ ...this.g, ...o }, this.now());
     for (const k of HIST_KEYS) (this.g as Record<string, unknown>)[k] = g[k];
     const cfg = (o.cfg ?? {}) as Record<string, unknown>;
-    for (const id of Object.keys(REGISTRY)) this.cfg[id] = sanitizeCfg(id, cfg[id]);
-    for (const id of HIST_DATA) {
-      const def = this.defs[id];
+    for (const id of this.g.order) this.cfg[id] = sanitizeCfg(id, cfg[id]);
+    for (const id of this.g.order) {
+      const def = this.dataDefOf(id);
       const raw = o['d:' + id];
       if (def && raw !== undefined) this.data[id] = def.sanitize(raw, this.now()) ?? def.initial(this.now());
     }
@@ -329,7 +388,7 @@ export class Dashboard {
     const pins = { ...this.g.pins };
     delete pins[id];
     this.g.pins = pins;
-    this.undoable((REGISTRY[id]?.n ?? id) + ' をボードから外しました');
+    this.undoable(nameOf(id) + ' をボードから外しました');
   }
   place(id: string, groupId: string): void {
     const off = { ...this.g.off };
@@ -343,6 +402,25 @@ export class Dashboard {
     if (p) pins[id] = p; else delete pins[id];
     this.g.pins = pins;
   }
+  /**
+   * Creates another placement of `kind` (`links#2`) on board `gid` (default: the first board) and returns its ID.
+   * Refused (null) for unknown kinds and for kinds with `multi: false`, whose only placement is the kind ID itself.
+   * The UI for this (「ここにも置く」) and shared records (`share`) are P3; records are independent by default.
+   */
+  addInstance(kind: string, gid?: string): string | null {
+    const def = REGISTRY[kind];
+    if (!def?.multi) return null;
+    const taken = [...this.g.order];
+    try { for (const k of this.store.keys()) if (k.startsWith(WIDGET_KEY_PREFIX)) taken.push(k.slice(WIDGET_KEY_PREFIX.length)); } catch { /* ignore */ }
+    const id = nextInstanceId(kind, taken);
+    const board = gid !== undefined && this.g.groups.some(g => g.id === gid) ? gid : this.g.groups[0]?.id ?? 'g0';
+    const dd = this.dataDefOf(id);
+    this.cfg[id] = {};
+    if (dd) this.data[id] = dd.initial(this.now());
+    this.g.order = [...this.g.order, id];
+    this.g.place = { ...this.g.place, [id]: board };
+    return id;
+  }
   addBoard(): string {
     const id = 'g' + String(this.now().toString(36));
     this.g.groups = renumber([...this.g.groups, { id, n: '' }]);
@@ -351,55 +429,145 @@ export class Dashboard {
 
   // ---------- persistence ----------
   private serializeGlobal(): string {
-    return JSON.stringify(this.g);
+    return JSON.stringify({ v: GLOBAL_VERSION, ...this.g });
   }
   private serializeWidget(id: string): string {
-    const def = this.defs[id];
+    const def = this.dataDefOf(id);
     const d = this.data[id];
     const saved = def?.toSaved ? def.toSaved(d, k => this.cfgOf(id, k)) : d;
-    return JSON.stringify({ v: SECTION_VERSION, cfg: this.cfg[id] ?? {}, data: saved });
+    return JSON.stringify(def ? { v: SECTION_VERSION, dv: def.version, cfg: this.cfg[id] ?? {}, data: saved } : { v: SECTION_VERSION, cfg: this.cfg[id] ?? {} });
+  }
+  /** Keys kept read-only this session (newer or broken sections). */
+  lockedKeys(): string[] {
+    return [...this.locked.keys()];
   }
   private write(key: string, value: string): void {
-    if (this.saved[key] === value) return;
-    try {
-      this.store.set(key, value);
-      this.saved[key] = value;
-    } catch {
-      this.toast('容量がいっぱいで保存できません', 'warn', { label: 'ファイルに保存', fn: () => { this.exportFile(); } });
-    }
+    if (this.locked.has(key)) return;
+    if (this.saved[key] === value) this.pending.delete(key);
+    else this.pending.set(key, value);
+    if (this.pending.size) this.flush();
   }
-  /** Whole export (実装ガイド 5章). Credentials/keys are never included. */
+  /** Writes every pending section; a failed one stays pending and is retried on the next write. */
+  private flush(): void {
+    let failed = false;
+    for (const [key, value] of [...this.pending]) {
+      try {
+        this.store.set(key, value);
+        this.saved[key] = value;
+        this.pending.delete(key);
+      } catch {
+        failed = true;
+      }
+    }
+    if (failed && !this.saveFailing) {
+      this.toast('容量がいっぱいで保存できません', 'warn', { label: 'ファイルに保存', fn: () => { void this.exportFile(); } });
+    }
+    this.saveFailing = failed;
+  }
+  /** Whole export (実装ガイド 5章). Credentials/keys are never included. Locked sections are exported as saved. */
   exportJson(): string {
     const widgets: Record<string, unknown> = {};
-    for (const id of Object.keys(REGISTRY)) widgets[id] = JSON.parse(this.serializeWidget(id)) as unknown;
-    return JSON.stringify({ format: 'lgd-dashboard', v: 1, global: this.g, widgets });
-  }
-  /** Validates per item and applies. Unknown items are dropped; missing ones fall back to defaults. */
-  importJson(text: string): boolean {
-    let o: unknown;
-    try { o = JSON.parse(text); } catch { return false; }
-    if (!o || typeof o !== 'object' || (o as { format?: unknown }).format !== 'lgd-dashboard') return false;
-    const src = o as { global?: unknown; widgets?: Record<string, { cfg?: unknown; data?: unknown }> };
-    const t = this.now();
-    Object.assign(this.g, sanitizeGlobal(src.global, t));
-    for (const id of Object.keys(REGISTRY)) {
-      const w = src.widgets?.[id];
-      this.cfg[id] = sanitizeCfg(id, w?.cfg);
-      const def = this.defs[id];
-      if (def) this.data[id] = def.sanitize(w?.data, t) ?? def.initial(t);
+    for (const id of this.g.order) {
+      const lk = this.locked.get(widgetKey(id));
+      if (lk) { if (lk.raw !== undefined) widgets[id] = lk.raw; continue; }
+      widgets[id] = JSON.parse(this.serializeWidget(id)) as unknown;
     }
-    return true;
+    const lg = this.locked.get(GLOBAL_KEY);
+    const global = lg?.raw !== undefined ? lg.raw : JSON.parse(this.serializeGlobal()) as unknown;
+    return JSON.stringify({ format: EXPORT_FORMAT, v: EXPORT_VERSION, global, widgets });
   }
-  exportFile(): void {
-    this.toast('設定と記録をファイルに保存しました', 'ok');
-    this.g.lastExp = this.now();
-    this.onExport?.(this.exportJson());
+  /**
+   * Checks the whole file first (envelope `format`/`v`, the global section's `v`, every widget section's `v`/`dv` and
+   * records); nothing is applied unless everything is usable. Within supported versions unknown items are dropped and
+   * missing ones fall back to defaults; sections of kinds this build does not know are skipped.
+   */
+  private planImport(text: string): ImportPlan {
+    const fail = (r: keyof typeof IMPORT_REASONS): ImportPlan => ({ ok: false, reason: IMPORT_REASONS[r] });
+    let o: unknown;
+    try { o = JSON.parse(text); } catch { return fail('format'); }
+    const env = envelopeHeader.safeParse(o);
+    if (!env.success) {
+      const newer = isObj(o) && o.format === EXPORT_FORMAT && typeof o.v === 'number' && o.v > EXPORT_VERSION;
+      return fail(newer ? 'future' : 'format');
+    }
+    if (env.data.v > EXPORT_VERSION) return fail('future');
+    const t = this.now();
+    const g = parseGlobalSection(env.data.global, t);
+    if (!g.ok) return fail(g.reason);
+    const sections: Record<string, WidgetSection> = {};
+    for (const [id, raw] of Object.entries(env.data.widgets)) {
+      if (!isInstanceId(id)) continue;
+      const p = parseWidgetSection(id, raw, this.dataDefOf(id), t);
+      if (!p.ok) return fail(p.reason);
+      sections[id] = p.value;
+    }
+    return { ok: true, g: g.value, sections };
   }
-  onExport: ((json: string) => void) | null = null;
+  /** Validates the whole file, then applies it (see `planImport`). Returns why it was refused. */
+  importJson(text: string): ImportResult {
+    const plan = this.planImport(text);
+    if (!plan.ok) return plan;
+    const t = this.now();
+    const g = plan.g;
+    // Records of placements missing from the imported order are kept (unplaced) instead of being dropped.
+    const extra = Object.keys(plan.sections).filter(id => !g.order.includes(id));
+    if (extra.length) {
+      g.order = [...g.order, ...extra];
+      g.off = { ...g.off, ...Object.fromEntries(extra.map(id => [id, true])) };
+      g.place = { ...g.place, ...Object.fromEntries(extra.map(id => [id, g.groups[0]?.id ?? 'g0'])) };
+    }
+    Object.assign(this.g, g);
+    for (const id of g.order) {
+      const sec = plan.sections[id];
+      this.cfg[id] = sec?.cfg ?? {};
+      const def = this.dataDefOf(id);
+      if (def) this.data[id] = sec ? sec.data : def.initial(t);
+    }
+    // The file replaces what was saved: sections that were locked become writable and are written.
+    for (const key of [GLOBAL_KEY, ...g.order.map(widgetKey)]) {
+      if (this.locked.delete(key)) delete this.saved[key];
+    }
+    return { ok: true };
+  }
+  /** `dashboard-年月日.json` (実装ガイド 5章). */
+  exportName(): string {
+    const d = new Date(this.now());
+    const p2 = (n: number): string => String(n).padStart(2, '0');
+    return 'dashboard-' + String(d.getFullYear()) + p2(d.getMonth() + 1) + p2(d.getDate()) + '.json';
+  }
+  /**
+   * ファイルに保存. 「保存しました」 and the last-export date only after the file was written (`saved`);
+   * a plain download only reports that saving started (`started`), because its completion cannot be observed.
+   * Cancel or failure leaves the last-export date unchanged.
+   */
+  async exportFile(): Promise<SaveResult> {
+    let r: SaveResult = 'fail';
+    const save = this.onExport;
+    if (save) {
+      try { r = await save(this.exportJson(), this.exportName()); } catch { r = 'fail'; }
+    }
+    if (r === 'saved' || r === 'started') {
+      this.g.lastExp = this.now();
+      this.toast(r === 'saved' ? '設定と記録をファイルに保存しました' : 'ファイルの保存を始めました', 'ok');
+    } else if (r === 'fail') {
+      this.toast('ファイルに保存できませんでした', 'warn');
+    }
+    return r;
+  }
   /** 初期状態に戻す / ミニマル構成. */
   resetLayout(): void {
     const d = defaultGlobal(this.now());
-    Object.assign(this.g, { groups: d.groups, place: d.place, order: d.order, sizes: {}, off: d.off, pins: {}, lockSz: {}, pgW: {} });
+    // Extra placements (`links#2`) stay, unplaced, so their records are kept (実装ガイド 7.5「外したウィジェットの区画は残し」).
+    const extra = this.g.order.filter(id => !(id in REGISTRY));
+    const first = d.groups[0]?.id ?? 'g0';
+    Object.assign(this.g, {
+      groups: d.groups,
+      place: { ...d.place, ...Object.fromEntries(extra.map(id => [id, first])) },
+      order: [...d.order, ...extra],
+      sizes: {},
+      off: { ...d.off, ...Object.fromEntries(extra.map(id => [id, true])) },
+      pins: {}, lockSz: {}, pgW: {},
+    });
     this.ui.page = 0;
   }
 }

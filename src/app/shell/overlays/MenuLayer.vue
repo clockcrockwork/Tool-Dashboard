@@ -5,7 +5,7 @@
  */
 import { computed, nextTick, ref, watch } from 'vue';
 import { useDash } from '../../context';
-import { REGISTRY } from '../../registry/registry';
+import { defOf } from '../../registry/instances';
 import {
   MI, closeMenu, hasFilter, menuGeometry, menuHeight, menuKeyTarget, menuRuntime, selectMenuItems, selectOptions, widgetMenuItems, type MenuItem,
 } from '../../store/overlays';
@@ -25,7 +25,7 @@ const role = computed(() => (d.ui.mn?.kind === 'select' ? 'listbox' : 'menu'));
 const label = computed(() => {
   const mn = d.ui.mn;
   if (!mn) return '';
-  return mn.kind === 'select' ? d.ui.mnAt?.al ?? '' : (REGISTRY[mn.id]?.n ?? '') + ' の操作';
+  return mn.kind === 'select' ? d.ui.mnAt?.al ?? '' : (defOf(mn.id)?.n ?? '') + ' の操作';
 });
 const geo = computed(() => {
   const mn = d.ui.mn;

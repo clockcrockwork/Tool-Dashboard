@@ -13,7 +13,7 @@ const TOUR_HL = ['pg', 'index', 'edit', 'gear'] as const;
 const hl = (key: (typeof TOUR_HL)[number]): string => (d.ui.tour >= 0 && TOUR_HL[d.ui.tour] === key ? 'hl' : '');
 const showDots = computed(() => L.value.total <= 7 && L.value.total <= Math.max(3, Math.floor((d.env.width - 294) / 24)));
 const dots = computed(() => Array.from({ length: L.value.total }, (_v, i) => {
-  const focus = i === L.value.focusIdx || i === L.value.boardIdx;
+  const focus = !!L.value.full[i];
   return {
     i,
     cls: [focus ? 'pg' : '', i === page.value ? 'on' : ''].filter(Boolean).join(' '),

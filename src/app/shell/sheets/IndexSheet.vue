@@ -2,7 +2,7 @@
 /** ウィジェット一覧 (ボードとウィジェット, prototype markup Main.dc.html 1874–1891). */
 import { computed } from 'vue';
 import { useDash } from '../../context';
-import { REGISTRY } from '../../registry/registry';
+import { nameOf } from '../../registry/instances';
 import { addBoardAndGo, currentBoard, currentBoardId, deleteBoard, flashOn, setVeil } from '../../store/sheets';
 import { IC } from '../../parts/icons';
 import Icon from '../../parts/LineIcon.vue';
@@ -23,7 +23,7 @@ const boards = computed(() => {
     const q = L.pos[id];
     const b = q ? out[q.gi] : undefined;
     if (!q || !b) continue;
-    b.items.push({ id, n: REGISTRY[id]?.n ?? id, page: q.page });
+    b.items.push({ id, n: nameOf(id), page: q.page });
   }
   return out;
 });

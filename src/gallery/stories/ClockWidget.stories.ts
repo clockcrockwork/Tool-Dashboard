@@ -39,7 +39,7 @@ const meta = {
       },
     } satisfies LgdParams,
   },
-  render: () => ({ components: { ClockWidget }, template: '<ClockWidget />' }),
+  render: () => ({ components: { ClockWidget }, template: '<ClockWidget id="clock" />' }),
 } satisfies Meta<ClockArgs>;
 
 export default meta;

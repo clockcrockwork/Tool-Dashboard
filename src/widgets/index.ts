@@ -20,13 +20,17 @@ export const WIDGETS: Readonly<Record<string, Component>> = {
   memo: defineAsyncComponent(() => import('./memo/MemoWidget.vue')),
 };
 
-/** Full-screen views (仕様書 2章「全画面ウィジェット」 `.fsw`). Always rendered; the view hides itself with `.off` when not full-screen. */
+/**
+ * Full-screen views by kind (仕様書 2章「全画面ウィジェット」 `.fsw`). DashboardRoot renders one per full-screen screen
+ * (`layout.fullScreens`), passing the placement ID. Widgets and views receive the placement ID as the `id` prop and
+ * read their settings and records through `useWidget(id)`.
+ */
 export const FULLSCREEN: Readonly<Record<string, Component>> = {
   clock: defineAsyncComponent(() => import('./clock/ClockFullScreen.vue')),
 };
 
 /**
- * Per-widget saved records (区画 `w:<id>` の data). `agenda` is registered before its widget (P2b) so that
+ * Saved records by kind (区画 `w:<配置ID>` の data; each placement keeps its own record). `agenda` is registered before its widget (P2b) so that
  * メモから予定への追加 is stored.
  */
 export const WIDGET_DATA: Readonly<Record<string, WidgetDataDef<unknown>>> = {

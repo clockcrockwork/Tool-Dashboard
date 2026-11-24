@@ -61,7 +61,8 @@ describe('pins, locks and full-screen (仕様書 2章)', () => {
     const s = { ...base(), pgW: { clock: true } };
     const L = computeLayout({ width: 1440, height: 900 }, s);
     expect(L.total).toBe(2);
-    expect(L.focusIdx).toBe(1);
+    expect(L.fullScreens).toEqual([{ id: 'clock', page: 1, gi: 0 }]);
+    expect(L.full).toEqual([null, 'clock']);
     expect(L.pos.clock).toMatchObject({ page: 1, pg: true, w: 8, h: 5 });
   });
   it('clamps saved sizes to the registry limits', () => {

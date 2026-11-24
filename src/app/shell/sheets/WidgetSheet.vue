@@ -6,7 +6,8 @@
  */
 import { computed } from 'vue';
 import { useDash } from '../../context';
-import { REGISTRY, type Field, type FieldValue } from '../../registry/registry';
+import { type Field, type FieldValue } from '../../registry/registry';
+import { defOf, kindOf } from '../../registry/instances';
 import { ITEM_ICONS, iconPath } from '../../registry/icons';
 import {
   ITEM_WIDGETS, addItem, bulkAddLinks, canNudge, fieldCheck, hideSelected, itemsOf, moveToBoard, nudgePin, parseBulkLinks, patchItem,
@@ -28,7 +29,7 @@ const d = useDash();
 const st = sheetState(d);
 
 const sel = computed(() => settingsTarget(d));
-const def = computed(() => (sel.value ? REGISTRY[sel.value] : undefined));
+const def = computed(() => (sel.value ? defOf(sel.value) : undefined));
 const open = computed(() => settingsOpen(d));
 const dock = computed(() => widgetDock(d, sel.value));
 const L = computed(() => d.layout.value);
@@ -49,7 +50,9 @@ const fields = computed<FieldView[]>(() => {
   const id = sel.value;
   if (!id || !def.value) return [];
   return def.value.f.map(f => {
-    const v = d.cfgOf(id, f.k);
+    // A value the check refused (e.g. a cleared time) is shown from the draft until it becomes valid.
+    const dk = id + '.' + f.k;
+    const v = dk in st.draft ? st.draft[dk] : d.cfgOf(id, f.k);
     const kind: FieldView['kind'] = f.t === 'tg' ? 'tg' : f.t === 'sg' ? ((f.o ?? []).length > 4 ? 'sel' : 'seg') : f.t === 'st' ? 'st' : f.t === 'rg' ? 'rg' : 'fx';
     return { f, v, kind, fid: 'ff-' + id + '-' + f.k };
   });
@@ -68,12 +71,20 @@ function fx(fv: FieldView): { it: string; w: string; bad: boolean; err: string; 
   };
 }
 function touch(k: string): void { st.touched = { ...st.touched, [k]: true }; }
-function setField(k: string, v: FieldValue): void { if (sel.value) d.setCfg(sel.value, k, v); }
+/** Saved only when valid (same check as restore/import); otherwise kept as a draft so the field can show the error. */
+function setField(k: string, v: FieldValue): void {
+  const id = sel.value;
+  if (!id) return;
+  const dk = id + '.' + k;
+  const draft = { ...st.draft };
+  if (d.setCfg(id, k, v)) delete draft[dk]; else draft[dk] = v;
+  st.draft = draft;
+}
 const val = (e: Event): string => (e.target as HTMLInputElement).value;
 
 // ----- items (ハビット・クイックリンク)
-const hasItems = computed(() => !!sel.value && ITEM_WIDGETS.includes(sel.value));
-const isLinks = computed(() => sel.value === 'links');
+const hasItems = computed(() => !!sel.value && ITEM_WIDGETS.includes(kindOf(sel.value)));
+const isLinks = computed(() => !!sel.value && kindOf(sel.value) === 'links');
 const items = computed(() => {
   const id = sel.value;
   if (!id || !hasItems.value) return [];
@@ -135,7 +146,7 @@ function onFile(e: Event, itemId: number): void {
         <div class="sl">まとめて追加</div>
         <textarea class="inp" aria-label="URLをまとめて貼り付け" aria-describedby="bulkn" placeholder="https://example.com 例のサイト" :value="st.bulkTx" style="min-height: 76px; padding: 8px 12px; resize: vertical" @input="st.bulkTx = val($event)" @keydown.stop />
         <p id="bulkn" class="cap" style="margin: 4px 0 0">1行に1つ。URLと名前は空白で区切ります。ブラウザのブックマークを書き出したファイル（HTML）の中身も貼れます。</p>
-        <button class="chip" :disabled="bulkNo" style="width: 100%; margin-top: 6px" @click="bulkAddLinks(d)">貼り付けたリンクを追加</button>
+        <button class="chip" :disabled="bulkNo" style="width: 100%; margin-top: 6px" @click="sel && bulkAddLinks(d, sel)">貼り付けたリンクを追加</button>
       </template>
       <button class="chip" style="width: 100%; margin-top: 8px" @click="addItem(d, sel)"><Icon :d="IC.plus" :size="18" />項目を追加</button>
     </template>

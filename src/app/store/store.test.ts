@@ -73,8 +73,9 @@ describe('Dashboard store', () => {
     d.setData('links', { items: ['x', 'y'] });
     await nextTick();
     expect(JSON.parse(store.get(GLOBAL_KEY) ?? '{}')).toMatchObject({ gs: { glass: 30 } });
-    expect(JSON.parse(store.get(WIDGET_KEY_PREFIX + 'clock') ?? '{}')).toMatchObject({ v: 1, cfg: { sec: false } });
-    expect(JSON.parse(store.get(WIDGET_KEY_PREFIX + 'links') ?? '{}')).toMatchObject({ data: { items: ['x', 'y'] } });
+    expect(JSON.parse(store.get(GLOBAL_KEY) ?? '{}')).toMatchObject({ v: 1 });
+    expect(JSON.parse(store.get(WIDGET_KEY_PREFIX + 'clock') ?? '{}')).toEqual({ v: 1, cfg: { sec: false } });
+    expect(JSON.parse(store.get(WIDGET_KEY_PREFIX + 'links') ?? '{}')).toEqual({ v: 1, dv: 1, cfg: {}, data: { items: ['x', 'y'] } });
     stop();
   });
   it('restores saved sections through sanitize', () => {
@@ -125,9 +126,9 @@ describe('Dashboard store', () => {
     d.setG('acc', 2);
     const json = d.exportJson();
     const other = make().d;
-    expect(other.importJson(json)).toBe(true);
+    expect(other.importJson(json)).toEqual({ ok: true });
     expect(other.g.gs.acc).toBe(2);
-    expect(other.importJson('{"format":"other"}')).toBe(false);
+    expect(other.importJson('{"format":"other"}').ok).toBe(false);
   });
   it('derives glass/blur/accent variables from settings (実装ガイド 3章)', () => {
     const { d } = make();

@@ -1,17 +1,19 @@
 <script setup lang="ts">
 /** 傘 (rain) — 2×1, net: data. Prototype: Main.dc.html section data-w="rain" (markup 749–764), values `renderVals()` `wx`. */
 import { computed } from 'vue';
-import { useDash } from '../../app/context';
+import { useDash, useWidget } from '../../app/context';
 import WidgetFrame from '../../app/shell/WidgetFrame.vue';
 import { rainView } from './rain';
 import { rainSample } from './sample';
 
+const props = defineProps<{ id: string }>();
 const d = useDash();
-const wx = computed(() => rainView(rainSample(d.cfgOf('rain', 'demo')), new Date(d.ui.t).getHours()));
+const w = useWidget(props.id);
+const wx = computed(() => rainView(rainSample(w.cfg('demo')), new Date(d.ui.t).getHours()));
 </script>
 
 <template>
-  <WidgetFrame id="rain" net>
+  <WidgetFrame net>
     <div class="in" style="align-items: center; gap: 12px; padding-inline: 16px">
       <svg class="i" aria-hidden="true" viewBox="0 0 24 24" style="width: min(44cqh, 52px); height: min(44cqh, 52px); stroke-width: 1.3"><path :d="wx.icon" /></svg>
       <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">

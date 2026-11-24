@@ -18,7 +18,7 @@ const meta = {
     edit: { description: '編集モード' },
   },
   parameters: { lgd: widgetLgd('search', (d, a) => { d.setCfg('search', 'eng', String(a.eng)); d.setCfg('search', 'url', String(a.url)); }) },
-  render: () => ({ components: { SearchWidget }, template: '<SearchWidget />' }),
+  render: () => ({ components: { SearchWidget }, template: '<SearchWidget id="search" />' }),
 } satisfies Meta<Args>;
 
 export default meta;

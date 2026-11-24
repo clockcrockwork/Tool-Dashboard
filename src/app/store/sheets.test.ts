@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { Dashboard } from './store';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Dashboard, type SaveResult } from './store';
 import { memoryStore } from './persist';
 import { REGISTRY, REGISTRY_ORDER } from '../registry/registry';
 import {
-  catalogGroups, deleteBoard, fieldCheck, foldKana, itemsOf, markSeen, matchWidget, parseBulkLinks, placeAt, presetMinimal,
+  catalogGroups, deleteBoard, exportCopy, fieldCheck, importFromClipboard, foldKana, itemsOf, markSeen, matchWidget, parseBulkLinks, placeAt, presetMinimal,
   pushHistory, selectOptions, setWidgetSize, shiftOrder, togglePin, toggleSection, sectionOpen, widgetDock,
 } from './sheets';
 
@@ -198,5 +198,57 @@ describe('select options and misc', () => {
   it('items fall back to the prototype samples', () => {
     const d = make();
     expect(itemsOf(d, 'habit').map(x => x.label)).toEqual(['水を飲む', '読書', '運動', '早寝']);
+  });
+});
+
+describe('書き出しの結果 (#4: 書けたことを確かめてから知らせる)', () => {
+  const lastToast = (d: Dashboard) => d.ui.toasts.at(-1);
+  afterEach(() => { vi.unstubAllGlobals(); });
+  it('reports a copy and updates the last export date only after the clipboard accepted it', async () => {
+    const d = make();
+    let got = '';
+    vi.stubGlobal('navigator', { clipboard: { writeText: (t: string) => { got = t; return Promise.resolve(); } } });
+    expect(await exportCopy(d)).toBe(true);
+    expect(JSON.parse(got)).toMatchObject({ format: 'lgd-dashboard', v: 1 });
+    expect(lastToast(d)).toMatchObject({ text: '設定と記録をコピーしました', kind: 'ok' });
+    expect(d.g.lastExp).toBeGreaterThan(0);
+  });
+  it('warns and keeps the date when the clipboard refuses or is missing', async () => {
+    for (const nav of [{ clipboard: { writeText: () => Promise.reject(new DOMException('denied', 'NotAllowedError')) } }, { clipboard: undefined }, {}]) {
+      const d = make();
+      vi.stubGlobal('navigator', nav);
+      expect(await exportCopy(d)).toBe(false);
+      expect(lastToast(d)).toMatchObject({ kind: 'warn' });
+      expect(lastToast(d)?.text).not.toContain('コピーしました');
+      expect(d.g.lastExp).toBe(0);
+    }
+  });
+  it('file: 「保存しました」 only when written, 「始めました」 for a download, nothing on cancel/failure', async () => {
+    const cases: [SaveResult | 'throw' | 'none', string | null, boolean][] = [
+      ['saved', '設定と記録をファイルに保存しました', true],
+      ['started', 'ファイルの保存を始めました', true],
+      ['cancel', null, false],
+      ['fail', 'ファイルに保存できませんでした', false],
+      ['throw', 'ファイルに保存できませんでした', false],
+      ['none', 'ファイルに保存できませんでした', false],
+    ];
+    for (const [res, text, dated] of cases) {
+      const d = make();
+      let name = '';
+      if (res !== 'none') d.onExport = (_json, filename) => { name = filename; if (res === 'throw') throw new Error('x'); return Promise.resolve(res); };
+      const before = d.ui.toasts.length;
+      await d.exportFile();
+      if (res !== 'none') expect(name).toMatch(/^dashboard-\d{8}\.json$/);
+      if (text) expect(lastToast(d)?.text).toBe(text); else expect(d.ui.toasts.length).toBe(before);
+      expect(d.g.lastExp > 0).toBe(dated);
+    }
+  });
+  it('import from the clipboard: a newer export is refused with its reason and nothing changes', async () => {
+    const d = make();
+    d.setG('acc', 3);
+    vi.stubGlobal('navigator', { clipboard: { readText: () => Promise.resolve('{"format":"lgd-dashboard","v":999}') } });
+    expect(await importFromClipboard(d)).toBe(false);
+    expect(lastToast(d)).toMatchObject({ text: '新しい版で書き出したデータのため読み込めません', kind: 'warn' });
+    expect(d.g.gs.acc).toBe(3);
   });
 });

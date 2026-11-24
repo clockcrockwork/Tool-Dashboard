@@ -5,7 +5,7 @@
  * `parseCand`, `sug*`, `memoFocus`, `bigTog.memo` in `renderVals()`.
  */
 import { computed, nextTick, ref } from 'vue';
-import { useDash } from '../../app/context';
+import { useDash, useWidget } from '../../app/context';
 import WidgetFrame from '../../app/shell/WidgetFrame.vue';
 import type { MemoData } from './data';
 import { MEMO_TOOLS, applyFormat, charCount, continueList, lineAt, mdLine, pvLine, toggleCheck, type Edit, type FormatKind } from './memo';
@@ -14,7 +14,9 @@ import type { TodoData } from '../todo/data';
 import { addTodo } from '../todo/todo';
 import { addEvent, type AgendaData } from '../agenda/data';
 
+const props = defineProps<{ id: string }>();
 const d = useDash();
+const w = useWidget(props.id);
 const ta = ref<HTMLTextAreaElement | null>(null);
 /** 編集／プレビュー (not saved, like the prototype `memoMode`). */
 const view = ref(false);
@@ -22,11 +24,11 @@ const view = ref(false);
 const caret = ref(-1);
 const scrollY = ref(0);
 
-const memo = computed(() => d.dataOf<MemoData>('memo'));
+const memo = computed(() => w.data<MemoData>());
 const now = computed(() => new Date(d.ui.t));
 const lines = computed(() => memo.value.text.split('\n'));
 const cands = computed(() => candidates(lines.value, memo.value.done, now.value));
-const isBig = computed(() => d.ui.big === 'memo' && (!d.g.off.memo || d.ui.temp === 'memo'));
+const isBig = computed(() => d.ui.big === w.id && (!d.g.off[w.id] || d.ui.temp === w.id));
 
 const mdLines = computed(() => lines.value.map((ln, i) => {
   const l = mdLine(ln);
@@ -47,12 +49,12 @@ const sug = computed(() => pickSuggestion(cands.value, caret.value));
 const sugD = computed(() => (sug.value?.kind === 'ev' ? 'M5 6h14v13H5zM5 10h14M9 4v3M15 4v3' : 'M5 12.5l4.5 4.5L19 7.5'));
 const sugText = computed(() => (sug.value ? suggestionText(sug.value, now.value) : ''));
 const sugAct = computed(() => (sug.value ? (sug.value.kind === 'ev' ? '予定に追加' : 'TODOに追加') : ''));
-const tools = computed(() => ((d.cfgOf('memo', 'bar') || isBig.value) && !view.value ? MEMO_TOOLS : []));
-const count = computed(() => (d.cfgOf('memo', 'count') ? String(charCount(memo.value.text)) + '字' : ''));
-const px = computed(() => Number(d.cfgOf('memo', 'size')) || 14);
+const tools = computed(() => ((w.cfg('bar') || isBig.value) && !view.value ? MEMO_TOOLS : []));
+const count = computed(() => (w.cfg('count') ? String(charCount(memo.value.text)) + '字' : ''));
+const px = computed(() => Number(w.cfg('size')) || 14);
 
 function setText(text: string): void {
-  d.setData<MemoData>('memo', { ...memo.value, text });
+  w.setData<MemoData>({ ...memo.value, text });
 }
 function applyEdit(e: Edit): void {
   setText(e.value);
@@ -77,8 +79,8 @@ function collapse(): void {
   try { (document.activeElement as HTMLElement | null)?.blur?.(); } catch { /* noop */ }
 }
 function toggleBig(): void {
-  if (d.ui.big === 'memo') collapse();
-  else Object.assign(d.ui, { big: 'memo', panel: 'none', edit: false, sel: null });
+  if (d.ui.big === w.id) collapse();
+  else Object.assign(d.ui, { big: w.id, panel: 'none', edit: false, sel: null });
 }
 
 // ----- textarea -----
@@ -87,7 +89,7 @@ function onInput(e: Event): void {
   syncCaret();
 }
 function onFocus(): void {
-  if (!d.ui.big && d.cfgOf('memo', 'expand') && d.env.width < 720) Object.assign(d.ui, { big: 'memo', panel: 'none' });
+  if (!d.ui.big && w.cfg('expand') && d.env.width < 720) Object.assign(d.ui, { big: w.id, panel: 'none' });
   syncCaret();
 }
 function onBlur(): void {
@@ -118,9 +120,10 @@ function check(i: number): void {
   setText(toggleCheck(memo.value.text, i));
 }
 function addCand(c: LineCand): void {
+  // Adds to the first TODO / 予定 placement (`todo`, `agenda`); choosing another placement comes with 複数配置 (P3).
   const sn = { todo: d.dataOf<TodoData>('todo'), agenda: d.dataOf<AgendaData>('agenda'), done: memo.value.done };
   const id = d.now();
-  d.setData<MemoData>('memo', { ...memo.value, done: { ...memo.value.done, [c.key]: 'add' } });
+  w.setData<MemoData>({ ...memo.value, done: { ...memo.value.done, [c.key]: 'add' } });
   if (c.kind === 'todo') d.setData<TodoData>('todo', { items: addTodo(sn.todo.items, c.title, id) ?? sn.todo.items });
   else d.setData<AgendaData>('agenda', addEvent(sn.agenda, { id, ts: c.ts, hasTime: c.hasTime, n: c.title, c: 'a1' }));
   d.toast((c.kind === 'todo' ? 'TODO' : '予定') + 'に追加しました', 'ok', {
@@ -128,7 +131,7 @@ function addCand(c: LineCand): void {
     fn: () => {
       d.setData<TodoData>('todo', sn.todo);
       d.setData<AgendaData>('agenda', sn.agenda);
-      d.setData<MemoData>('memo', { ...d.dataOf<MemoData>('memo'), done: sn.done });
+      w.setData<MemoData>({ ...w.data<MemoData>(), done: sn.done });
     },
   });
 }
@@ -138,7 +141,7 @@ function sugAdd(): void {
 function sugSkip(): void {
   const s = sug.value;
   if (!s) return;
-  d.setData<MemoData>('memo', { ...memo.value, done: { ...memo.value.done, [s.key]: 'skip' } });
+  w.setData<MemoData>({ ...memo.value, done: { ...memo.value.done, [s.key]: 'skip' } });
 }
 /** 別の端末へ送る — 受け渡し (P2d) arrives later; until then this mirrors the prototype's toast for the sample devices. */
 function send(): void {
@@ -148,7 +151,7 @@ function send(): void {
 </script>
 
 <template>
-  <WidgetFrame id="memo">
+  <WidgetFrame>
     <div class="in" style="flex-direction: column; gap: 4px; padding: 14px 16px 8px">
       <div v-if="!view" class="mdw" :style="{ fontSize: px + 'px' }">
         <div class="mdhl" aria-hidden="true"><div :style="{ translate: '0 ' + String(-scrollY) + 'px' }">

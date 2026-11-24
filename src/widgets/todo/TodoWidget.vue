@@ -1,18 +1,20 @@
 <script setup lang="ts">
 /** TODO (todo) — 2×2. Prototype: Main.dc.html section data-w="todo" (markup 815–830), `todoKey`, `todoPhrases`, `none.todo`. */
 import { computed, ref } from 'vue';
-import { useDash } from '../../app/context';
+import { useDash, useWidget } from '../../app/context';
 import WidgetFrame from '../../app/shell/WidgetFrame.vue';
 import type { TodoData } from './data';
 import { TODO_PHRASES, addTodo, applyPhrase, todoEmptyText, toggleTodo, visibleTodos } from './todo';
 
+const props = defineProps<{ id: string }>();
 const d = useDash();
+const w = useWidget(props.id);
 const inp = ref<HTMLInputElement | null>(null);
-const data = computed(() => d.dataOf<TodoData>('todo'));
-const hide = computed(() => !!d.cfgOf('todo', 'hide'));
+const data = computed(() => w.data<TodoData>());
+const hide = computed(() => !!w.cfg('hide'));
 const items = computed(() => visibleTodos(data.value.items, hide.value));
 const empty = computed(() => todoEmptyText(data.value.items, hide.value));
-const bar = computed(() => !!d.cfgOf('todo', 'bar'));
+const bar = computed(() => !!w.cfg('bar'));
 
 function onKey(e: KeyboardEvent): void {
   e.stopPropagation();
@@ -21,10 +23,10 @@ function onKey(e: KeyboardEvent): void {
   const next = addTodo(data.value.items, el.value, d.now());
   if (!next) return;
   el.value = '';
-  d.setData<TodoData>('todo', { items: next });
+  w.setData<TodoData>({ items: next });
 }
 function toggle(id: number): void {
-  d.setData<TodoData>('todo', { items: toggleTodo(data.value.items, id) });
+  w.setData<TodoData>({ items: toggleTodo(data.value.items, id) });
 }
 function phrase(t: string): void {
   const el = inp.value;
@@ -35,7 +37,7 @@ function phrase(t: string): void {
 </script>
 
 <template>
-  <WidgetFrame id="todo">
+  <WidgetFrame>
     <div class="in" style="flex-direction: column; gap: 6px">
       <input ref="inp" class="inp" placeholder="追加…" aria-label="TODOを追加" @keydown="onKey">
       <div class="ab" :class="bar ? 'show' : ''" style="margin: -4px -6px -4px">

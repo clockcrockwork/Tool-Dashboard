@@ -76,7 +76,7 @@ export function attachPointer(root: HTMLElement, d: Dashboard, tip: Ref<Tip | nu
   const at = (w: HTMLElement, x: number, y: number, ret: HTMLElement | null = null): void => {
     clearTimeout(st.tt);
     tip.value = null;
-    openWidgetMenu(d, root, w.getAttribute('data-w') ?? '', { x, y }, ret);
+    openWidgetMenu(d, root, w.getAttribute('data-wid') ?? '', { x, y }, ret);
   };
   const menuL: Listener[] = [
     ['contextmenu', (e) => {

@@ -36,7 +36,7 @@ const setup: DashSetup = d => {
   <DashScope v-if="comp" :prepare="setup">
     <div class="snapf" :class="{ edit }" role="img" :aria-label="label" :style="{ width: w + 'px', height: h + 'px' }">
       <div class="snapi" inert>
-        <component :is="comp" />
+        <component :is="comp" :id="id" />
         <div v-if="marks.length" class="wmk" aria-hidden="true"><Icon v-for="(m, i) in marks" :key="i" :d="m" /></div>
       </div>
     </div>

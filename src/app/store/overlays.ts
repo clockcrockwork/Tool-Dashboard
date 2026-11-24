@@ -6,7 +6,7 @@
  * only render and wire DOM events.
  */
 import { shallowRef } from 'vue';
-import { REGISTRY } from '../registry/registry';
+import { defOf, kindOf } from '../registry/instances';
 import type { Dashboard } from './store';
 import { STORE_NOTE, detectEnv, envGuide, placeAt, selectOptions, sheetState, targetBoard, type EnvGuide, type SelectKey, type SelectOption } from './sheets';
 import type { DialogSpec, MenuAnchor, MenuSpec, NoticeBar } from './types';
@@ -114,7 +114,7 @@ function setMenu(d: Dashboard, kind: MenuSpec['kind'], id: string, at: MenuAncho
 
 /** Low-priority strip buttons hidden at narrow widths move to the top of the menu (prototype `mnHid`). */
 function hiddenStripButtons(root: HTMLElement, id: string): { l: string; el: HTMLElement }[] {
-  const w = root.querySelector('.w[data-w="' + id + '"]');
+  const w = root.querySelector('.w[data-wid="' + id + '"]');
   if (!w) return [];
   return Array.from(w.querySelectorAll<HTMLElement>('.ab .abb.lo')).filter(b => b.offsetParent === null)
     .map(b => ({ l: (b.getAttribute('aria-label') ?? b.textContent ?? '').trim(), el: b }));
@@ -156,7 +156,7 @@ export function widgetMenuItems(d: Dashboard, id: string): MenuItem[] {
   const out: MenuItem[] = menuRuntime(d).extra.map(y => row({ kind: 'cmd', l: y.l, tap: () => { closeMenu(d, true); y.el.click(); } }));
   const own: MenuItem[] = [];
   if (placed) own.push(row({ kind: 'cmd', l: '設定', d: MI.gear, tap: () => { closeMenu(d, false); Object.assign(d.ui, { edit: true, sel: id, panel: 'widget', big: null }); } }));
-  if (BIG_IDS.includes(id)) {
+  if (BIG_IDS.includes(kindOf(id))) {
     const on = d.ui.big === id;
     own.push(row({ kind: 'cmd', l: on ? '元の大きさに戻す' : '大きく表示', d: on ? MI.small : MI.big, tap: () => {
       closeMenu(d, false);
@@ -203,9 +203,9 @@ export function selectMenuItems(d: Dashboard, key: string, opts: readonly Select
 /** Whether right click / long press / Shift+F10 on `t` may open the widget menu (prototype `mnL` `ok`). */
 export function menuTarget(d: Dashboard, t: EventTarget | null): HTMLElement | null {
   if (!(t instanceof Element) || d.ui.edit || d.ui.mn) return null;
-  const w = t.closest<HTMLElement>('.w[data-w]');
+  const w = t.closest<HTMLElement>('.w[data-wid]');
   if (!w || t.closest('input,textarea,select,canvas,[contenteditable],.veilc,.pmw')) return null;
-  if (d.ui.big && d.ui.big !== w.getAttribute('data-w')) return null;
+  if (d.ui.big && d.ui.big !== w.getAttribute('data-wid')) return null;
   return w;
 }
 
@@ -227,7 +227,7 @@ export function placeTemp(d: Dashboard): void {
 
 /** `--tw` / `--th` for the temporary-use window (componentDidUpdate `tp !== this._tpv`). */
 export function tempSize(id: string): { tw: string; th: string } | null {
-  const r = REGISTRY[id];
+  const r = defOf(id);
   if (!r) return null;
   const sz = r.ts ?? r.s;
   return { tw: String(Math.max(340, sz[0] * 180)) + 'px', th: String(Math.max(240, sz[1] * 168)) + 'px' };

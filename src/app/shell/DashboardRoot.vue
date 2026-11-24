@@ -6,7 +6,8 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { provideDash } from '../context';
 import type { Dashboard } from '../store/store';
-import { REGISTRY } from '../registry/registry';
+import { AUTO_FOCUS_KIND } from '../registry/registry';
+import { kindOf } from '../registry/instances';
 import { FULLSCREEN, WIDGETS } from '../../widgets';
 import { IC } from '../parts/icons';
 import Icon from '../parts/LineIcon.vue';
@@ -36,8 +37,11 @@ const gridStyle = computed(() => ({
   scrollPaddingInline: String(hg.value) + 'px',
 }));
 const snaps = computed(() => Array.from({ length: L.value.total }, (_v, i) => '1 / ' + String(i * L.value.cols + 1) + ' / span 1 / span 1'));
-/** Widgets rendered in the grid: implemented ones that are placed, or open for temporary use. */
-const shown = computed(() => Object.keys(REGISTRY).filter(id => WIDGETS[id] && (!d.g.off[id] || d.ui.temp === id)));
+/**
+ * Placements rendered in the grid: implemented kinds that are placed, or open for temporary use. Keyed and passed by
+ * placement ID; the component is looked up by kind, so no kind needs its own branch here.
+ */
+const shown = computed(() => d.ids.value.filter(id => WIDGETS[kindOf(id)] && (!d.g.off[id] || d.ui.temp === id)));
 /** Edit-mode marks for pinned / size-locked / hidden-in-public widgets (部品シート 7章「編集中の固定の印」). */
 const marks = computed(() => {
   if (!d.ui.edit) return [];
@@ -46,7 +50,8 @@ const marks = computed(() => {
   })).filter(m => m.p || m.l || m.v);
 });
 const empties = computed(() => L.value.empty.map((e, gi) => (e ? { gi, area: '1 / ' + String((L.value.first[gi] ?? 0) * L.value.cols + 1) + ' / span ' + String(L.value.rows) + ' / span ' + String(L.value.cols) } : null)).filter(x => x !== null));
-const fullScreenIds = computed(() => Object.keys(FULLSCREEN));
+/** Full-screen screens of the layout whose kind has a full-screen view (`pg`, 仕様書 2章「全画面ウィジェット」). */
+const fullViews = computed(() => L.value.fullScreens.filter(s => FULLSCREEN[kindOf(s.id)]));
 const sheetModal = computed(() => ['global', 'index', 'add', 'help', 'devices'].includes(d.ui.panel));
 const scrimOpen = computed(() => !!d.ui.big && (!d.g.off[d.ui.big] || d.ui.temp === d.ui.big));
 
@@ -119,9 +124,9 @@ function onKey(e: KeyboardEvent): void {
 }
 function onGridClick(e: MouseEvent): void {
   if (!d.ui.edit || d.ui.big) return;
-  const el = (e.target as Element | null)?.closest?.('[data-w]');
+  const el = (e.target as Element | null)?.closest?.('[data-wid]');
   if (!el) { Object.assign(d.ui, { panel: 'none', sel: null }); return; }
-  Object.assign(d.ui, { sel: el.getAttribute('data-w'), panel: 'widget' });
+  Object.assign(d.ui, { sel: el.getAttribute('data-wid'), panel: 'widget' });
 }
 
 // ----- environment -----
@@ -166,11 +171,11 @@ onMounted(() => {
   const start = m ? Math.max(0, Number(m[1]) - 1) : d.homeIndex();
   if (start > 0) d.go(start, false);
   // Focus the search box on open for mouse users (仕様書 2章).
-  if (mqFine.matches && d.g.gs.autoq && d.ui.tour < 0 && !d.g.off.search) {
+  if (mqFine.matches && d.g.gs.autoq && d.ui.tour < 0 && !d.g.off[AUTO_FOCUS_KIND]) {
     // Widgets load asynchronously; wait (up to ~2s) until the search box exists.
     let tries = 0;
     const tryFocus = (): void => {
-      const q = root.value?.querySelector<HTMLInputElement>('[data-w="search"] input');
+      const q = root.value?.querySelector<HTMLInputElement>('[data-wid="' + AUTO_FOCUS_KIND + '"] input');
       if (q) { q.focus({ preventScroll: true }); return; }
       if (++tries < 120) requestAnimationFrame(tryFocus);
     };
@@ -221,8 +226,8 @@ watch(() => d.ui.page, p => {
       <div v-for="em in empties" :key="'e' + em.gi" :style="{ gridArea: em.area, display: 'grid', placeItems: 'center', zIndex: 1 }">
         <button class="chip" @click="openAddFor(em.gi)"><Icon :d="IC.plus" :size="18" />ウィジェットを追加</button>
       </div>
-      <component :is="WIDGETS[id]" v-for="id in shown" :key="id" />
-      <component :is="FULLSCREEN[id]" v-for="id in fullScreenIds" :key="'fs-' + id" />
+      <component :is="WIDGETS[kindOf(id)]" v-for="id in shown" :id="id" :key="id" />
+      <component :is="FULLSCREEN[kindOf(fs.id)]" v-for="fs in fullViews" :id="fs.id" :key="'fs-' + fs.id" />
     </div>
 
     <div class="sscrim" :class="{ open: sheetModal }" aria-hidden="true" @click="d.back()" />

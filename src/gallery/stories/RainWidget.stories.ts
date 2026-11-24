@@ -17,7 +17,7 @@ const meta = {
     edit: { description: '編集モード' },
   },
   parameters: { lgd: widgetLgd('rain', (d, a) => { d.setCfg('rain', 'demo', String(a.demo)); }) },
-  render: () => ({ components: { RainWidget }, template: '<RainWidget />' }),
+  render: () => ({ components: { RainWidget }, template: '<RainWidget id="rain" />' }),
 } satisfies Meta<Args>;
 
 export default meta;
