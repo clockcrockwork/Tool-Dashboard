@@ -139,12 +139,23 @@ describe('かたまり recognition (仕様書 6章「メモから予定・TODO�
 
 describe('suggestion (1件だけ、行を離れたら、行の文面で覚える)', () => {
   const lines = MEMO_INITIAL.split('\n');
-  it('initial memo: the heading 「# 今日」 is a (終日) 予定 like in the prototype, then the TODO line', () => {
-    const c = candidates(lines, {}, NOW);
-    expect(c.map(x => x?.kind ?? null)).toEqual(['ev', 'todo', 'ev', null]);
+  it('「# 今日」のような見出しの行も、日付を含めば (終日) 予定として認識する（見出しを候補から外さない。プロトタイプどおり）', () => {
+    const c = candidates(['# 今日', '- [ ] 牛乳を買う'], {}, NOW);
+    expect(c.map(x => x?.kind ?? null)).toEqual(['ev', 'todo']);
     expect(pickSuggestion(c, -1)).toMatchObject({ kind: 'ev', title: '予定', i: 0, key: '# 今日', hasTime: false });
-    const c2 = candidates(lines, { '# 今日': 'skip' }, NOW);
+    const c2 = candidates(['# 今日', '- [ ] 牛乳を買う'], { '# 今日': 'skip' }, NOW);
     expect(pickSuggestion(c2, -1)).toMatchObject({ kind: 'todo', title: '牛乳を買う', i: 1, key: '- [ ] 牛乳を買う' });
+  });
+  it('initial memo: the heading 「# メモ」 is not a candidate; the first suggestion is the next recognised line', () => {
+    const c = candidates(lines, {}, NOW);
+    expect(lines[0]).toBe('# メモ');
+    expect(c.map(x => x?.kind ?? null)).toEqual([null, 'todo', 'ev', null]);
+    expect(pickSuggestion(c, -1)).toMatchObject({ kind: 'todo', title: '牛乳を買う', i: 1, key: '- [ ] 牛乳を買う' });
+    // 次の行を答えると、「明日 14:00 打ち合わせ」が提案になる
+    const c2 = candidates(lines, { '- [ ] 牛乳を買う': 'skip' }, NOW);
+    const s2 = pickSuggestion(c2, -1);
+    expect(s2).toMatchObject({ kind: 'ev', title: '打ち合わせ', i: 2, ts: at(11, 20, 14), hasTime: true });
+    expect(s2 && suggestionText(s2, NOW)).toBe('明日 14:00　打ち合わせ');
   });
   it('the caret line is skipped', () => {
     const c = candidates(['- [ ] a', '明日 14:00 打ち合わせ'], {}, NOW);
@@ -168,7 +179,7 @@ describe('suggestion (1件だけ、行を離れたら、行の文面で覚える
 
 describe('memo data', () => {
   it('initial text and sanitize', () => {
-    expect(memoData.initial(0)).toEqual({ text: '# 今日\n- [ ] 牛乳を買う\n明日 14:00 打ち合わせ\n週報は**金曜**まで', done: {} });
+    expect(memoData.initial(0)).toEqual({ text: '# メモ\n- [ ] 牛乳を買う\n明日 14:00 打ち合わせ\n週報は**金曜**まで', done: {} });
     expect(memoData.sanitize({ text: 'a', done: { x: 'add', y: 'nope', z: 1 }, extra: 1 }, 0)).toEqual({ text: 'a', done: { x: 'add' } });
     expect(memoData.sanitize({ text: 1 }, 0)).toBeNull();
     expect(memoData.sanitize('a', 0)).toBeNull();

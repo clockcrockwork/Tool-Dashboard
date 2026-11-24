@@ -5,7 +5,7 @@ import { isObj, isStr } from '../shared/guards';
 export type SugResult = 'add' | 'skip';
 export type MemoData = { text: string; done: Record<string, SugResult> };
 
-export const MEMO_INITIAL = '# 今日\n- [ ] 牛乳を買う\n明日 14:00 打ち合わせ\n週報は**金曜**まで';
+export const MEMO_INITIAL = '# メモ\n- [ ] 牛乳を買う\n明日 14:00 打ち合わせ\n週報は**金曜**まで';
 export const MEMO_MAX = 100_000;
 const DONE_MAX = 500;
 

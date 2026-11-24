@@ -30,3 +30,19 @@ export function todoEmptyText(items: readonly TodoItem[], hideDone: boolean): st
   if (!empty) return null;
   return items.length ? 'すべて完了しました' : '上の欄に書いて Enter で追加します';
 }
+
+/**
+ * Removes the row `id` added by one operation (メモからの追加の「元に戻す」) and puts back the rows that the 50-item limit
+ * pushed out by that addition (`dropped`, at the bottom where they were). Other edits made since are kept; a dropped
+ * row that is somehow back already is not duplicated, and the limit still applies.
+ */
+export function undoAddTodo(items: readonly TodoItem[], id: number, dropped: readonly TodoItem[] = []): TodoItem[] {
+  const rest = items.filter(x => x.id !== id);
+  const back = dropped.filter(x => !rest.some(y => y.id === x.id));
+  return [...rest, ...back].slice(0, TODO_MAX);
+}
+
+/** Rows of `before` that are missing from `after` (pushed out by the limit). */
+export function droppedRows<T extends { id: number }>(before: readonly T[], after: readonly T[]): T[] {
+  return before.filter(x => !after.some(y => y.id === x.id));
+}

@@ -23,4 +23,6 @@ export const IC = {
   shrink: 'M10 4v6H4M14 20v-6h6',
   play: 'M8 5.5v13l11-6.5z',
   pause: 'M8 5v14M16 5v14',
+  /** 準備中（使えるようになるまで待つ）: a clock face. */
+  soon: 'M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zM12 7.5V12l3 2',
 } as const;

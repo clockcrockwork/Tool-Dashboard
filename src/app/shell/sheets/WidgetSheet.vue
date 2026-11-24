@@ -49,7 +49,8 @@ type FieldView = { f: Field; v: FieldValue | undefined; kind: 'tg' | 'seg' | 'se
 const fields = computed<FieldView[]>(() => {
   const id = sel.value;
   if (!id || !def.value) return [];
-  return def.value.f.map(f => {
+  // Prototype-only settings (`dev`, e.g. 傘の「サンプル」) are not in production builds (実装ガイド 付録「確認用の機能」).
+  return def.value.f.filter(f => !f.dev || import.meta.env.DEV).map(f => {
     // A value the check refused (e.g. a cleared time) is shown from the draft until it becomes valid.
     const dk = id + '.' + f.k;
     const v = dk in st.draft ? st.draft[dk] : d.cfgOf(id, f.k);

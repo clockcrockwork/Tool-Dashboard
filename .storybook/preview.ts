@@ -2,6 +2,7 @@
 import type { Preview } from '@storybook/vue3-vite';
 import '../src/app/styles/fonts';
 import '../src/app/styles/dashboard.css';
+import '../src/app/styles/overrides.css';
 import { withDashboard } from '../src/gallery/storybook';
 
 const preview: Preview = {

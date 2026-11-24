@@ -8,7 +8,7 @@
  * Saving: see the header of `persist.ts` (versions, locked sections, writing only changed sections).
  */
 import { computed, reactive, watch, type ComputedRef, type WatchStopHandle } from 'vue';
-import { REGISTRY, fieldDefault, type FieldValue, type Size } from '../registry/registry';
+import { REGISTRY, fieldDefault, type FieldValue, type Size, type WidgetDef } from '../registry/registry';
 import { defOf, isInstanceId, kindOf, nameOf, nextInstanceId, sortInstances } from '../registry/instances';
 import { computeLayout, isFullScreen, sizeOf, type Layout, type Pin } from '../layout/layout';
 import { ACCENTS, defaultGlobal, defaultUi, renumber } from './defaults';
@@ -18,6 +18,7 @@ import {
   type LockReason, type SectionStore, type WidgetSection,
 } from './persist';
 import { checkField, envelopeHeader } from './validate';
+import type { RecordStore } from './records';
 import type { DialogSpec, GlobalSection, GlobalSettings, Panel, Toast, ToastAct, ToastKind, UiState, WidgetCfg, WidgetDataDef } from './types';
 
 export type { WidgetDataDef } from './types';
@@ -39,7 +40,39 @@ export type DashOptions = Readonly<{
   now?: () => number;
   /** Timer hooks (tests). */
   setTimeout?: (fn: () => void, ms: number) => unknown;
+  /**
+   * Kinds that have an implementation (`Object.keys(WIDGETS)`). Other kinds are listed and can be opened, but show
+   * 「準備中」 and are not placed (review #9). Omitted: every kind counts as implemented (store-only tests).
+   */
+  implemented?: Iterable<string>;
+  /** 非同期の記録の保存先 for large records (`createRecords(idbBackend())`, review #7). Omitted: none (null). */
+  records?: RecordStore;
 }>;
+
+/**
+ * Everything a reading (import) replaces, taken before it is applied: the global section, every placement's settings
+ * and record, the saved bytes of every section (locked ones included) and the shared undo history (review #3).
+ */
+export type SectionSnapshot = Readonly<{
+  g: string;
+  cfg: string;
+  data: string;
+  bytes: ReadonlyMap<string, string>;
+  saved: Readonly<Record<string, string>>;
+  pending: ReadonlyMap<string, string>;
+  locked: ReadonlyMap<string, { reason: LockReason; raw: unknown }>;
+  hist: readonly string[];
+  page: number;
+}>;
+
+/** 「人前では隠す」 of one placement: its own setting, else the kind's default `priv` (仕様書 3章; not `vd`). */
+export function veilSetting(cfg: Readonly<Record<string, unknown>> | undefined, def: Pick<WidgetDef, 'priv'> | undefined): boolean {
+  const c = cfg?.veil;
+  return typeof c === 'boolean' ? c : !!def?.priv;
+}
+
+/** Prefix of every key the dashboard saves (`lgd.v1:global`, `lgd.v1:w:<配置ID>`). */
+const KEY_PREFIX = 'lgd.v1:';
 
 /** Result of reading a file or the clipboard (実装ガイド 5章). Nothing changes unless `ok`. */
 export type ImportResult = { ok: true } | { ok: false; reason: string };
@@ -78,6 +111,8 @@ export class Dashboard {
   /** All placement IDs in registry order, then by number (DOM order of the widgets). */
   readonly ids: ComputedRef<string[]>;
   readonly now: () => number;
+  /** 非同期の記録の保存先 (大きな記録、`records.ts`). Null until the app passes one (used from P2). */
+  readonly records: RecordStore | null;
   private readonly store: SectionStore;
   private readonly defs: Readonly<Record<string, WidgetDataDef<unknown>>>;
   private readonly later: (fn: () => void, ms: number) => unknown;
@@ -94,6 +129,7 @@ export class Dashboard {
   /** Keys never written this session (newer or broken sections); value = the parsed saved JSON, if any. */
   private locked = new Map<string, { reason: LockReason; raw: unknown }>();
   private toastHold = false;
+  private readonly ready: ReadonlySet<string> | null;
   /** Called when the active screen changes; the shell scrolls the pager. */
   onGo: ((page: number, smooth: boolean) => void) | null = null;
   /** Saves the export file (set by `main.ts`; see `SaveResult`). */
@@ -104,6 +140,8 @@ export class Dashboard {
     this.store = opts.store;
     this.defs = opts.dataDefs;
     this.later = opts.setTimeout ?? ((fn, ms) => setTimeout(fn, ms));
+    this.ready = opts.implemented ? new Set(opts.implemented) : null;
+    this.records = opts.records ?? null;
     const t = this.now();
     const gr = readGlobal(this.store, t);
     const global = gr.state === 'ok' ? gr.value : defaultGlobal(t);
@@ -141,7 +179,8 @@ export class Dashboard {
     const watchSection = (id: string): void => {
       if (per.has(id)) return;
       // immediate: a placement added later (no baseline yet) gets its section written right away.
-      per.set(id, watch(() => this.serializeWidget(id), v => { this.write(widgetKey(id), v); this.track(); }, { immediate: true }));
+      // Only placements in the order are written (one dropped by undoing a reading keeps the bytes restored for it).
+      per.set(id, watch(() => this.serializeWidget(id), v => { if (this.g.order.includes(id)) this.write(widgetKey(id), v); this.track(); }, { immediate: true }));
     };
     const stops = [
       watch(() => this.serializeGlobal(), v => { this.write(GLOBAL_KEY, v); this.track(); }),
@@ -210,9 +249,20 @@ export class Dashboard {
   sizeOf(id: string): Size {
     return sizeOf(this.g, id);
   }
+  /** 「人前では隠す」 setting of a placement (see `veilSetting`). */
   veilOf(id: string): boolean {
-    const c = this.cfg[id]?.veil;
-    return typeof c === 'boolean' ? c : !!defOf(id)?.vd;
+    return veilSetting(this.cfg[id], defOf(id));
+  }
+  /**
+   * Hidden now (仕様書 3章「人前では隠す」): 「中身を隠す」 is on, the placement hides in public and was not shown with
+   * 「表示する」. Takes precedence everywhere: board, front view, temporary use, full screen, state overlay, 1×1 notices.
+   */
+  veiled(id: string): boolean {
+    return this.g.gs.veil && !this.ui.peek[id] && this.veilOf(id);
+  }
+  /** The kind has an implementation (see `DashOptions.implemented`); other kinds show 「準備中」 (review #9). */
+  isReady(kind: string): boolean {
+    return this.ready ? this.ready.has(kind) : kind in REGISTRY;
   }
   /** `.w` class modifiers (prototype `k[id]`). */
   frameClass(id: string): string {
@@ -220,7 +270,7 @@ export class Dashboard {
     const tmp = u.temp === id && u.big === id;
     const hidden = (this.g.off[id] || this.pgOn(id)) && !tmp;
     const big = u.big === id && (tmp || !this.g.off[id]);
-    const veil = this.g.gs.veil && !u.peek[id] && this.veilOf(id);
+    const veil = this.veiled(id);
     return [hidden ? 'off' : '', big ? 'big' : '', tmp ? 'tmp' : '', veil ? 'veil' : ''].filter(Boolean).join(' ');
   }
   boardName(gi: number): string {
@@ -524,10 +574,64 @@ export class Dashboard {
       if (def) this.data[id] = sec ? sec.data : def.initial(t);
     }
     // The file replaces what was saved: sections that were locked become writable and are written.
-    for (const key of [GLOBAL_KEY, ...g.order.map(widgetKey)]) {
-      if (this.locked.delete(key)) delete this.saved[key];
+    // Written now: a watcher fires only when the in-memory value changes, which it may not (defaults in both).
+    if (this.locked.delete(GLOBAL_KEY)) { delete this.saved[GLOBAL_KEY]; this.write(GLOBAL_KEY, this.serializeGlobal()); }
+    for (const id of g.order) {
+      const key = widgetKey(id);
+      if (this.locked.delete(key)) { delete this.saved[key]; this.write(key, this.serializeWidget(id)); }
     }
+    // The shared history is about the replaced state; a reading is undone with its own snapshot (`restoreSnapshot`).
+    this.resetHistory([]);
     return { ok: true };
+  }
+  /** See `SectionSnapshot`. Take it right before `importJson`; `restoreSnapshot` undoes the reading. */
+  snapshot(): SectionSnapshot {
+    const bytes = new Map<string, string>();
+    try {
+      for (const k of this.store.keys()) {
+        if (!k.startsWith(KEY_PREFIX)) continue;
+        const v = this.store.get(k);
+        if (v !== null) bytes.set(k, v);
+      }
+    } catch { /* storage unavailable: only the in-memory state is restored */ }
+    return {
+      g: JSON.stringify(this.g), cfg: JSON.stringify(this.cfg), data: JSON.stringify(this.data),
+      bytes, saved: { ...this.saved }, pending: new Map(this.pending), locked: new Map(this.locked),
+      hist: [...this.hist], page: this.ui.page,
+    };
+  }
+  /**
+   * Puts back what `snapshot` took: the state in memory, the saved bytes of every section as they were (sections the
+   * reading created are removed; locked sections get their original bytes), and the shared history before the reading.
+   * The restored state is the saved state, so nothing is written afterwards unless it differs.
+   */
+  restoreSnapshot(s: SectionSnapshot): void {
+    const replace = (target: Record<string, unknown>, json: string): void => {
+      const src = JSON.parse(json) as Record<string, unknown>;
+      for (const k of Object.keys(target)) if (!(k in src)) delete target[k];
+      Object.assign(target, src);
+    };
+    Object.assign(this.g, JSON.parse(s.g) as GlobalSection);
+    replace(this.cfg, s.cfg);
+    replace(this.data, s.data);
+    try {
+      for (const k of this.store.keys()) if (k.startsWith(KEY_PREFIX) && !s.bytes.has(k)) this.store.remove(k);
+      for (const [k, v] of s.bytes) if (this.store.get(k) !== v) this.store.set(k, v);
+      this.saveFailing = false;
+    } catch {
+      this.toast('容量がいっぱいで保存できません', 'warn', { label: 'ファイルに保存', fn: () => { void this.exportFile(); } });
+    }
+    this.saved = { ...s.saved };
+    this.pending = new Map(s.pending);
+    this.locked = new Map(s.locked);
+    this.resetHistory(s.hist);
+    this.go(s.page, false);
+  }
+  private resetHistory(hist: readonly string[]): void {
+    this.hist = [...hist];
+    this.histLast = 0;
+    this.undoing = false;
+    this.histSig = this.histSignature();
   }
   /** `dashboard-年月日.json` (実装ガイド 5章). */
   exportName(): string {

@@ -13,7 +13,7 @@ const wx = computed(() => rainView(rainSample(w.cfg('demo')), new Date(d.ui.t).g
 </script>
 
 <template>
-  <WidgetFrame net>
+  <WidgetFrame>
     <div class="in" style="align-items: center; gap: 12px; padding-inline: 16px">
       <svg class="i" aria-hidden="true" viewBox="0 0 24 24" style="width: min(44cqh, 52px); height: min(44cqh, 52px); stroke-width: 1.3"><path :d="wx.icon" /></svg>
       <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">

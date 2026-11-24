@@ -7,7 +7,7 @@ import { Dashboard } from '../app/store/store';
 import { memoryStore } from '../app/store/persist';
 import { REGISTRY, type Size } from '../app/registry/registry';
 import { renumber } from '../app/store/defaults';
-import { WIDGET_DATA } from '../widgets';
+import { WIDGETS, WIDGET_DATA } from '../widgets';
 
 export const FIXED_NOW = Date.parse('2026-11-19T10:24:36+09:00');
 
@@ -23,6 +23,7 @@ export function makeDash(setup?: DashSetup, opts: MakeDashOptions = {}): Dashboa
   const d = new Dashboard({
     store: memoryStore(),
     dataDefs: WIDGET_DATA,
+    implemented: Object.keys(WIDGETS),
     now: () => FIXED_NOW,
     ...(opts.timers ? {} : { setTimeout: () => 0 }),
   });

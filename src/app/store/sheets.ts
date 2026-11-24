@@ -180,9 +180,13 @@ export function useWithoutPlacing(d: Dashboard, id: string): void {
   Object.assign(d.ui, { big: id, temp: id, panel: 'none', ret: 'add', sel: null });
 }
 
-/** Add (or move) a widget to a board. `stay` keeps the screen where it is. */
-export function placeAt(d: Dashboard, id: string, gid: string, stay: boolean): void {
+/**
+ * Add (or move) a widget to a board. `stay` keeps the screen where it is. A kind without an implementation is not
+ * added: 「〇〇 は準備中です」 is shown instead and false is returned (review #9; moving an already placed one still works).
+ */
+export function placeAt(d: Dashboard, id: string, gid: string, stay: boolean): boolean {
   const wasOff = !!d.g.off[id];
+  if (wasOff && !d.isReady(kindOf(id))) { pendingToast(d, id); return false; }
   const off = { ...d.g.off };
   delete off[id];
   d.g.off = off;
@@ -191,6 +195,12 @@ export function placeAt(d: Dashboard, id: string, gid: string, stay: boolean): v
   if (!stay) follow(d, id);
   flashOn(d, id);
   d.undoable(nameOf(id) + ' を「' + boardNameOf(d, gid) + '」に' + (wasOff ? '追加' : '移動') + 'しました');
+  return true;
+}
+
+/** 「〇〇 は準備中です」 (an add that did not happen; review #9). */
+export function pendingToast(d: Dashboard, id: string): void {
+  d.toast(nameOf(id) + ' は準備中です', 'info');
 }
 
 // ---------------------------------------------------------------- boards and presets
@@ -264,13 +274,18 @@ export async function exportCopy(d: Dashboard): Promise<boolean> {
   return true;
 }
 
-/** 読み込み. The whole text is checked before anything changes (`Dashboard.importJson`); a refusal says why. */
+/**
+ * 読み込み. The whole text is checked before anything changes (`Dashboard.importJson`); a refusal says why.
+ * 「元に戻す」 on the toast puts back every section as it was before (settings, layout and records such as TODO, メモ,
+ * 予定, and the bytes of sections this build could not read), and that restored state is what stays saved (review #3).
+ */
 export async function importFromClipboard(d: Dashboard): Promise<boolean> {
   const empty = (): false => { d.toast('読み込めるデータがクリップボードにありません', 'warn'); return false; };
   const c = clip();
   if (!c || typeof c.readText !== 'function') return empty();
   let txt: string;
   try { txt = await c.readText(); } catch { return empty(); }
+  const before = d.snapshot();
   const r = d.importJson(txt);
   if (!r.ok) {
     if (r.reason === IMPORT_REASONS.format) return empty();
@@ -278,7 +293,13 @@ export async function importFromClipboard(d: Dashboard): Promise<boolean> {
     return false;
   }
   d.go(0, false);
-  d.undoable('読み込みました');
+  let done = false;
+  d.toast('読み込みました', 'info', { label: '元に戻す', fn: () => {
+    if (done) return;
+    done = true;
+    d.restoreSnapshot(before);
+    d.toast('元に戻しました', 'info');
+  } });
   return true;
 }
 

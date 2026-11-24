@@ -8,7 +8,7 @@
 import { shallowRef } from 'vue';
 import { defOf, kindOf } from '../registry/instances';
 import type { Dashboard } from './store';
-import { STORE_NOTE, detectEnv, envGuide, placeAt, selectOptions, sheetState, targetBoard, type EnvGuide, type SelectKey, type SelectOption } from './sheets';
+import { STORE_NOTE, detectEnv, envGuide, pendingToast, placeAt, selectOptions, sheetState, targetBoard, type EnvGuide, type SelectKey, type SelectOption } from './sheets';
 import type { DialogSpec, MenuAnchor, MenuSpec, NoticeBar } from './types';
 
 // ---------------------------------------------------------------- icons (prototype `IX()`)
@@ -220,6 +220,8 @@ export function collapse(d: Dashboard): void {
 export function placeTemp(d: Dashboard): void {
   const id = d.ui.temp;
   if (!id) return;
+  // 準備中の種類は置かない（一時利用はそのまま開いておく。review #9）。
+  if (!d.isReady(kindOf(id))) { pendingToast(d, id); return; }
   const tgt = targetBoard(d);
   Object.assign(d.ui, { big: null, temp: null, ret: null, panel: 'none' });
   placeAt(d, id, tgt.id, false);

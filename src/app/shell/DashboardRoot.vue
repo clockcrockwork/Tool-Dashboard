@@ -3,7 +3,7 @@
  * Root `.dash`: wallpaper, the horizontally snapping screen grid, widgets, and the operation layer
  * (bottom bar, sheets, toasts…). Ported from design/claude-design/Main.dc.html (markup 686–2016).
  */
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch, type Component } from 'vue';
 import { provideDash } from '../context';
 import type { Dashboard } from '../store/store';
 import { AUTO_FOCUS_KIND } from '../registry/registry';
@@ -15,6 +15,9 @@ import BottomNav from './BottomNav.vue';
 import ToastStack from './ToastStack.vue';
 import SheetsHost from './sheets/SheetsHost.vue';
 import OverlaysHost from './overlays/OverlaysHost.vue';
+import PendingWidget from './PendingWidget.vue';
+import FullScreenStub from './FullScreenStub.vue';
+import { fullScreenViews, gridPlacements } from './render';
 
 const props = defineProps<{ dash: Dashboard }>();
 const d = props.dash;
@@ -38,10 +41,12 @@ const gridStyle = computed(() => ({
 }));
 const snaps = computed(() => Array.from({ length: L.value.total }, (_v, i) => '1 / ' + String(i * L.value.cols + 1) + ' / span 1 / span 1'));
 /**
- * Placements rendered in the grid: implemented kinds that are placed, or open for temporary use. Keyed and passed by
- * placement ID; the component is looked up by kind, so no kind needs its own branch here.
+ * Placements rendered in the grid: placed ones, or the one open for temporary use; `lazy` kinds only near the current
+ * screen or in front (`render.ts`). Keyed and passed by placement ID; the component is looked up by kind, so no kind
+ * needs its own branch here. A kind without an implementation shows 「準備中」 (`PendingWidget`, review #9).
  */
-const shown = computed(() => d.ids.value.filter(id => WIDGETS[kindOf(id)] && (!d.g.off[id] || d.ui.temp === id)));
+const shown = computed(() => gridPlacements(d));
+const viewOf = (id: string): Component => WIDGETS[kindOf(id)] ?? PendingWidget;
 /** Edit-mode marks for pinned / size-locked / hidden-in-public widgets (部品シート 7章「編集中の固定の印」). */
 const marks = computed(() => {
   if (!d.ui.edit) return [];
@@ -50,8 +55,15 @@ const marks = computed(() => {
   })).filter(m => m.p || m.l || m.v);
 });
 const empties = computed(() => L.value.empty.map((e, gi) => (e ? { gi, area: '1 / ' + String((L.value.first[gi] ?? 0) * L.value.cols + 1) + ' / span ' + String(L.value.rows) + ' / span ' + String(L.value.cols) } : null)).filter(x => x !== null));
-/** Full-screen screens of the layout whose kind has a full-screen view (`pg`, 仕様書 2章「全画面ウィジェット」). */
-const fullViews = computed(() => L.value.fullScreens.filter(s => FULLSCREEN[kindOf(s.id)]));
+/**
+ * Full-screen screens of the layout (`pg`, 仕様書 2章「全画面ウィジェット」). The kind's view, or the shell's stand-in while
+ * 人前では隠す hides it (the view is not created) or when the kind has no full-screen view yet.
+ */
+const fullViews = computed(() => fullScreenViews(d).map((s) => {
+  const view = FULLSCREEN[kindOf(s.id)];
+  const mode = d.veiled(s.id) ? 'veil' as const : view ? null : 'pending' as const;
+  return { id: s.id, view, mode };
+}));
 const sheetModal = computed(() => ['global', 'index', 'add', 'help', 'devices'].includes(d.ui.panel));
 const scrimOpen = computed(() => !!d.ui.big && (!d.g.off[d.ui.big] || d.ui.temp === d.ui.big));
 
@@ -226,8 +238,11 @@ watch(() => d.ui.page, p => {
       <div v-for="em in empties" :key="'e' + em.gi" :style="{ gridArea: em.area, display: 'grid', placeItems: 'center', zIndex: 1 }">
         <button class="chip" @click="openAddFor(em.gi)"><Icon :d="IC.plus" :size="18" />ウィジェットを追加</button>
       </div>
-      <component :is="WIDGETS[kindOf(id)]" v-for="id in shown" :id="id" :key="id" />
-      <component :is="FULLSCREEN[kindOf(fs.id)]" v-for="fs in fullViews" :id="fs.id" :key="'fs-' + fs.id" />
+      <component :is="viewOf(id)" v-for="id in shown" :id="id" :key="id" />
+      <template v-for="fs in fullViews" :key="'fs-' + fs.id">
+        <FullScreenStub v-if="fs.mode" :id="fs.id" :mode="fs.mode" />
+        <component :is="fs.view" v-else :id="fs.id" />
+      </template>
     </div>
 
     <div class="sscrim" :class="{ open: sheetModal }" aria-hidden="true" @click="d.back()" />

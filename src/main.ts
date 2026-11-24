@@ -2,9 +2,10 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import './app/styles/fonts';
 import './app/styles/dashboard.css';
+import './app/styles/overrides.css';
 import { Dashboard, type SaveResult } from './app/store/store';
 import { localStore } from './app/store/persist';
-import { WIDGET_DATA } from './widgets';
+import { WIDGETS, WIDGET_DATA } from './widgets';
 
 type SavePicker = (opts: { suggestedName: string; types: { description: string; accept: Record<string, string[]> }[] }) => Promise<{
   createWritable(): Promise<{ write(data: Blob): Promise<void>; close(): Promise<void> }>;
@@ -43,6 +44,6 @@ async function saveFile(json: string, filename: string): Promise<SaveResult> {
   }
 }
 
-const dash = new Dashboard({ store: localStore(), dataDefs: WIDGET_DATA });
+const dash = new Dashboard({ store: localStore(), dataDefs: WIDGET_DATA, implemented: Object.keys(WIDGETS) });
 dash.onExport = saveFile;
 createApp(App, { dash }).mount('#app');

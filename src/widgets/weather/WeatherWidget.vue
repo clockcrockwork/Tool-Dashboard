@@ -3,11 +3,11 @@
  * 天気 (weather) — 2×1, net: data. 朝・昼・夜＋湿度、縦2以上で3時間ごと、縦2以上かつ横3以上または縦3以上で週間.
  * Prototype: Main.dc.html section data-w="weather" (markup 723–747), values `renderVals()` `wd`.
  */
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 import { useDash, useWidget } from '../../app/context';
 import WidgetFrame from '../../app/shell/WidgetFrame.vue';
 import { stateClass, stateText, weatherTiers, weatherView } from './weather';
-import { requestTiers, retryWeather, weatherRuntime } from './status';
+import { retryWeather, useWeatherTiers, weatherRuntime } from './status';
 
 const props = defineProps<{ id: string }>();
 const d = useDash();
@@ -18,14 +18,15 @@ const tiers = computed(() => {
   const pos = d.layout.value.pos[w.id];
   return weatherTiers(pos ? { w: pos.w, h: pos.h } : { w: def[0], h: def[1] }, !!d.g.off[w.id]);
 });
-watch(tiers, t => { requestTiers(d, t); }, { immediate: true });
-const v = computed(() => weatherView(new Date(d.ui.t), w.cfg('unit') === '°F', tiers.value, rt.ready));
+// 段のデータは表示中のときだけ取りに行き・更新する（status.ts）. unmount で止まる.
+const place = useWeatherTiers(d, w.id, () => tiers.value);
+const v = computed(() => weatherView(new Date(d.ui.t), w.cfg('unit') === '°F', tiers.value, place.ready));
 const stc = computed(() => stateClass(rt.st));
 const st = computed(() => stateText(rt.st, d.ui.t));
 </script>
 
 <template>
-  <WidgetFrame net states :state-class="stc" :st-msg="st[0]" :st-act="st[1]" :st-sub="st[2]" @retry="retryWeather(d)">
+  <WidgetFrame :state-class="stc" :st-msg="st[0]" :st-act="st[1]" :st-sub="st[2]" @retry="retryWeather(d)">
     <div class="in" style="flex-direction: column; justify-content: center; gap: 10px; padding: 12px 16px">
       <div style="display: flex; align-items: center; gap: 8px">
         <div v-for="wp in v.parts" :key="wp.l" class="wcol" style="flex: 1"><span class="cap">{{ wp.l }}</span><svg class="i" role="img" :aria-label="wp.a" viewBox="0 0 24 24" style="width: 26px; height: 26px; stroke-width: 1.4"><path :d="wp.d" /></svg><span class="num" style="font-size: var(--fs-xl); font-weight: 300; line-height: 1.2">{{ wp.t }}</span></div>

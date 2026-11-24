@@ -45,3 +45,13 @@ export const agendaData: WidgetDataDef<AgendaData> = {
 export function addEvent(data: AgendaData, ev: AgendaEvent): AgendaData {
   return { events: [...data.events, ev].slice(-AGENDA_MAX) };
 }
+
+/**
+ * Removes the event `id` added by one operation (メモからの追加の「元に戻す」) and puts back the events the limit pushed out
+ * by that addition (`dropped`, at the front where they were). Other edits made since are kept.
+ */
+export function undoAddEvent(data: AgendaData, id: number, dropped: readonly AgendaEvent[] = []): AgendaData {
+  const rest = data.events.filter(x => x.id !== id);
+  const back = dropped.filter(x => !rest.some(y => y.id === x.id));
+  return { events: [...back, ...rest].slice(-AGENDA_MAX) };
+}

@@ -3,6 +3,7 @@
  * A small widget whose permission card (`.pmw .perm`) or empty/error message (`.sto .stm`) does not fit
  * keeps it faded and announces it as a toast headed by the widget name: once while the state lasts,
  * again when the widget is tapped. Ported from `ntOf` / `ntScan` / `ntToast` (Main.dc.html).
+ * Nothing is announced for a widget hidden by 「人前では隠す」 (`.veil`, review #6).
  */
 import type { Dashboard } from '../../store/store';
 import type { ToastKind } from '../../store/types';
@@ -10,7 +11,8 @@ import type { ToastKind } from '../../store/types';
 export type WidgetNotice = { key: string; text: string; btn: HTMLElement | null; kind: ToastKind };
 
 export function noticeOf(w: HTMLElement, edit: boolean): WidgetNotice | null {
-  if (edit) return null;
+  // 人前では隠すが優先 (仕様書 3章): a hidden widget tells nothing about its content, not even in a toast.
+  if (edit || w.classList.contains('veil')) return null;
   const pm = w.querySelector(':scope>.pmw .perm');
   const sm = w.classList.contains('s-err') || w.classList.contains('s-empty') ? w.querySelector('.sto .stm') : null;
   if (!pm && !sm) return null;

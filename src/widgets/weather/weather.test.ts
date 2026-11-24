@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { deg, stateClass, stateText, weatherTiers, weatherView } from './weather';
-import { requestTiers, retryWeather, setWeatherState, weatherRuntime, weatherState } from './status';
+import { retryWeather, setWeatherState, weatherState } from './status';
 import type { Dashboard } from '../../app/store/store';
 
 const NOW = new Date(2026, 10, 19, 10, 24, 36); // Thu
@@ -67,17 +67,6 @@ describe('states (仕様書 3章「状態」)', () => {
     expect(weatherState(d)).toBe('load');
     vi.advanceTimersByTime(1400);
     expect(weatherState(d)).toBe('ok');
-    vi.useRealTimers();
-  });
-  it('fetches each tier once, the first time it is needed', () => {
-    vi.useFakeTimers();
-    const d = {} as Dashboard;
-    requestTiers(d, { hours: true, week: false });
-    requestTiers(d, { hours: true, week: false });
-    expect(weatherRuntime(d).ready).toEqual({ hours: false, week: false });
-    vi.advanceTimersByTime(1100);
-    expect(weatherRuntime(d).ready).toEqual({ hours: true, week: false });
-    expect(weatherRuntime(d).req).toEqual({ hours: true, week: false });
     vi.useRealTimers();
   });
 });

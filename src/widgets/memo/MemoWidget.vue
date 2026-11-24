@@ -11,8 +11,8 @@ import type { MemoData } from './data';
 import { MEMO_TOOLS, applyFormat, charCount, continueList, lineAt, mdLine, pvLine, toggleCheck, type Edit, type FormatKind } from './memo';
 import { candidates, pickSuggestion, suggestionText, type LineCand } from './suggest';
 import type { TodoData } from '../todo/data';
-import { addTodo } from '../todo/todo';
-import { addEvent, type AgendaData } from '../agenda/data';
+import type { AgendaData } from '../agenda/data';
+import { addFromMemo, undoFromMemo, type MemoTargets } from './transfer';
 
 const props = defineProps<{ id: string }>();
 const d = useDash();
@@ -121,18 +121,19 @@ function check(i: number): void {
 }
 function addCand(c: LineCand): void {
   // Adds to the first TODO / 予定 placement (`todo`, `agenda`); choosing another placement comes with 複数配置 (P3).
-  const sn = { todo: d.dataOf<TodoData>('todo'), agenda: d.dataOf<AgendaData>('agenda'), done: memo.value.done };
-  const id = d.now();
-  w.setData<MemoData>({ ...memo.value, done: { ...memo.value.done, [c.key]: 'add' } });
-  if (c.kind === 'todo') d.setData<TodoData>('todo', { items: addTodo(sn.todo.items, c.title, id) ?? sn.todo.items });
-  else d.setData<AgendaData>('agenda', addEvent(sn.agenda, { id, ts: c.ts, hasTime: c.hasTime, n: c.title, c: 'a1' }));
+  const cur = (): MemoTargets => ({ todo: d.dataOf<TodoData>('todo'), agenda: d.dataOf<AgendaData>('agenda'), done: w.data<MemoData>().done });
+  const apply = (before: MemoTargets, next: MemoTargets): void => {
+    if (next.todo !== before.todo) d.setData<TodoData>('todo', next.todo);
+    if (next.agenda !== before.agenda) d.setData<AgendaData>('agenda', next.agenda);
+    if (next.done !== before.done) w.setData<MemoData>({ ...w.data<MemoData>(), done: next.done });
+  };
+  const before = cur();
+  const { next, receipt } = addFromMemo(before, c, d.now());
+  apply(before, next);
   d.toast((c.kind === 'todo' ? 'TODO' : '予定') + 'に追加しました', 'ok', {
     label: '元に戻す',
-    fn: () => {
-      d.setData<TodoData>('todo', sn.todo);
-      d.setData<AgendaData>('agenda', sn.agenda);
-      w.setData<MemoData>({ ...w.data<MemoData>(), done: sn.done });
-    },
+    // Takes back only this addition (its row ID and the rows the limit pushed out); later edits stay.
+    fn: () => { const now = cur(); apply(now, undoFromMemo(now, receipt)); },
   });
 }
 function sugAdd(): void {

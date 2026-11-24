@@ -5,12 +5,18 @@
  * - `s` default size [cols, rows], `min`/`max` size limits, `pg` can go full-screen,
  *   `ts` temporary-use size, `vd` input-first (front display on phones), `multi` can be placed multiple times,
  *   `net` network kind, `perm` permissions, `f` per-widget settings fields.
+ * - Items the prototype lacks (実装ガイド 4章「足りない」, review #6): `priv` default of 「人前では隠す」 (仕様書 3章; independent
+ *   of `vd`), `states` the shared states the frame may show, `refresh` how the widget updates, `keys` keys used only inside
+ *   the widget, `lazy` do not render until shown. `icon` and `share` stay undefined until decided (実装ガイド 7.6).
+ *   `store` (record name and version) is not duplicated here: see `storeOf()` in `./store-ref.ts` (from `WIDGET_DATA`).
  * - `REGISTRY_ORDER` is the catalog order (5 categories + local AI); `DEFAULT_ORDER` is the board order.
  */
 export type FieldType = 'tg' | 'sg' | 'st' | 'rg' | 'tx' | 'tm' | 'dt';
 export type FieldValue = string | number | boolean;
 export type Field = Readonly<{
   k: string;
+  /** Prototype-only setting (実装ガイド 付録「確認用の機能」): shown only in development builds. */
+  dev?: boolean;
   t: FieldType;
   l: string;
   d: FieldValue;
@@ -24,6 +30,21 @@ export type Category = '時間' | '予定と記録' | '情報' | '道具' | 'ロ
 export type NetKind = '' | 'data' | 'dl' | 'own';
 export type Permission = 'geo' | 'notify' | 'mic' | 'clipboard';
 export type Size = readonly [number, number];
+/**
+ * States a widget can show (実装ガイド 4章 `states`): 読み込み中 `load`, 更新中 `stale`, 空 `empty`, 失敗 `err`
+ * (the frame's state overlay `.sto`, 仕様書 3章「状態」), 古い内容 `old` (net: data offline: the filled dot and the last
+ * content), 許可待ち `perm` (the permission card in place of the content, 実装ガイド 4章「通信と許可の出し方」).
+ * The empty state of records the user writes (TODO, メモ…) is part of the widget's own content (`.empt`), not listed here.
+ */
+export type WidgetState = 'load' | 'stale' | 'empty' | 'err' | 'old' | 'perm';
+/** States drawn by the frame's overlay `.sto`. */
+export const OVERLAY_STATES: readonly WidgetState[] = ['load', 'stale', 'empty', 'err'];
+/**
+ * How a widget updates by itself (実装ガイド 4章 `refresh`, 仕様書 3章「段階表示」). `every`: seconds between updates
+ * (null = not decided yet; set with the real data source in P4). `visible`: update only while its screen is shown
+ * (true for every kind: 未配置・表示中でない画面では更新しない).
+ */
+export type Refresh = Readonly<{ every: number | null; visible: boolean }>;
 
 export type WidgetDef = Readonly<{
   id: string;
@@ -40,6 +61,22 @@ export type WidgetDef = Readonly<{
   net: NetKind;
   perm: readonly Permission[];
   f: readonly Field[];
+  /** 「人前では隠す」 default (仕様書 3章). Independent of `vd`. */
+  priv: boolean;
+  states: readonly WidgetState[];
+  /** Undefined: the widget does not update by itself. */
+  refresh?: Refresh;
+  /** Keys handled inside the widget only (`Mod` = Ctrl/⌘). Checked against the shell keys; shown in 操作ヒント later. */
+  keys: readonly string[];
+  /**
+   * Heavy widget: rendered only while its screen is the current or a neighbouring one, in the front view or temporary use
+   * (実装ガイド 8章「開く速さ」). Off for every kind so far.
+   */
+  lazy: boolean;
+  /** 線のアイコン (not decided yet). */
+  icon?: string;
+  /** Whether placements share one record (実装ガイド 7.4, 7.6: not decided; undefined = independent). */
+  share?: boolean;
 }>;
 
 type Base = { n: string; s: Size; f: readonly Field[]; pg?: boolean; ts?: Size; vd?: boolean };
@@ -52,7 +89,7 @@ function base(y: number): Record<string, Base> {
   return {
     clock: { n: '時計', pg: true, s: [2, 1], f: [{ k: 'sec', t: 'tg', l: '秒を表示', d: true }, { k: 'h12', t: 'tg', l: '12時間表示', d: false }] },
     weather: { n: '天気', s: [2, 1], f: [{ k: 'unit', t: 'sg', l: '単位', o: ['°C', '°F'], d: '°C' }] },
-    rain: { n: '傘', s: [2, 1], f: [{ k: 'demo', t: 'sg', l: 'サンプル', o: ['あとで降る', 'いま雨', '降らない'], d: 'あとで降る' }] },
+    rain: { n: '傘', s: [2, 1], f: [{ k: 'demo', dev: true, t: 'sg', l: 'サンプル', o: ['あとで降る', 'いま雨', '降らない'], d: 'あとで降る' }] },
     sun: { n: '日の出・日の入り', s: [2, 1], f: [{ k: 'loc', t: 'sg', l: '場所', o: ['東京', '大阪', '札幌', '福岡', '那覇', '現在地'], d: '東京' }] },
     gantt: { n: 'タイムスケジュール', s: [4, 1], f: [{ k: 'now', t: 'tg', l: '現在時刻の線', d: true }] },
     todo: { n: 'TODO', vd: true, s: [2, 2], f: [{ k: 'hide', t: 'tg', l: '完了を隠す', d: false }, { k: 'bar', t: 'tg', l: '定型ボタンを表示', d: false }] },
@@ -114,6 +151,37 @@ const META: Readonly<Record<string, Meta>> = {
   bar: ['データ表示', 2, 1, 'm', 'ぼうぐらふ 棒グラフ チャート'], line: ['データ表示', 2, 1, 'm', 'おれせんぐらふ 折れ線 推移'], pie: ['データ表示', 2, 1, 'm', 'えんぐらふ 円グラフ 割合'], donut: ['データ表示', 1, 1, 'm', 'どーなつぐらふ 進み具合'], heat: ['データ表示', 3, 1, 'm', 'ひーとまっぷ 草 活動'], meter: ['データ表示', 1, 1, 'm', 'めーたー 使用率'],
 };
 
+/** 「人前では隠す」 on by default (仕様書 3章). Not derived from `vd`. */
+export const PRIV_DEFAULT: readonly string[] = ['memo', 'todo', 'agenda', 'clip', 'chat', 'translate', 'share', 'table', 'script', 'timelog', 'sketch'];
+
+const EXTERNAL: readonly WidgetState[] = ['load', 'stale', 'empty', 'err', 'old'];
+/**
+ * `states` per kind. 外部の情報 with the 5 states (仕様書 3章「状態」; the prototype has them for weather, GitHub PR, RSS);
+ * every other `net: 'data'` kind can show old content, and every kind with `perm` can wait for a permission.
+ * (`registry.test.ts` checks that `old` / `perm` follow `net` / `perm`.)
+ */
+const STATES: Readonly<Record<string, readonly WidgetState[]>> = {
+  weather: [...EXTERNAL, 'perm'], github: EXTERNAL, rss: EXTERNAL,
+  rain: ['old', 'perm'], today: ['old'],
+  sun: ['perm'], alarm: ['perm'], pomo: ['perm'], habit: ['perm'], recorder: ['perm'], share: ['perm'], clip: ['perm'],
+};
+
+const VISIBLE_ONLY = (every: number | null): Refresh => ({ every, visible: true });
+/** `refresh` per kind: clocks tick every second; external data has no interval until the real source (P4). */
+const REFRESH: Readonly<Record<string, Refresh>> = {
+  clock: VISIBLE_ONLY(1), world: VISIBLE_ONLY(1), gantt: VISIBLE_ONLY(60), countdown: VISIBLE_ONLY(60),
+  weather: VISIBLE_ONLY(null), rain: VISIBLE_ONLY(null), rss: VISIBLE_ONLY(null), github: VISIBLE_ONLY(null), today: VISIBLE_ONLY(null),
+};
+
+/** `keys` per kind (仕様書 10章「表」, 12章「キー操作」). Inputs that only use Enter need no entry. */
+const KEYS: Readonly<Record<string, readonly string[]>> = {
+  table: ['Tab', 'Shift+Tab', 'Enter', 'Shift+Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape'],
+  script: ['Mod+Enter', 'Tab', 'Shift+Tab', 'Enter', 'Escape', 'Alt+Digit1-9'],
+};
+
+/** Kinds rendered only when shown (`lazy`). None of the implemented kinds are heavy yet. */
+const LAZY: readonly string[] = [];
+
 export function buildRegistry(year: number): Readonly<Record<string, WidgetDef>> {
   const b = base(year);
   const out: Record<string, WidgetDef> = {};
@@ -128,6 +196,11 @@ export function buildRegistry(year: number): Readonly<Record<string, WidgetDef>>
       net: (nf ? (nf === 'n' ? 'data' : nf.slice(2)) : '') as NetKind,
       perm: flags.filter(x => x.startsWith('p:')).map(x => x.slice(2) as Permission),
       f: r.f,
+      priv: PRIV_DEFAULT.includes(id),
+      states: STATES[id] ?? [],
+      keys: KEYS[id] ?? [],
+      lazy: LAZY.includes(id),
+      ...(REFRESH[id] ? { refresh: REFRESH[id] } : {}),
       ...(r.ts ? { ts: r.ts } : {}),
     };
     out[id] = def;

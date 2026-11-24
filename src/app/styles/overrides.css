@@ -1,0 +1,17 @@
+/*
+ * 本実装で足す CSS（プロトタイプの CSS `dashboard.css` は手で変えない。docs/lgd/development-flow.md 1章）。
+ * dashboard.css のあとに読み込む（main.ts、.storybook/preview.ts、src/gallery/main.ts）。
+ */
+
+/*
+ * 人前では隠すを最優先にする（仕様書 3章「人前では隠す」、review #6）。
+ * dashboard.css の 1×1 の規則（386行: `.w:has(>.pmw)>.in, .w.s-err>.in, .w.s-empty>.in {visibility:visible!important}`）が
+ * `.w.veil>.in {visibility:hidden}`（588行）を打ち消すので、隠している間は見出し・目の印・接続の点以外を !important で隠す。
+ * visibility:hidden は描かず、読み上げにも出さず、フォーカスも受けない。状態の覆いと置き換えの知らせは作らない（WidgetFrame）が、
+ * ウィジェットが自分で置いたものが残っても出ないよう、ここでも消す。
+ */
+.w.veil>:not(h2):not(.veilc):not(.cdot){visibility:hidden!important}
+.w.veil>.sto,.w.veil>.pmw{display:none!important}
+
+/* 全画面の隠し方はプロトタイプに無い。通常と同じ .veilc（目の印と「表示する」）を出し、中身は描かない（FullScreenVeil）。 */
+.fsw.veil>.veilc{display:grid}
