@@ -22,3 +22,7 @@
 | fullscreen-clock | 0.9999 | 0.00% | 合格 | |
 
 参考（合否に使わない）: `design/claude-design/gallery/` の古い版の12枚とプロトタイプ現行版の差は `vrt/baselines/gallery-reference.json`（SSIM 0.78〜0.99）。
+
+## 2026-11-24 レビュー対応後（`64cf35e`）
+
+結果: **48 / 48 合格**。最小は dialog desktop light（SSIM 0.9770・差分率 0.84%。乱数のペアリングコードと QR）。メモの初期本文を「# メモ」に変えたため（`deferred.md`）、メモが写る desktop の画面（home・home-tour・menu・settings・index・add・edit・widget-settings・help・toast）に SSIM 0.996〜0.998・差分率 0.05〜0.07% の差が出た。差はメモの1行目と提案の帯だけ（差分画像で確認）。mobile は 0.9998 以上。

@@ -41,15 +41,19 @@
 
 ## 3. 対応表（記録）
 
-| # | 状態 | コミット | 確認 |
+ゲートの結果（2026-11-24、`64cf35e`）: `npm run check` 単体 251・取り決め 29 合格、`npm run build`・`npm run build-storybook` 成功、e2e 27 合格（desktop・mobile Chromium。WebKit・実機 Safari は未確認）、本番ビルドの確認（`e2e/production.spec.ts`）合格、再現度 48/48 合格（最小 dialog desktop light SSIM 0.9770・差分率 0.84%。メモの初期本文の変更で desktop の各画面に SSIM 0.996〜0.998・0.05〜0.07% の差、`deferred.md` に記録）。
+
+| # | 状態 | コミット | 確認（テスト） |
 | --- | --- | --- | --- |
-| 1 | 対応中 | | |
-| 2 | 対応中 | | |
-| 3 | 対応中 | | |
-| 4 | 対応中 | | |
-| 5 | 対応中 | | |
-| 6 | 対応中 | | |
-| 7 | 対応中 | | |
-| 8 | 対応中 | | |
-| 9 | 対応中 | | |
-| 初期本文 | 対応中 | | |
+| 1 | 対応済み | `5c0af8a` | `src/app/store/sections.test.ts`（往復・不足の補完・種類ごとの版と migrate・import 拒否9通りで記録と保存 bytes が不変・ロックした区画の bytes 維持）、`persist.test.ts` |
+| 2 | 対応済み | `5c0af8a` | `sections.test.ts`（起動時の書き込み 0、変えた区画だけ書く、2つの Dashboard で別区画が両方残る、容量超過の知らせと再書き込み）。同じ区画の同時変更は後勝ちで P3 まで未対応（`persist.ts` 先頭に明記） |
+| 3 | 対応済み | `64cf35e` | `src/app/store/import-undo.test.ts`（読み込み→元に戻すで記録・設定・配置と保存 bytes が読み込み前と同じ）、`src/widgets/memo/transfer.test.ts`（追加→別の編集→元に戻すで別の編集が残る、上限で落ちた行が戻る） |
+| 4 | 対応済み | `5c0af8a` | `persist.test.ts`（型・値域・step・時刻・日付・長さ・重複・参照切れ・不正な数値）、`sheets.test.ts`（クリップボードの成功・拒否・無い、ファイル保存の6通り） |
+| 5 | 対応済み | `5c0af8a` | `sections.test.ts`（`links`/`links#2` の往復、`multi:false` の拒否、`clock#2` だけ全画面、layout と DashboardRoot に種類 ID の分岐が無い）、`instances.test.ts`。複数置く UI と記録の共有は P3 |
+| 6 | 対応済み | `64cf35e` | `src/app/registry/registry.test.ts`（`priv` と `vd` が独立、`states` と `net`/`perm` の一貫）、`e2e/privacy-pending.spec.ts`（通常・1×1 の失敗＋隠す・全画面・前面表示で中身・読み上げ・知らせが出ない） |
+| 7 | 対応済み（境界） | `64cf35e` | `src/app/store/records.test.ts`（IndexedDB の往復・書き込みの順番・失敗の伝わり方）、`visibility.test.ts`、`src/widgets/weather/tiers.test.ts`（小→大→小・表示していない画面・再表示・古い応答・unmount）、`src/app/shell/render.test.ts`（lazy）、`src/widgets/saved.test.ts`（保存しないもの）。保存先のアプリへの組み込みは P2 の該当分類で |
+| 8 | 対応済み | `73379a7` | 資料の更新（schema v0 §0・照合表・旧契約の適用範囲・開発フローのゲート・スキル・エージェント定義） |
+| 9 | 対応済み | `64cf35e` | `src/app/store/pending.test.ts`、`e2e/privacy-pending.spec.ts`（準備中の置き換え・1×1 のトースト）、`e2e/production.spec.ts`（本番ビルドに表示テスト・すべて並べる・傘のサンプル・開発用フックが無い） |
+| 初期本文 | 対応済み | `64cf35e`・`679a48d` | `src/widgets/memo/memo.test.ts`（初期の提案は「牛乳を買う」、認識の規則は変えない）、再現度テストの差はメモの1行目と提案の帯だけ |
+
+決めたこと（レビューに無く、こちらで決めた値）: 天気の「古い」の基準は登録の `refresh` に一本化して仮に 30 分（正本に値が無い。P4 で実データに合わせて決め直す）。読み込みを元に戻すと共通の履歴も読み込み前に戻す。準備中の文言「準備中です／このウィジェットは次の版で使えるようになります」。
