@@ -33,9 +33,14 @@ export function protoStorage(seed: Seed | null | undefined): StorageEntries {
   return seedEntries(PROTO_KEY, seed);
 }
 
-/** seed → 本実装の localStorage。キー名の違いが出たらここで変換する */
+/**
+ * seed → 本実装の localStorage。キー名の違いが出たらここで変換する。
+ * 全体の区画には版 `v: 1` を付ける（無くても 1 と読まれるが、本番が書く形にそろえる）。
+ * order / off / place / groups / tourDone / pgW はプロトタイプと同じ名前・同じ意味（配置 ID = 種類 ID）なのでそのまま渡す。
+ * groups の `n`（ボード名）は本実装では読まない（番号から付け直す）が、害はないので残す。
+ */
 export function appStorage(seed: Seed | null | undefined): StorageEntries {
-  return seedEntries(APP_KEY, seed);
+  return seedEntries(APP_KEY, seed ? { v: 1, ...seed } : seed);
 }
 
 /** 本実装の index.html と同じ viewport メタ */
