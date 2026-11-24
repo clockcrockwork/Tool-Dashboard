@@ -174,6 +174,8 @@ const VISIBLE_ONLY = (every: number | null): Refresh => ({ every, visible: true 
 const REFRESH: Readonly<Record<string, Refresh>> = {
   clock: VISIBLE_ONLY(1), world: VISIBLE_ONLY(1), gantt: VISIBLE_ONLY(60), countdown: VISIBLE_ONLY(60),
   weather: VISIBLE_ONLY(30 * 60), rain: VISIBLE_ONLY(null), rss: VISIBLE_ONLY(null), github: VISIBLE_ONLY(null), today: VISIBLE_ONLY(null),
+  // P2a: 残り・経過・勤務時間・今の位置の描き直し（計算は終わる時刻・始めた時刻から。鳴る・終わるは表示に関係なく時刻どおり）.
+  pomo: VISIBLE_ONLY(1), stopwatch: VISIBLE_ONLY(0.1), punch: VISIBLE_ONLY(1), timelog: VISIBLE_ONLY(60),
 };
 
 /** `keys` per kind (仕様書 10章「表」, 12章「キー操作」). Inputs that only use Enter need no entry. */

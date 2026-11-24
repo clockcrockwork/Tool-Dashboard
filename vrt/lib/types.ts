@@ -21,7 +21,7 @@ export type Step =
   /** キー入力 */
   | { do: 'press'; key: string; note?: string }
   /** 要素が表示されるまで待つ */
-  | { do: 'waitFor'; sel: string; nth?: number; state?: 'visible' | 'hidden' | 'attached' | 'detached'; note?: string }
+  | { do: 'waitFor'; sel: string; nth?: number; state?: 'visible' | 'hidden' | 'attached' | 'detached'; timeout?: number; note?: string }
   /** 固定時間待つ（アニメーション・遅延表示の待ち合わせ） */
   | { do: 'wait'; ms: number; note?: string }
   /** 要素をスクロールして見える位置へ */

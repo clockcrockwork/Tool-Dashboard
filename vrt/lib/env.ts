@@ -176,7 +176,7 @@ export async function runSteps(page: Page, steps: Step[], viewport: ViewportName
           await page.keyboard.press(st.key);
           break;
         case 'waitFor':
-          await pick(page, st.sel, st.nth).waitFor({ state: st.state ?? 'visible', timeout: STEP_TIMEOUT });
+          await pick(page, st.sel, st.nth).waitFor({ state: st.state ?? 'visible', timeout: st.timeout ?? STEP_TIMEOUT });
           break;
         case 'wait':
           await page.waitForTimeout(st.ms);

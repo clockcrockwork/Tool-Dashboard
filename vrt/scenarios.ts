@@ -214,7 +214,7 @@ export const p2aScenarios: Scenario[] = [
       { do: 'click', sel: `${w('punch')} button:has-text("出勤")`, note: '打刻の「出勤」（10:24 に出勤、勤務 0:00:00）' },
       { do: 'click', sel: `${w('stopwatch')} button[aria-label="スタート・ストップ"]`, note: '時刻固定なので 00:00.0 のまま走行中の表示になる' },
       { do: 'mouseAway' },
-      { do: 'waitFor', sel: SEL.toast, state: 'detached', note: '「出勤 10:24」のトースト（3 秒）が消えるまで待つ' },
+      { do: 'waitFor', sel: SEL.toast, state: 'detached', timeout: 15000, note: '「出勤 10:24」のトーストが消えるまで待つ（本実装は「元に戻す」付きで 10 秒。プロトタイプは 3 秒）' },
     ],
     ready: (vp) => (vp === 'mobile' ? w('punch') : w('timelog')),
   },
