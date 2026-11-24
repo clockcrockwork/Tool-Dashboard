@@ -2,7 +2,22 @@
 
 Shared documentation lives in `docs/`. When deciding where processing should run (client JS, Web APIs, Wasm, or server-side), refer to the client-first/serverless priority order in [Project Principles §9](./docs/principles.md#9-client-vs-server-processing-priorities) so humans and agents follow the same policy.
 
-## Stage 1b — local board (in progress)
+## リキッドグラス・ダッシュボード（2026-11-23〜、実装中）
+
+Claude Design の「リキッドグラス・ツールダッシュボード」を Vue 3 + Vite + TypeScript で本実装しています。v0 の仮の画面（Stage 1b のローカルボード）は置き換えました。
+
+- デザインの正本: [`design/claude-design/`](./design/claude-design/)（仕様書 `Spec.dc.html`、実装ガイド `Impl.dc.html`、部品シート `Parts.dc.html`、プロトタイプ `Main.dc.html`、基準画像 `gallery/`）
+- **進め方（P0 土台 / P1 最初の7個 / P2 残り39個 / P3 仕上げ / P4 外部連携）、層の分担、合格ライン:** [docs/lgd/development-flow.md](./docs/lgd/development-flow.md)
+- 再現度テスト（プロトタイプとのスクリーンショット比較。SSIM ≥ 0.95 かつ差分画素率 ≤ 5%）: [docs/lgd/vrt.md](./docs/lgd/vrt.md)
+- Storybook と Design Pattern Gallery: [docs/lgd/gallery-and-storybook.md](./docs/lgd/gallery-and-storybook.md)
+- 見た目が変わるため今回は入れないもの: [docs/lgd/deferred.md](./docs/lgd/deferred.md)
+- スキーマ v0 はデザインと照合して改訂済み（[§0 R1〜R13](./docs/widget-schema-v0.md#0-デザインとの照合による改訂2026-11-23)）
+
+保存はこのブラウザの localStorage（区画 `lgd.v1:global` と `lgd.v1:w:<id>`）です。v0 の保存データ（IndexedDB・書き出し v3）からの移行はしません。
+
+## Stage 1b — local board (superseded)
+
+> 2026-11-23: 以下の Stage 1b の画面と保存（Dexie）はリキッドグラス・ダッシュボードに置き換えた。`src/core` の Operation / JSON Schema の取り決めと品質ゲートは引き続き有効。
 
 The project is revisiting its independent widget/tool design to support a common implementation across the Web standalone UI/board, remote MCP, MCP Apps, and experimental browser WebMCP. The local-only Web experience must remain usable without a remote Worker.
 
@@ -43,7 +58,7 @@ Legacy `docs/basic-design.md`, `docs/schemas.md`, `docs/dev-guide.md` are **hist
 
 Stage 1b builds on the Stage 1a operation and registry contracts with a local board for clock and color conversion. The UI and its state are browser-local. No account, remote Worker, MCP server, synchronization, or deployment is included. This is not the final visual design. See [Stage 1a handoff](docs/stage-1a-handoff.md) for the earlier foundation and [Stage 1b work plan](docs/stage-1b-work-plan.md) for remaining acceptance work.
 
-### Using the local board
+### Using the local board (Stage 1b, removed)
 
 Add clock or color tools from the board. Each placement refers to an independently saved configuration; the color standalone view has its own settings and does not need a board placement. Changes remain drafts until saved. If another tab changes a configuration while it is being edited, the draft is retained and the stale save is rejected; load the latest settings to continue.
 

@@ -4,9 +4,21 @@ import { withVueTs, vueTsConfigs } from '@vue/eslint-config-typescript';
 
 export default withVueTs(
   { rootDir: import.meta.dirname },
-  { ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'prototype.jsx'] },
+  { ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'prototype.jsx', 'design/**', 'vrt/**', 'storybook-static/**'] },
   pluginVue.configs['flat/recommended'],
   vueTsConfigs.recommendedTypeChecked,
+  {
+    // Templates mirror the Claude Design prototype markup; whitespace between inline elements is
+    // visible, so formatting rules that insert line breaks are disabled (docs/lgd/development-flow.md).
+    files: ['**/*.vue'],
+    rules: {
+      'vue/max-attributes-per-line': 'off',
+      'vue/singleline-html-element-content-newline': 'off',
+      'vue/multiline-html-element-content-newline': 'off',
+      'vue/html-closing-bracket-newline': 'off',
+      'vue/first-attribute-linebreak': 'off',
+    },
+  },
   {
     files: ['src/core/**/*.ts', 'src/tools/**/*.ts'],
     rules: {
@@ -23,16 +35,6 @@ export default withVueTs(
     files: ['src/core/parts.ts', 'src/core/tokens.ts'],
     rules: {
       'no-restricted-imports': ['error', { patterns: [{ group: ['*'], message: 'Parts and tokens are dependency-free declarations.' }] }],
-    },
-  },
-  {
-    files: ['src/web/**/*.{ts,vue}', 'src/App.vue'],
-    ignores: ['src/web/local-repository.ts', 'src/web/export-import.ts', 'src/web/migrations.ts', 'src/web/legacy-import.ts', 'src/web/**/*.test.ts'],
-    rules: {
-      'no-restricted-syntax': ['error',
-        { selector: 'MemberExpression[property.name=/^(records|targetStates|table)$/]', message: 'Use the LocalRepository mutation API; target revisions must change atomically.' },
-        { selector: 'CallExpression[callee.object.property.name="configs"][callee.property.name=/^(add|put|update|delete|clear|bulkAdd|bulkPut|bulkDelete)$/]', message: 'Use the LocalRepository mutation API for configurations.' },
-      ],
     },
   },
 );

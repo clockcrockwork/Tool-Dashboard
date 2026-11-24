@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>レビュー</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=Noto+Sans+JP:wght@400;500&display=swap">
+<style>
+body{margin:0}
+a{color:#2f6f9f}a:hover{color:#1f4f75}
+.spec{
+  color-scheme:light dark;
+  --bg:light-dark(#e8ecf1,#0d1117);--text:light-dark(#18202b,#eef2f6);--mut:light-dark(#4d5969,#a9b3c0);
+  --glass:light-dark(rgba(255,255,255,.42),rgba(255,255,255,.082));--glass2:light-dark(rgba(255,255,255,.3),rgba(255,255,255,.07));
+  --sheet:light-dark(rgba(244,247,250,.8),rgba(26,32,42,.82));
+  --hi:light-dark(rgba(255,255,255,.98),rgba(255,255,255,.46));--hi3:light-dark(rgba(255,255,255,.72),rgba(255,255,255,.2));
+  --rim0:light-dark(rgba(255,255,255,.34),rgba(255,255,255,.07));--edge:light-dark(rgba(20,30,50,.1),rgba(0,0,0,.55));
+  --sh1:light-dark(rgba(20,30,50,.08),rgba(0,0,0,.4));--shadow:light-dark(rgba(38,56,84,.22),rgba(0,0,0,.6));
+  --fill:light-dark(rgba(24,32,43,.07),rgba(255,255,255,.08));--fill2:light-dark(rgba(24,32,43,.14),rgba(255,255,255,.17));
+  --a1:light-dark(#2f6f9f,#82b8de);--a2:light-dark(#c2742d,#e2a46e);--on-a:light-dark(#ffffff,#0d1117);
+  --c1:light-dark(#2f6f9f,#4a8ec6);--c2:light-dark(#c2742d,#c97f3c);
+  --w1:light-dark(#b7cdec,#1b3558);--w2:light-dark(#efcdb6,#57321f);
+  font-family:Inter,"Noto Sans JP",system-ui,sans-serif;font-size:15px;line-height:1.75;color:var(--text);background:var(--bg);
+}
+.spec[data-theme="light"]{color-scheme:light}
+.spec[data-theme="dark"]{color-scheme:dark}
+.spec *{box-sizing:border-box}
+.spec h1{font-size:34px;font-weight:300;line-height:1.25;margin:0;letter-spacing:-0.01em}
+.spec h2{font-size:22px;font-weight:500;line-height:1.35;margin:0 0 14px}
+.spec h3{font-size:15px;font-weight:600;margin:22px 0 8px}
+.spec p{margin:0 0 10px;max-width:72ch;text-wrap:pretty}
+.spec ul{margin:0 0 10px;padding-left:1.2em;max-width:72ch}
+.spec li{margin:2px 0}
+.spec code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--fill);padding:1px 6px;border-radius:6px}
+.sec{padding:36px 0;border-top:1px solid var(--fill2)}
+.spec pre{margin:8px 0 14px;padding:14px 16px;border-radius:14px;background:var(--fill);overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.6;white-space:pre;tab-size:2}
+.spec ol{margin:0 0 10px;padding-left:1.4em;max-width:72ch}
+.lead{color:var(--mut)}
+.tw{overflow-x:auto;margin:8px 0 14px}
+.spec table{border-collapse:collapse;width:100%;min-width:560px;font-size:13.5px;line-height:1.55}
+.spec th{text-align:left;font-weight:600;color:var(--mut);font-size:12.5px;padding:8px 12px 8px 0;border-bottom:1px solid var(--fill2);white-space:nowrap}
+.spec td{padding:8px 12px 8px 0;border-bottom:1px solid var(--fill);vertical-align:top}
+.swt{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.swt i{width:16px;height:16px;border-radius:5px;border:1px solid var(--fill2);flex:none}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:14px}
+.pane{position:relative;border-radius:26px;padding:18px;background:var(--glass);
+  box-shadow:inset 0 0 0 1px var(--rim0),0 0 0 .5px var(--edge),0 1px 2px var(--sh1),0 8px 18px -14px var(--shadow)}
+.pane::before,.navx::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.25px;pointer-events:none;
+  background:linear-gradient(135deg,var(--hi) 0%,transparent 26%,transparent 70%,var(--hi3) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude}
+.stage{position:relative;border-radius:22px;padding:22px;overflow:hidden;
+  background:radial-gradient(circle at 14% 20%,var(--w1) 0 120px,transparent 122px),radial-gradient(circle at 88% 86%,var(--w2) 0 140px,transparent 142px),var(--bg);
+  box-shadow:inset 0 0 0 1px var(--fill2)}
+.lbl{font-size:12px;color:var(--mut);margin:0 0 8px}
+.rowx{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.btn{appearance:none;border:0;background:var(--fill);color:var(--text);border-radius:999px;min-width:44px;min-height:44px;padding:0;display:grid;place-items:center;cursor:pointer;font:inherit}
+.btn.on{background:var(--a1);color:var(--on-a)}
+.chip{appearance:none;border:0;background:var(--fill);color:var(--text);border-radius:999px;min-height:44px;padding:0 16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-size:14px;text-decoration:none}
+.chip.on{background:var(--text);color:var(--bg)}
+.chip.sm{font-size:13px;padding:0 13px;background:none;border:1.5px dashed var(--fill2);color:var(--mut)}
+.chip.sm.on{background:color-mix(in oklab,var(--a1) 24%,transparent);border:1.5px solid transparent;color:var(--text)}
+.seg{display:inline-flex;background:var(--fill);border-radius:999px}
+.sg{appearance:none;border:0;background:none;color:var(--text);border-radius:999px;min-height:44px;min-width:44px;padding:0 13px;cursor:pointer;font:inherit;font-size:14px}
+.sg.on{background:var(--text);color:var(--bg)}
+.sw{appearance:none;border:0;background:none;width:52px;height:44px;padding:0;display:grid;place-items:center;cursor:pointer}
+.sw .tr{width:46px;height:26px;border-radius:99px;background:var(--fill2);position:relative}
+.sw .kn{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:99px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.sw.on .tr{background:var(--a1)}
+.sw.on .kn{translate:20px 0}
+.rg{appearance:none;-webkit-appearance:none;width:180px;height:14px;border-radius:99px;margin:15px 0;border:1px solid var(--rim0);background:var(--fill2)}
+.rg::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:99px;background:#fff;border:1px solid rgba(0,0,0,.18);box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.rg::-moz-range-thumb{width:24px;height:24px;border-radius:99px;background:#fff;border:1px solid rgba(0,0,0,.18);box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.inp{appearance:none;border:0;background:var(--fill);color:var(--text);border-radius:14px;min-height:44px;padding:0 14px;width:200px;font:inherit;font-size:16px}
+.inp::placeholder{color:var(--mut)}
+.fd{position:relative;display:block;width:56px;height:120px;border-radius:16px;background:var(--fill);overflow:hidden}
+.fd span{position:absolute;left:0;right:0;bottom:0;height:60%;background:color-mix(in oklab,var(--text) 24%,transparent)}
+.navx{position:relative;display:inline-flex;align-items:center;padding:0 4px;border-radius:999px;background:var(--glass2);
+  -webkit-backdrop-filter:blur(9px) saturate(190%) brightness(1.06);backdrop-filter:blur(9px) saturate(190%) brightness(1.06);
+  box-shadow:inset 0 0 0 1px var(--rim0),0 0 0 .5px var(--edge),0 2px 4px var(--sh1),0 14px 32px -12px var(--shadow)}
+.nb{width:44px;height:44px;display:grid;place-items:center;border-radius:99px}
+.tst{display:inline-flex;align-items:center;gap:10px;padding:11px 18px 11px 14px;border-radius:999px;background:var(--sheet);
+  box-shadow:inset 0 0 0 1px var(--rim0),0 0 0 .5px var(--edge),0 14px 32px -12px var(--shadow)}
+.num{font-variant-numeric:tabular-nums}
+.cap{font-size:12px;color:var(--mut)}
+.spec{--bad:light-dark(#b3402f,#f09a8a);--sun-d:light-dark(#dfa64f,#c18a3e);--sun-t:light-dark(#9fb5d3,#3e5a7e);--jk:light-dark(#7446a8,#c3a6ee);--js:light-dark(#2b7650,#8ccfa6);--jn:light-dark(#a85a22,#e6a874);--jf:light-dark(#2f6f9f,#82b8de);--jb:light-dark(#9c3f70,#e59ac3)}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.sunb{position:relative;display:block;height:20px;border-radius:6px;overflow:hidden}
+.sunb .nw{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;border-radius:2px;background:var(--text)}
+.sunb .tk{position:absolute;top:0;bottom:0;width:1px;background:color-mix(in oklab,var(--text) 16%,transparent)}
+.rbar{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:2px;align-items:end;height:20px}
+.rbar span{border-radius:3px;background:var(--c1)}
+.code{margin:8px 0 14px;padding:12px 14px;border-radius:14px;background:var(--fill);font:13px/20px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;overflow-x:auto}
+.code .ln{display:inline-block;width:2em;margin-right:10px;text-align:right;color:var(--mut)}
+.code .er{display:inline-block;min-width:100%;background:color-mix(in oklab,var(--bad) 16%,transparent);box-shadow:inset 2px 0 var(--bad)}
+.jk{color:var(--jk)}.js{color:var(--js)}.jn{color:var(--jn)}.jf{color:var(--jf)}.jb{color:var(--jb)}.jc{color:var(--mut);font-style:italic}
+.drop{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 14px;border-radius:14px;border:1.5px dashed var(--fill2);color:var(--mut);text-align:center;font-size:14px}
+.drop.full{min-height:120px;flex-direction:column;gap:6px}
+.drop.over{border-style:solid;border-color:var(--a1);background:color-mix(in oklab,var(--a1) 12%,transparent);color:var(--text)}
+.prg{display:block;height:4px;border-radius:9px;background:var(--fill2);overflow:hidden}
+.prg i{display:block;width:100%;height:100%;transform-origin:left center;background:var(--a1)}
+.frow{display:flex;align-items:center;gap:10px;min-height:52px}
+.frow .cn{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;line-height:1.35}
+.frow .cn b{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frow .cn span{font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frow.err .cn span{color:var(--bad)}
+.fth{width:40px;height:40px;flex:none;border-radius:10px;background:var(--fill)}
+.stack{display:flex;flex-direction:column;gap:10px}
+.pr{display:inline-block;min-width:2em;padding:1px 8px;border-radius:99px;font-size:0.75rem;font-weight:600;text-align:center}
+.pr.ph{background:color-mix(in oklab,var(--bad) 24%,transparent)}.pr.pm{background:color-mix(in oklab,var(--a2) 24%,transparent)}.pr.pl{background:var(--fill)}.pr.pd{background:color-mix(in oklab,var(--js,#2b7650) 22%,transparent)}
+.spec td.num{text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.lens{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 8px}.lens>div{padding:16px 18px;border-radius:18px;background:var(--fill)}.lens h4{margin:0 0 6px;font-size:0.9375rem;font-weight:600}.lens p{margin:0}
+@media (max-width:760px){.lens{grid-template-columns:1fr}}
+</style>
+</helmet>
+<div class="spec" data-theme="{{theme}}" style="min-height: 100vh">
+<div style="max-width: 1040px; margin: 0 auto; padding: 48px 24px 96px">
+<header style="padding-bottom: 36px">
+<p class="lead" style="margin-bottom: 6px">リキッドグラス・ツールダッシュボード</p>
+<h1>レビュー</h1>
+<p class="lead" style="margin-top: 14px">採点、残っている課題、これまでに決めたこと・直したことの経緯、既存ツールの調査をまとめたボードです。実装には使いません（実装は「仕様書」「実装ガイド」「部品シート」を見てください）。</p>
+<p class="lead">点数と指摘は、このプロトタイプを作った側の判断です。</p>
+<a href="Main.dc.html" class="chip" style="margin-top: 10px">ダッシュボードに戻る</a>
+</header>
+<section class="sec">
+<h2>1. 採点（2026年11月21日時点）</h2>
+<h3>使った観点</h3>
+<div class="lens"><div><h4>Impeccable critique</h4><p>ニールセンの10の観点を0〜4で採点する。4は「目立つ崩れが無い」、3は「土台はあるが崩れが残る」。</p></div><div><h4>Vercel Web Animation Design</h4><p>出入りは ease-out・300ms以下・<code>transform</code> と <code>opacity</code> だけ・起点はきっかけの側・何度も見るものは動かさない。</p></div><div><h4>Anthropic Frontend Design</h4><p>その製品らしさがあるか。型どおりの見た目になっていないか。強さを1か所に使っているか。</p></div></div>
+<h3>点数</h3>
+<div class="tw"><table><thead><tr><th>#</th><th>観点</th><th>点（0〜4）</th><th>理由</th></tr></thead><tbody><tr><td>1</td><td>システムの状態が見える</td><td class="num">3</td><td>知らせは1つの形にそろい、置く場所も原因で決まった。通信するウィジェットには接続の点。読み込み・失敗・空を作り込んであるのは天気・GitHub PR・RSS だけ。</td></tr><tr><td>2</td><td>現実の言葉と合う</td><td class="num">4</td><td>ボード・画面・ウィジェット・全画面に整理し、「ページ」をやめた。繰り返しは「もう一度」、ボタンは動詞。</td></tr><tr><td>3</td><td>利用者が操作を握れる</td><td class="num">4</td><td>元に戻す、Esc、その他メニュー、⌂ と Home でどこからでも1手。画面送りは1画面分だけで、距離で長くならない。</td></tr><tr><td>4</td><td>一貫性と標準</td><td class="num">3</td><td>ボタン4役割、角丸5段、影3段、文字8段、動き4つ。全画面ウィジェットと通信・許可の出し方も共通の形にした。行の中に直接書いた見た目が約440か所残る。</td></tr><tr><td>5</td><td>間違いを防ぐ</td><td class="num">4</td><td>取り消せない操作は確認。入るはずのない大きさは押せない。入力欄に補足と離れたあとのエラー。</td></tr><tr><td>6</td><td>覚えずに見て分かる</td><td class="num">3</td><td>アイコンにツールチップ、一覧に検索と最近の検索。帯のアイコンが多いウィジェットが残る。</td></tr><tr><td>7</td><td>慣れた人の近道</td><td class="num">4</td><td>1文字のキー、右クリック、Home、検索の Enter、位置と大きさの固定。</td></tr><tr><td>8</td><td>見た目を絞る</td><td class="num">3</td><td>小型で残すものは決まった。すべてのウィジェットが同じ強さのガラスで、主役と脇役の差が付きにくい。</td></tr><tr><td>9</td><td>失敗から立ち直る</td><td class="num">3</td><td>失敗ごとに次の操作があり、オフラインは前回の内容を出す。作り込みが3つのウィジェットだけ。</td></tr><tr><td>10</td><td>助けと説明</td><td class="num">3</td><td>ツアーと操作ヒント。ウィジェットごとの説明は無い。</td></tr><tr><td></td><td><b>合計</b></td><td class="num"><b>34 / 40</b></td><td>言葉の整理、ホームへの1手、入らない大きさを押せなくしたことで上がった。残りは「状態の作り込みの範囲」と「ガラスの強さ・帯のアイコンの多さ」に集まっている。</td></tr></tbody></table></div>
+<h3>前回からの変化</h3>
+<p>前回（部品シートの見直し、30 / 40）から点が変わった観点だけを並べます。</p>
+<div class="tw"><table><thead><tr><th>観点</th><th>前回</th><th>今回</th></tr></thead><tbody><tr><td>現実の言葉と合う</td><td class="num">3</td><td class="num">4</td></tr><tr><td>利用者が操作を握れる</td><td class="num">3</td><td class="num">4</td></tr><tr><td>間違いを防ぐ</td><td class="num">3</td><td class="num">4</td></tr><tr><td>慣れた人の近道</td><td class="num">3</td><td class="num">4</td></tr><tr><td><b>合計</b></td><td class="num">30</td><td class="num"><b>34</b></td></tr></tbody></table></div>
+<h3>動き（Vercel Web Animation Design）</h3>
+<p>指摘したもの（メニューの起点、ダイアログ、画面の点、グラフの棒、画面送り、ホバー）はすべて直り、残りはありません。動きを減らす設定の扱いは、3章「動き」の後の判断のとおりです。</p>
+<h3>らしさ（Anthropic Frontend Design）</h3>
+<div class="tw"><table><thead><tr><th></th><th>見立て</th></tr></thead><tbody>
+<tr><td>強み</td><td>壁の色とガラスで「自分の机」のような場所ができている。全画面の時計の大きな数字が主役として効いている。</td></tr>
+<tr><td>強み</td><td>状態の言葉が動詞で書かれ、ボタンとトーストの言葉がそろっている。用語が画面と資料で一致した。</td></tr>
+<tr><td>気になる</td><td>すべてのウィジェットが同じ強さのガラスで、主役と脇役の差が付きにくい。脇役（クイックリンク、検索）は少し沈めてもよい。</td></tr>
+<tr><td>気になる</td><td>選択中は文字色の塗りに分けたが、進み具合とバッジはまだアクセントの青。青を「押せる・オン」に集めきれていない。</td></tr>
+</tbody></table></div>
+</section>
+<section class="sec">
+<h2>2. 残っている課題</h2>
+<div class="tw"><table><thead><tr><th>優先</th><th>課題</th><th>見たこと</th><th>直し方</th><th>見る場所</th></tr></thead><tbody><tr><td><span class="pr pm">中</span></td><td><b>読み込み・失敗・空の作り込みが3つだけ</b></td><td>天気・GitHub PR・RSS 以外は、知らせの形は決まっていても、ウィジェットごとの状態が無い。</td><td>登録の <code>states</code> を本実装で持たせ、通信・許可・記録のあるウィジェットから順に作る。</td><td>実装ガイド4章</td></tr><tr><td><span class="pr pm">中</span></td><td><b>主役と脇役の差</b></td><td>すべてのウィジェットが同じ強さのガラス。</td><td>脇役を少し沈める（透明感を上げる、縁を弱める）案を作って比べる。</td><td>—</td></tr><tr><td><span class="pr pm">中</span></td><td><b>帯のアイコンが多い</b></td><td>メモ・スクリプト・表は、表面の帯のボタンが多い。</td><td>優先度の低いボタンを最初から「…」に入れる数を増やす。</td><td>部品シート8章</td></tr><tr><td><span class="pr pl">低</span></td><td><b>アクセントの青の使い道</b></td><td>進み具合とバッジが青。</td><td>進み具合は文字色、バッジは赤系か文字色にして、青を「押せる・オン」に集める。</td><td>実装ガイド2章</td></tr><tr><td><span class="pr pl">低</span></td><td><b>スマホの受け取りの帯</b></td><td>上の端の帯が時計の数字に重なる。</td><td>帯の高さ分だけ画面の上の余白を足すか、帯を下部バーの上に出す。</td><td>部品シート11章</td></tr><tr><td><span class="pr pl">低</span></td><td><b>ウィジェットごとの説明</b></td><td>操作ヒントは全体の説明だけ。</td><td>その他メニューに「使い方」を足し、1〜2文の説明を出す（説明を求められる場なので文字数の目安の外）。</td><td>仕様書1章</td></tr><tr><td><span class="pr pl">低</span></td><td><b>行の中に直接書いた見た目</b></td><td><code>style</code> 属性が約440か所。</td><td>部品シートのクラスとトークンに置き換える。</td><td>実装ガイド9章</td></tr><tr><td><span class="pr pl">低</span></td><td><b>同じ種類を複数置けない</b></td><td>プロトタイプは1種類1個の保存の形。</td><td>本実装で置いた1個ごとのIDと保存の区画にする。</td><td>実装ガイド7.4</td></tr></tbody></table></div>
+</section>
+<section class="sec">
+<h2>3. 変更の経緯</h2>
+<h3>決めたこと</h3>
+<div class="tw"><table><thead><tr><th>項目</th><th>決めたこと</th></tr></thead><tbody><tr><td><b>原則</b></td><td>やりたいことは2〜3手、言葉は必要最低限。繰り返しは「もう一度」。ツアーと操作ヒントは説明の場として目安の外。</td></tr><tr><td><b>用語</b></td><td>ボード・画面・ホーム・ウィジェット・全画面ウィジェット・ツール・パーツ。「ページ」はやめた（Webページの意味だけ残す）。</td></tr><tr><td><b>ボードの名前</b></td><td>「ボード 1」からの通し番号。2画面以上にまたがるものは、ツールチップで「ボード 1-2」、読み上げで「ボード 1の2」。</td></tr><tr><td><b>ホーム</b></td><td>「開いたときのページ」をホームにし、⌂ と Home キーでどこからでも1手。ホームの左右にボードを置ける。</td></tr><tr><td><b>画面送り</b></td><td>どこへ移っても最後の1画面分だけ動かす。距離で時間を変えない。</td></tr><tr><td><b>メニューとダイアログ</b></td><td>メニューは開いたボタンの側から 0.95倍、ダイアログは 0.97倍＋透明度。</td></tr><tr><td><b>全画面ウィジェット</b></td><td>集中モードと手書きページをやめ、時計とスケッチの大きさに「全画面」を足した。名前は道具の名前のまま。共通の形（<code>.fsw</code>）を決めた。</td></tr><tr><td><b>ウィジェット内の知らせ</b></td><td>形は1つ、置く場所は原因で決める（入力の下／結果の中／中身と置き換え／操作の帯の上）。1×1はトースト。</td></tr><tr><td><b>登録の項目</b></td><td>分類・検索語・最小と最大の大きさ・全画面・複数・通信・許可を登録に持たせた。足りない項目は実装ガイド4章。</td></tr><tr><td><b>大きさ</b></td><td>ウィジェットが収まる大きさと、端末の列数・行数に入るマスだけ押せる。今の大きさをマス数で渡す（<code>--ww</code> <code>--wh</code>）。</td></tr><tr><td><b>一覧の検索</b></td><td>打つたびに絞り込み、使った語を5件まで覚える。入力欄の原則として仕様書6章へ。</td></tr><tr><td><b>通信と許可</b></td><td>登録の <code>net</code> と <code>perm</code> で出し方を決め、ツールごとに作らない。</td></tr><tr><td><b>トークン</b></td><td>ボタンは役割の4つ、角丸5段、影3段、文字の大きさ8段、動きの時間4つ。</td></tr><tr><td><b>Modern Web Guidance</b></td><td>本実装の決まりとして採用（機能の範囲、<code>&lt;dialog&gt;</code> とポップオーバー、隠れている間の停止、長い処理）。</td></tr><tr><td><b>名前のぶつかり</b></td><td>小さなチップと状態表示の <code>.sm</code> がぶつかっていたため、状態表示を <code>.stm</code> にした。</td></tr></tbody></table></div>
+<h3>レビューで直したこと</h3><div class="tw"><table><thead><tr><th>優先</th><th>直すこと</th><th>見たこと</th><th>直し方</th><th>見る場所</th></tr></thead><tbody><tr><td><span class="pr pd">済</span></td><td><b>小型表示の中身を決める</b></td><td>天気 1×1 で気温が重なる。メモ 2×1 で本文が見えず提案の帯が主役になる。</td><td>天気は湿度を外して気温だけ。メモは本文だけにし、書式の帯は入力中だけ出す。</td><td>部品シート9章</td></tr><tr><td><span class="pr pd">済</span></td><td><b>ウィジェット内の知らせを1つの形に</b></td><td>状態の出し方が3系統あり、場所も見た目も違う。</td><td>形は1つ、置く場所は原因で決めた。置き換えの2種類をそろえ、1×1はトーストに出す（部品シート6章）。</td><td>部品シート6章・12章</td></tr><tr><td><span class="pr pd">済</span></td><td><b>失敗に次の手を付ける</b></td><td>画像変換の「読めない形式」に操作が無い。スクリプトの「入力なし」で状態の行と案内が重なる。</td><td>画像変換は失敗の理由ごとに「選び直す」「長辺◯pxでもう一度」「JPEGでもう一度」。スクリプトは案内を結果の欄の中に出す。</td><td>部品シート12章</td></tr><tr><td><span class="pr pd">済</span></td><td><b>部品の種類を減らす</b></td><td>同じ役割のボタンが別の名前で作られている。</td><td>ボタン・角丸・影・文字の大きさ・動きの時間をすべてトークンにした。</td><td>部品シート2章・4章・10章</td></tr><tr><td><span class="pr pd">済</span></td><td><b>動きの規則を守る</b></td><td>メニューの起点、ダイアログに動きが無い、レイアウトを動かすアニメーション。</td><td>メニューは開いたボタンの側から、ダイアログは 0.97倍＋透明度、画面送りは最後の1画面分だけ。下の「動き」の表。</td><td>部品シート10章</td></tr></tbody></table></div>
+<h3>並べて見つかった小さな崩れ</h3><div class="tw"><table><thead><tr><th>箇所</th><th>見たこと</th><th>直し方</th><th>見る場所</th></tr></thead><tbody><tr><td><b>選択中の色</b></td><td>チップ・選択の並び・選択メニューは文字色、丸ボタンとアイコンボタンは青、帯のボタンは灰色、小チップは薄い青だった。</td><td>済：「選んでいる」は文字色の塗り、「オンの機能」は青。</td><td>部品シート3章</td></tr><tr><td><b>主な操作のホバー</b></td><td>主な操作と危険な操作は、マウスを乗せても見た目が変わらなかった。</td><td>済：塗りを少し濃くする。ホバーはマウスのある端末だけにした。</td><td>部品シート3章</td></tr><tr><td><b>スイッチのフォーカス</b></td><td>フォーカスの輪が四角かった。ほかは部品の形に沿って丸い。</td><td>済：輪を溝（丸）に付けた。</td><td>部品シート3章</td></tr><tr><td><b>入力欄の無効</b></td><td>無効のときも通常と見分けがつかなかった。</td><td>済：ほかの部品と同じく不透明度0.4。</td><td>部品シート3章</td></tr><tr><td><b>天気の更新中</b></td><td>右上の回る印が、状態の丸い印と重なっていた。</td><td>済：更新中は丸い印を隠し、回る印を同じ位置に。印は角丸から同じだけ内側へ。</td><td>部品シート12章</td></tr><tr><td><b>スクリプトの入力なし</b></td><td>案内の文と、下の状態の行・結果の欄の説明が重なっていた。</td><td>済：案内を結果の欄の中に出し、状態の行は1行に。</td><td>部品シート12章</td></tr></tbody></table></div>
+<h3>動き</h3><div class="tw"><table><thead><tr><th>箇所</th><th>対応</th><th>備考</th></tr></thead><tbody><tr><td>メニューの出方</td><td>済：開いたボタンの側を起点（<code>transform-origin</code>）に <code>scale(.95)</code> から 0.2秒</td><td>—</td></tr><tr><td>ホバーの塗り</td><td>済：<code>(hover: hover) and (pointer: fine)</code> の中だけにし、0.15秒にした</td><td>—</td></tr><tr><td>ダイアログ</td><td>済：透明度＋<code>scale(.97)</code>、0.25秒 ease-out。動きを減らす設定では透明度だけ</td><td>—</td></tr><tr><td>画面の点</td><td>済：幅は動かさず、色と透明度だけ 0.2秒</td><td>—</td></tr><tr><td>グラフの棒</td><td>済：高さは動かさず、色だけ 0.15秒</td><td>—</td></tr><tr><td>画面送り</td><td>済：どこへ移っても最後の1画面分だけ動かす。距離で時間を変えない</td><td>—</td></tr><tr><td>使っていない規則</td><td>済：<code>@keyframes tin</code>・<code>sin</code>、<code>--ease-pop</code>、上書きされて効いていない宣言、使っていないクラスと値を消した</td><td>—</td></tr><tr><td>動きを減らす設定</td><td>シート・トーストは透明度を残す。読み込みは明滅を残す</td><td>このまま（下の「判断」）</td></tr></tbody></table></div><p><b>動きを減らす設定の判断</b>　Vercel の考え方は「動きを減らす設定ではすべて止める」、Impeccable は「状態の変化を伝える透明度や色は残す」。このダッシュボードは後者を採ります。位置と大きさの変化は止め、出た・消えた・待っているは透明度と明滅で残します。</p>
+<h3>簡素化</h3><div class="tw"><table><thead><tr><th>項目</th><th>前の種類</th><th>寄せた先</th></tr></thead><tbody><tr><td>ボタンの種類</td><td>済：21の別々の規則（chip, btn, nb, abb, sg, bk, cnb, jlb, pva …）</td><td>役割の4つにまとめた：文字のボタン（大・小）、アイコンボタン（塗りあり・なし）、選択の並び、行全体のボタン。部品シート4章の「役割で4つ」</td></tr><tr><td>角丸</td><td>済：23種類</td><td>5段にした：6・12・18・26（ウィジェット・シート）・丸。部品シート2章</td></tr><tr><td>文字の大きさ</td><td>済：14種類（行の中の指定も含む）</td><td>8段にした：11・12・13・14（本文）・16（入力欄）・18・22・30。主役の数字はコンテナ単位のまま。部品シート2章</td></tr><tr><td>動きの時間</td><td>済：部品の動きで11種類</td><td>トークン4つ（0.1・0.15・0.2・0.25秒）にした。読み込みの繰り返しと背景の模様は別枠。部品シート10章</td></tr><tr><td>最小の高さ</td><td>済：13種類（32〜84px）</td><td>押せるものは3つ（36・44・48）にした。表示だけの行と文の欄は中身に合わせる</td></tr><tr><td>影</td><td>済：32種類（うち高さの影は11通り）</td><td>面の高さで3段（ウィジェット・浮く面・シートとダイアログ）と、ガラスの縁・つまみ。残りは線や輪として扱う。部品シート2章</td></tr></tbody></table></div>
+<h3>部品シートで見つかった不足</h3><div class="tw"><table>
+<thead><tr><th>内容</th><th>どう直すか</th><th>状況</th></tr></thead>
+<tbody>
+<tr><td>押した反応が丸いボタンと電卓のキーにしかない</td><td>押せるもの全部に 0.96倍の縮み（部品シート1章）</td><td>反映済み</td></tr>
+<tr><td>無効の見た目がチップにしかない</td><td>アイコンボタン、帯のボタン、選択の並び、マス、スイッチにも不透明度0.4</td><td>反映済み</td></tr>
+<tr><td>小さなチップ（<code>.chip.sm</code>）が、ウィジェットの状態表示の <code>.sm</code> と名前がぶつかり、置くボード・追加先・一覧のウィジェット名が表示されていなかった</td><td>状態表示の名前を <code>.stm</code> に変えて、名前のぶつかりをなくした</td><td>反映済み</td></tr>
+<tr><td>5個以上から選ぶ部品が無く、チップを並べて逃げていた（ホーム、場所）</td><td>選択メニュー</td><td>反映済み</td></tr>
+<tr><td>帯のボタンが多いウィジェット（スクリプト、画像変換、表）は、小さいと横スクロールで隠れる</td><td>その他メニューと、ボタンの優先度（<code>.lo</code>）</td><td>反映済み</td></tr>
+<tr><td>画面が8つ以上になると点が入りきらない</td><td>画面が多いときの表示</td><td>反映済み</td></tr>
+<tr><td>位置の固定などが、編集中にも見えない</td><td>編集中の固定の印</td><td>反映済み</td></tr>
+<tr><td>許可が要る機能（位置、マイク、クリップボード、通知）が、いきなりブラウザの問い合わせを出す</td><td>許可のお願い</td><td>反映済み</td></tr>
+<tr><td>文字の設定に、書き方の説明も間違いの知らせも無い</td><td>入力欄の補足とエラー</td><td>反映済み</td></tr>
+<tr><td>タッチ端末でホバーの塗りが押したあとに残る</td><td>ホバーの規則を <code>@media (hover: hover) and (pointer: fine)</code> の中に移す</td><td>反映済み</td></tr>
+<tr><td>動きの時間・文字の大きさ・角丸・影が部品ごとにばらばら</td><td>トークンに寄せる（部品シート1章・2章）</td><td>反映済み</td></tr>
+<tr><td>重なりの順が数字の直書き</td><td>層のトークンにする（部品シート1章）</td><td>本実装（実装ガイド9章）</td></tr>
+<tr><td>小チップの縁の線が薄い（3:1未満）</td><td>縁を <code>--line</code> にする</td><td>本実装（実装ガイド9章）</td></tr>
+<tr><td>設定の「検索先」のように4つの選択の並びが、シートの幅に入りきらないことがある</td><td>文字の長い並びは選択メニューにする基準を、数だけでなく幅でも判断する</td><td>本実装（実装ガイド9章）</td></tr>
+<tr><td>ウィジェット内の知らせを部品ごとに作っている（スクリプトの入力、AIの状態、受け渡し）</td><td>形は1つ、置く場所は原因で決める（仕様書3章）</td><td>反映済み</td></tr>
+</tbody></table></div>
+</section>
+<section class="sec">
+<h2>4. 既存ツールの調査</h2>
+<p>ブラウザの新規タブ拡張、自宅サーバー向けダッシュボード、スマホのホーム画面ウィジェットで繰り返し挙がる不満と、この設計での扱いです。</p>
+<div class="tw"><table>
+<thead><tr><th>よくある不満</th><th>この設計での扱い</th><th>状況</th></tr></thead>
+<tbody>
+<tr><td>更新や不具合で設定・リストが消える</td><td>端末内保存、書き出しと読み込み、版つきの保存形式</td><td>プロトタイプに実装</td></tr>
+<tr><td>設定ファイルを書かないと配置を変えられない</td><td>画面上で大きさ・ボード・並び順を変更</td><td>実装（ドラッグは未対応）</td></tr>
+<tr><td>ボードやグループに分けたい</td><td>ボードの追加と削除、ウィジェットのボード間移動</td><td>実装（改名は未対応）</td></tr>
+<tr><td>うっかり消して戻せない</td><td>削除・読み込み・初期化に「元に戻す」</td><td>実装</td></tr>
+<tr><td>編集の入口が見つからない</td><td>編集と一覧のボタンを常に下部バーに表示</td><td>実装</td></tr>
+<tr><td>ごちゃごちゃする。検索とリンクだけでいい</td><td>ミニマル構成（時計・検索・リンク・TODO・天気）へ1操作で切替</td><td>実装</td></tr>
+<tr><td>開くのが遅い</td><td>外部画像や大きなライブラリに頼らない。外部情報は前回の内容を先に出す</td><td>要件（本実装で計測）</td></tr>
+<tr><td>権限やデータ収集が不安</td><td>既定は端末内だけで完結。アカウント不要</td><td>要件</td></tr>
+<tr><td>基本機能が有料の壁の向こうにある</td><td>ウィジェットに等級を付けない</td><td>方針</td></tr>
+<tr><td>外部のタスク管理などと同期したい</td><td>ウィジェット単位の接続として設計</td><td>未対応</td></tr>
+<tr><td>端末間で同じ画面にしたい</td><td>書き出しと読み込みで手動移行。自動同期は別途</td><td>未対応</td></tr>
+<tr><td>ウィジェットが見るだけで操作できない</td><td>全ウィジェットをその場で操作可能に</td><td>実装</td></tr>
+</tbody></table></div>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["auto","light","dark"],"default":"auto"},"$preview":{"width":1280,"height":9400}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.theme ?? 'auto' };
+  }
+}
+</script>
+</body>
+</html>

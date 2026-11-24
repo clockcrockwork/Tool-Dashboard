@@ -2,6 +2,32 @@
 
 作成日: 2026-11-19。対象: [設計案](./widget-schema-v0.md) と [三つの定義例](./widget-schema-v0-examples.md)。
 
+## 0. デザイン提供後の扱い（2026-11-23、2026-11-24 改訂）
+
+新しいプロトタイプが `design/claude-design/` に提供された。照合の結果は [設計案 §0](./widget-schema-v0.md#0-デザインとの照合による改訂2026-11-23) の改訂 R1〜R13。**ブラウザの画面とデータは `design/` と `docs/lgd/` の資料が正本**で（[設計案の「正本と適用範囲」](./widget-schema-v0.md)）、受け入れ条件 V01〜V15 は下の対応表で扱う。実装の進め方と合格の決め方は [開発フロー](./lgd/development-flow.md)（再現度テスト SSIM ≥ 0.95・差分画素率 ≤ 5% と、それとは別の**機能・データのゲート**）、PR #22 のレビュー対応は [レビュー対応のフロー](./lgd/review-flow.md)。
+
+扱いの区分: **現行要件**＝今の実装（P0〜P2）で満たす。**廃止**＝デザインで不要になった。**P3**／**P4**＝その段階で扱う（[開発フロー 2章](./lgd/development-flow.md)）。「テスト」の列は、確かめるテストの場所と状態（既存／この PR で対応中／未作成）。テストが無いものを合格扱いにしない。
+
+| ID | 扱い | 今の要件（正本・改訂） | テスト（場所・状態） |
+| --- | --- | --- | --- |
+| V01 | 廃止（R1）→ 現行要件に置き換え | ページ単一表示は無い。`pg` の種類だけ大きさに「全画面」が出る。全画面は置いた1個の大きさで、`pgW[配置ID]` が真の配置だけが1画面を占め、ボードのほかのウィジェットの後ろに並ぶ（仕様書 2章「全画面ウィジェット」、実装ガイド 7.4）。種類ごとの分岐を作らない | `src/app/layout/layout.test.ts`「gives a full-screen clock its own screen after the board」（既存）。`pg: true` の配置1個だけを全画面にする fixture（review #5、この PR で対応中）。再現度 `fullscreen-clock`（既存） |
+| V02 | 現行要件（保存の形）＋ P3（UI） | 種類 ID と配置 ID を分け、同じ種類の2個（`links` と `links#2`）は設定と記録が混ざらずに保存・書き出し・復元される。`multi: false` の種類は2個目を作れない。記録の共有は未決定で既定は独立（R6、実装ガイド 7.4・7.6）。view ごとの draft と競合は廃止（R7）。複数置く UI（「ここにも置く」）は P3 | `src/app/store/store.test.ts` の非 UI fixture（同じ種類の2区画の往復、`multi: false` の拒否。review #5、この PR で対応中）。P3: 複数追加の e2e（未作成） |
+| V03 | 現行要件（R4） | 位置を固定・大きさを固定を別々に切り替えられる。固定した位置は保存値を変えずに、入らない画面ではその画面だけ空き場所に並べる。全画面のときは位置を固定できない | `src/app/layout/layout.test.ts`「places pinned widgets first at their saved cell」「keeps the saved pin and reflows when it does not fit」、`src/app/store/sheets.test.ts`「size respects min/max and the lock」「pins at the current position」、`src/app/store/overlays.test.ts`「toggles pin and size lock and closes」（既存） |
+| V04 | 現行要件 | ほかの配置の移動・並べ直し・画面幅の変更で、固定した配置の保存値を変えない。端末に収まらないときは表示だけ縮める（仕様書 2章） | `src/app/layout/layout.test.ts`「clamps saved sizes to the registry limits」「spreads one board over several screens on a phone」（既存）。再現度の mobile シナリオ（既存） |
+| V05 | 現行要件（R3） | 外す→一覧から追加し直すと設定と記録が残っている（未配置）。人前では隠すの既定は登録の `priv`（`vd` とは独立）。隠している間は通常・前面表示・全画面・状態の覆い・1×1 の知らせのどれでも中身・読み上げ・知らせを出さない（仕様書 3章「人前では隠す」） | `e2e/dashboard.spec.ts`「removing a widget from the board can be undone from the toast」、`src/app/store/overlays.test.ts`「removes from the board with an undo toast」（既存）。`vd` と `priv` が独立した fixture、1×1 の失敗・空＋隠す、通常→全画面＋隠す（review #6、この PR で対応中） |
+| V06 | 現行要件（R5） | 段階表示の境目（マス数）で段が足される／消える。出ていない段の要素とデータ取得が無い。未配置・表示中でない画面では基本の段も更新しない（仕様書 3章「大きさで中身が増えるウィジェット」） | `src/widgets/weather/weather.test.ts`「weatherTiers」「fetches each tier once, the first time it is needed」「data kept after shrinking is not shown」（既存）。表示中の画面だけ更新する fixture（review #7、この PR で対応中） |
+| V07 | 現行要件（テンプレートは廃止、R5） | 大きさ・テーマを変えても入力中の内容と実行が保たれ、再実行しない | 未作成。入力・実行を持つウィジェット（P2a 以降）の分類ごとに単体テストか e2e を足す |
+| V08 | 現行要件（表示は R10）＋ P4（実 API） | 外部の情報を使うウィジェットは5状態（通常・読み込み中・更新中・空・失敗）と接続の点。空と失敗を区別し、オフラインでは前回の内容を残す。P4 までは見本・模擬データで、接続の点で見本であることを示す | `src/widgets/weather/weather.test.ts`「states (仕様書 3章「状態」)」（既存）。不正応答・実通信の失敗は P4 のアダプターのテスト（未作成） |
+| V09 | P4（実 API・認証） | 地域・単位の変更後に古い応答で上書きしない、認証の失効で表示を止める（§7 の要求世代は有効）。模擬の範囲では古い非同期応答を捨てることだけ確かめる | 古い非同期応答の代表 fixture（review #7、この PR で対応中）。認証・キャッシュは P4（未作成） |
+| V10 | 現行要件（draft の離脱 UI は廃止、R7） | 画面の切り替え・未配置・再表示で、表示されていないものは更新せず、unmount で timer などを止める。表示されたときに古ければ「更新中」を経て差し替える | 非表示画面・再表示・unmount の代表 fixture（review #7、この PR で対応中） |
+| V11 | 現行要件（R11） | ウィジェット内の知らせは置き場所を原因で決め、1×1 ではトースト。再描画のたびや定期更新の失敗で知らせを連発しない | 1×1 の知らせ（review #6、この PR で対応中）。重複しないことの確認は、更新を持つ分類（P2c）の前に足す（未作成） |
+| V12 | P2d（UI）＋ P4（実行方式は #16） | 実行は明示的な Run だけ。停止を確かめてから停止済みを出す。読み込みで自動実行しない。スクリプトの実行結果は保存しない（実装ガイド 6章） | P2d のスクリプトの単体テスト・e2e（未作成）。実行環境は #16 |
+| V13 | 現行要件（R8）。v0 データの移行は廃止 | 書き出し→読み込みの往復。知らない項目は捨て、足りない項目は既定値。封筒と区画の版（`v`/`dv`）を反映前にすべて検証し、未来の版・不正な封筒・移行の失敗では何も変えず、既存の記録と保存 bytes を保つ。読み込みは元に戻せる | `src/app/store/store.test.ts`「exports and re-imports with validation」「restores saved sections through sanitize」（既存）。版・負 fixture・保存 bytes の維持・別の区画を消さない（review #1・#2・#4）、読み込みの元に戻す（review #3）（この PR で対応中） |
+| V14 | 現行要件 | ライト・ダーク、キーボード、タッチ、動きを減らす。必須の知らせ・止める・確認を隠さない | 再現度テスト（light/dark × desktop/mobile、既存）、`e2e/dashboard.spec.ts`（Chromium、既存）。**WebKit と実機 Safari は未確認**で、結果は別に記録する（[開発フロー 5章](./lgd/development-flow.md)） |
+| V15 | 廃止（R1・R9） | 単一ページの参照・三択の削除は無い。外す・ボードの削除はトーストの「元に戻す」で戻す。「初期状態に戻す」は最初の7個の配置に戻すだけで記録を消さない | `src/app/store/sheets.test.ts`「deleting a board unplaces its widgets and renumbers」「minimal preset keeps only the starter set on board 1」、`e2e/dashboard.spec.ts`「removing a widget …」（既存） |
+
+1〜5章は v0 設計 PR の経緯として残す。そこに出てくる placement / instance / `standalone:<kind>` / view ごとの draft / 削除の三択 / revision は、ブラウザの画面とデータには適用しない（上の表と設計案 §0 が優先する）。
+
 ## 1. 目的・対象・現在地
 
 **目的:** 新しい Claude Design の画面を、共通設定と Parts / Shell / controller / 保存の責務へ無理なく対応付ける。画面に必要なものを見て v0 を調整し、その後の実装単位・受け入れ条件を決める。
@@ -34,7 +60,7 @@
 
 ## 3. 新しいプロトタイプ／実装の受け入れ条件
 
-下表は **すべて未検証**。HTML を読むだけで処理・保存・実機動作の PASS にしない。「prototype」は視覚・操作の検証、「implementation」は本番コードでの検証を指す。
+下表は v0 時点の条件で、**すべて未検証**のまま残す（今の扱いとテストの場所は 0章の表）。HTML を読むだけで処理・保存・実機動作の PASS にしない。「prototype」は視覚・操作の検証、「implementation」は本番コードでの検証を指す。
 
 | ID | 観点と試し方 | 期待する結果 | 必要な証拠 |
 | --- | --- | --- | --- |

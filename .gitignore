@@ -9,3 +9,9 @@ playwright-report/
 .env.*
 !.env.example
 .DS_Store
+# 再現度テスト（vrt/baselines はコミットする）
+vrt/actual/
+vrt/diff/
+vrt/report/
+vrt/.cache/
+storybook-static/

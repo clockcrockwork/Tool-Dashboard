@@ -3,7 +3,26 @@
 Status: **ACCEPTED module boundaries / draft runtime implementation**, 2026-11-12. Canonical four-layer types and schema lifecycle: [four-layer-contracts-v2.md](./four-layer-contracts-v2.md). Required quality gates: [quality-gates-v2.md](./quality-gates-v2.md). Companion to [architecture-v2.md](./architecture-v2.md).
 The main goal is **quickly adding widgets without separately rewriting the same operation for WebMCP, remote MCP and MCP Apps**. This is an implementation design, not a claim that existing code already implements the interfaces below.
 
+## 0. 適用範囲 / Scope (2026-11-24)
+
+PR #22 のレビュー 8（[対応方針](./lgd/review-flow.md)）を受けて、この文書の適用範囲を次のとおり限る。
+
+- **ブラウザの画面とデータには適用しない。** ボード・画面・配置・大きさ・全画面・未配置・置かずに使う・人前では隠す・保存（localStorage の区画と大きな記録の保存先）・書き出しと読み込み・元に戻すは、`design/claude-design/`（仕様書・実装ガイド・部品シート・プロトタイプ）と `docs/lgd/` の資料が正本。この文書の placement / instance / `standalone:<kind>` / view ごとの draft / 削除の三択 / IndexedDB の revision と CAS の規約は、そこには使わない。
+- **将来の契約としては維持する。** MCP（remote・WebMCP・MCP Apps）に公開する Operation の型付き定義、公開範囲（`exposeTo`・visibility）、認可、remote の対象の発見、revision による CAS、冪等キー、部分失敗の報告、エラーの区別は、その機能を実装するときの契約として有効。
+- **置き換え先:**
+
+| この文書の規約 | ブラウザの画面での置き換え先 |
+| --- | --- |
+| `kind` / `placementId` / `instanceId`（§1） | 種類 ID と配置 ID（最初の1個は種類 ID、2個目以降 `<kind>#<n>`）。区画 `w:<配置ID>` が設定と記録を持ち、共有は未決定で既定は独立 — [widget schema v0 §0 R6](./widget-schema-v0.md)、[review-flow #5](./lgd/review-flow.md)、実装ガイド 7.4 |
+| `standalone:<kind>`（§1・§5） | 置かずに使う（一時利用）は置いたときと同じ区画を使う — R12、仕様書 2章「置かずに使う」 |
+| view ごとの draft と revision（§1・§5） | その場で反映し、元に戻す（タブごと、0.7秒で1手、最大40手）。記録は各ウィジェットの個別の元に戻す — R7、仕様書 7章 |
+| IndexedDB の LocalRepository と revision、export v1 の封筒（§5） | `lgd.v1:global` と `lgd.v1:w:<配置ID>` の区画、区画の版（`v`/`dv`）、`lgd-dashboard` v1 の書き出しと反映前の検証。大きな記録は非同期の保存先 — R8、[review-flow #1・#7](./lgd/review-flow.md)、実装ガイド 5〜7章 |
+| 削除の三択（§5） | 「このボードから外す」＋トーストの「元に戻す」。「初期状態に戻す」は最初の7個の配置に戻すだけで記録を消さない — R9、仕様書 1章・2章 |
+| 追加の手順（§7）と自動チェック（§8） | [開発フロー](./lgd/development-flow.md)、スキル `lgd-add-widget`（`.claude/skills/lgd-add-widget/SKILL.md`） |
+
 ## 1. Canonical identity and ownership (accepted 2026-11-12)
+
+> 適用範囲（§0）: この節の ID と所有者は MCP・remote の Operation の将来の契約。ブラウザの画面では種類 ID と配置 ID を使う（widget schema v0 R6）。
 
 **A board placement, durable tool instance, data target, rendered view and operation are not the same thing.**
 
@@ -159,6 +178,8 @@ UI-only actions use `mcpVisibility: ["app"]`. Do not treat this metadata as auth
 
 ## 5. Persistent state, export and the three delete choices
 
+> 適用範囲（§0）: この節（IndexedDB の repository・revision・export v1・削除の三択）はブラウザの画面とデータには適用しない。置き換え先は widget schema v0 の R8・R9 と実装ガイド 5〜7章。remote provider の CAS・tombstone・冪等の規約は将来の契約として維持する。
+
 The v2 canonical local store is **IndexedDB via the LocalRepository/Dexie adapter**. The v1 four-layer Board/Common/Metadata/Extension taxonomy remains useful but v1 localStorage and embedded-config placement details are historical, not a competing source of truth.
 
 | Persisted concern | Identity and owner | Rules |
@@ -187,6 +208,8 @@ The v2 canonical local store is **IndexedDB via the LocalRepository/Dexie adapte
 
 The [widget schema v0 working draft](./widget-schema-v0.md) maps page-single and board-widget presentation onto these identities and shells. It preserves placement/config/view ownership and the existing deletion/revision rules. The proposed page composition, locks, visibility and data-source descriptors are not yet persisted or implemented; see its [conformance checklist](./widget-schema-v0-checklist.md) before adding fields to the current repository/export format.
 
+> 適用範囲（§0）: 2026-11-23 の §0 改訂で、widget schema v0 はページ単一表示・visible・三択の削除を廃止した。ブラウザの画面の構成は `design/` と `docs/lgd/` の資料に従う。
+
 Design one focused ToolView that can receive typed ViewModel data and emit intents/actions. Hosts provide their own surrounding chrome. Visual styling belongs to reusable design tokens, optional semantic part manifests and host shells; see [design-system-and-parts-v2.md](./design-system-and-parts-v2.md). A schema-driven renderer is optional for simple forms/results, not a mandatory generic UI engine:
 
 ~~~text
@@ -206,6 +229,8 @@ Optional shortcut/link-style widgets to existing standalone applications are acc
 
 ## 7. Adding a new utility (desired developer experience)
 
+> 適用範囲（§0）: ダッシュボードにウィジェットを足す手順は [開発フロー](./lgd/development-flow.md) とスキル `lgd-add-widget`。ここに書いた Widget/Standalone view の印と config migration は使わない。純粋な計算を MCP に公開する Operation にするときだけ、この節の 2・4・5 を使う。
+
 1. Define kind, metadata, configuration defaults/schema/migration in one local module. Mark whether it has Widget and/or Standalone views.
 2. Implement actual pure operations **only when needed**. Declare runtime compatibility, input/output schemas, privacy class, effect and explicit agent exposure.
 3. Implement a focused Vue ToolView or use the small set of semantic UI primitives/parts if the UI is simple. Board/Standalone shells wrap it; the loader adds it to the picker/catalog. Changing the visual theme must not change tool operation code.
@@ -215,6 +240,8 @@ Optional shortcut/link-style widgets to existing standalone applications are acc
 Web-only tools stop after step 3 and appropriate tests. Operations-only tools need no UI. The framework must not create empty stub files or cloud resources to fill unused channels.
 
 ## 8. Required automated consistency checks
+
+> 適用範囲（§0）: placement→instance→target、三択の削除、revision の競合のテストは MCP・remote を実装するときのもの。ブラウザの画面とデータのゲートは [開発フロー 5章](./lgd/development-flow.md)（再現度と、機能・データのゲート）。
 
 In addition to the original fixtures below: each operation's `exposeTo` and MCP Apps `visibility` are checked independently; no unlisted operation becomes model-visible. Test a stable local placement→instance→target mapping, two saved same-kind instances, three delete choices (including export confirmation + concurrent updates), authorized target discovery, two-target AI instruction, revision conflict and remote UI refresh. An unknown or disconnected target must not be inferred from a display name.
 

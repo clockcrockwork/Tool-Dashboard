@@ -1,0 +1,28 @@
+/** Shared UI icon paths (prototype markup). Keep one source so shell, widgets and gallery match. */
+export const IC = {
+  close: 'M6.5 6.5l11 11M17.5 6.5l-11 11',
+  back: 'M14.5 6l-6 6 6 6',
+  chevR: 'M9.5 6l6 6-6 6',
+  home: 'M4 11.5L12 4.5l8 7M6.5 9.5V19.5h11V9.5M10 19.5v-5h4v5',
+  grid: 'M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z',
+  pen: 'M5 19l1-4L16.5 4.5l3 3L9 18z',
+  sliders: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 4.500v5M9 14.500v5',
+  undo: 'M8 6L4 10l4 4M4 10h10a5 5 0 0 1 0 10h-3',
+  addBoard: 'M5 4h10l4 4v12H5zM12 10v6M9 13h6',
+  plus: 'M6 12h12M12 6v12',
+  eyeOff: 'M4 4l16 16M9.5 9.6a3.5 3.5 0 0 0 4.9 4.9M6.3 6.6C4.4 7.9 3 9.8 2.5 12c1.2 4 5 7 9.5 7 1.6 0 3.1-.4 4.4-1M10 5.2c.6-.1 1.3-.2 2-.2 4.5 0 8.3 3 9.5 7-.4 1.4-1.1 2.6-2 3.7',
+  pin: 'M9 4h6l-1 5 3 3H7l3-3zM12 15v5',
+  lock: 'M7 11h10v9H7zM9 11V8a3 3 0 0 1 6 0v3',
+  check: 'M5 12.5l4.5 4.5L19 7.5',
+  toastInfo: 'M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5h4',
+  toastOk: 'M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18zM8 12.3l2.8 2.8L16 9.6',
+  toastWarn: 'M12 4l9 16H3zM12 10v4.5M12 17.4v.2',
+  offline: 'M4 4l16 16M8.5 16.5a5 5 0 0 1 7 0M5.5 13a9 9 0 0 1 4-2.4M14 10.3a9 9 0 0 1 4.5 2.7M2.5 9.5a13.5 13.5 0 0 1 4-2.7M10.5 5.6a13.5 13.5 0 0 1 11 3.9M12 19.5h.1',
+  reload: 'M19 12a7 7 0 1 1-2.05-4.95M19 4.5V9h-4.5',
+  expand: 'M4 10V4h6M20 14v6h-6',
+  shrink: 'M10 4v6H4M14 20v-6h6',
+  play: 'M8 5.5v13l11-6.5z',
+  pause: 'M8 5v14M16 5v14',
+  /** 準備中（使えるようになるまで待つ）: a clock face. */
+  soon: 'M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zM12 7.5V12l3 2',
+} as const;
