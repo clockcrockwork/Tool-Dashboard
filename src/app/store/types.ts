@@ -45,6 +45,25 @@ export type GlobalSection = {
 
 export type WidgetCfg = Record<string, FieldValue>;
 
+/**
+ * Per-kind record definition (実装ガイド 4章 `store`, 7.5). Keyed by kind in `WIDGET_DATA`; every placement of the
+ * kind keeps its own record in its own section (`w:links`, `w:links#2`).
+ */
+export type WidgetDataDef<T> = Readonly<{
+  /** Version of the record's shape. Saved as `dv` in the section; bump it when the shape changes. */
+  version: number;
+  initial: (now: number) => T;
+  /** Return null to reject (the section is then kept read-only, not overwritten). Unknown fields must be dropped. */
+  sanitize: (raw: unknown, now: number) => T | null;
+  /**
+   * Moves a record saved with an older `dv` (`from`) to the current shape, before `sanitize`. Return null (or throw)
+   * when it cannot; without `migrate` an older record is treated like a newer one (kept, not overwritten).
+   */
+  migrate?: (raw: unknown, from: number) => unknown;
+  /** Records excluded from saving (e.g. chat when 「会話を保存」 is off). */
+  toSaved?: (data: T, cfg: (key: string) => FieldValue | undefined) => unknown;
+}>;
+
 export type ToastKind = 'info' | 'ok' | 'warn';
 export type ToastAct = { label: string; fn: () => void };
 export type Toast = { id: number; text: string; kind: ToastKind; act: ToastAct | null; spin?: boolean; out?: boolean };

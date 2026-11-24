@@ -1,9 +1,12 @@
 /**
  * Board/screen grid layout (仕様書 2章「グリッドとボード」). Pure function ported from prototype `layout()`.
- * Pinned widgets are placed first at [screen, col, row]; the rest flow top-left first; full-screen
- * widgets (clock, sketch) occupy one screen after their board.
+ * Pinned widgets are placed first at [screen, col, row]; the rest flow top-left first; a placement whose kind
+ * can go full-screen (登録の `pg`) and whose size is 「全画面」 (`pgW[配置ID]`) occupies one screen after its board.
+ * Everything here is keyed by placement ID (`links`, `links#2`); kinds are looked up through the registry only,
+ * so adding a kind needs no change here.
  */
-import { REGISTRY, type Size } from '../registry/registry';
+import { type Size } from '../registry/registry';
+import { defOf, isInstanceId } from '../registry/instances';
 
 export type Board = Readonly<{ id: string; n: string }>;
 export type Pin = readonly [screen: number, col: number, row: number];
@@ -23,8 +26,11 @@ export type LayoutEnv = Readonly<{ width: number; height: number; fontScale?: nu
 
 export type WidgetPos = Readonly<{ page: number; c: number; r: number; w: number; h: number; gi: number; pg?: boolean }>;
 
+/** A full-screen view: which placement, on which screen, after which board. */
+export type FullScreen = Readonly<{ id: string; page: number; gi: number }>;
+
 export type Layout = Readonly<{
-  /** CSS grid-area (+ --ww/--wh custom properties) per widget id. */
+  /** CSS grid-area (+ --ww/--wh custom properties) per placement ID. */
   area: Readonly<Record<string, string>>;
   ww: Readonly<Record<string, number>>;
   wh: Readonly<Record<string, number>>;
@@ -33,28 +39,30 @@ export type Layout = Readonly<{
   cols: number;
   rows: number;
   cw: number;
-  focusIdx: number;
-  boardIdx: number;
   first: readonly number[];
   empty: readonly boolean[];
+  /** Board index per screen; -1 for a full-screen screen (see `full`). */
   phys: readonly number[];
+  /** Placement ID shown full-screen on each screen, or null for a board screen. */
+  full: readonly (string | null)[];
+  /** Full-screen views in screen order. */
+  fullScreens: readonly FullScreen[];
   pinMiss: Readonly<Record<string, boolean>>;
   total: number;
 }>;
 
 export const CELL_W = [138, 170, 212] as const;
 export const CELL_H = [124, 150, 186] as const;
-export const FULL_SCREEN_IDS = ['clock', 'sketch'] as const;
-
 export function sizeOf(input: Pick<LayoutInput, 'sizes'>, id: string): Size {
-  const r = REGISTRY[id];
+  const r = defOf(id);
   if (!r) return [1, 1];
   const z = input.sizes[id] ?? r.s;
   return [Math.min(r.max[0], Math.max(r.min[0], z[0])), Math.min(r.max[1], Math.max(r.min[1], z[1]))];
 }
 
+/** 「全画面」: the kind supports it (`pg`) and this placement chose it (`pgW[id]`), and it is placed. */
 export function isFullScreen(input: Pick<LayoutInput, 'pgW' | 'off'>, id: string): boolean {
-  const r = REGISTRY[id];
+  const r = defOf(id);
   return !!(r?.pg && input.pgW[id] && !input.off[id]);
 }
 
@@ -82,11 +90,11 @@ export function computeLayout(env: LayoutEnv, s: LayoutInput): Layout {
     for (let y = r; y < r + h; y++) for (let x = c; x < c + w; x++) grid[y * cols + x] = 1;
     return true;
   };
-  const known = (id: string) => !!REGISTRY[id];
+  const ids = [...new Set(s.order)].filter(id => isInstanceId(id));
 
-  for (const id of s.order) {
+  for (const id of ids) {
     const pn = s.pins[id];
-    if (!known(id) || s.off[id] || !pn || isFullScreen(s, id)) continue;
+    if (s.off[id] || !pn || isFullScreen(s, id)) continue;
     const gi = groupOf(id);
     const pages = pagesBy[gi] ?? [];
     const sz = sizeOf(s, id);
@@ -97,8 +105,8 @@ export function computeLayout(env: LayoutEnv, s: LayoutInput): Layout {
     if (grid && take(grid, pn[1], pn[2], w, h)) raw[id] = { p: pn[0], c: pn[1], r: pn[2], w, h, gi };
     else pinMiss[id] = true;
   }
-  for (const id of s.order) {
-    if (!known(id) || s.off[id] || raw[id] || isFullScreen(s, id)) continue;
+  for (const id of ids) {
+    if (s.off[id] || raw[id] || isFullScreen(s, id)) continue;
     const gi = groupOf(id);
     const pages = pagesBy[gi] ?? [];
     const sz = sizeOf(s, id);
@@ -119,19 +127,22 @@ export function computeLayout(env: LayoutEnv, s: LayoutInput): Layout {
     }
   }
 
-  const first: number[] = [], empty: boolean[] = [], phys: number[] = [];
+  const first: number[] = [], empty: boolean[] = [], phys: number[] = [], full: (string | null)[] = [];
+  const fullScreens: FullScreen[] = [];
   const pgPos: Record<string, WidgetPos> = {};
-  let base = 0, focusIdx = -1, boardIdx = -1;
+  let base = 0;
   s.groups.forEach((_gr, gi) => {
-    const pgHere = FULL_SCREEN_IDS.filter(id => isFullScreen(s, id) && groupOf(id) === gi);
+    const pgHere = ids.filter(id => isFullScreen(s, id) && groupOf(id) === gi);
     const pages = pagesBy[gi] ?? [];
     first[gi] = base;
     empty[gi] = pages.length === 0 && !pgHere.length;
     const n = pages.length || (pgHere.length ? 0 : 1);
-    for (let i = 0; i < n; i++) phys.push(gi);
+    for (let i = 0; i < n; i++) { phys.push(gi); full.push(null); }
     base += n;
     for (const id of pgHere) {
-      if (id === 'clock') { focusIdx = base; phys.push(-1); } else { boardIdx = base; phys.push(-2); }
+      phys.push(-1);
+      full.push(id);
+      fullScreens.push({ id, page: base, gi });
       pgPos[id] = { page: base, c: 0, r: 0, w: cols, h: rows, gi, pg: true };
       base += 1;
     }
@@ -139,7 +150,7 @@ export function computeLayout(env: LayoutEnv, s: LayoutInput): Layout {
 
   const area: Record<string, string> = {}, ww: Record<string, number> = {}, wh: Record<string, number> = {};
   const pos: Record<string, WidgetPos> = { ...pgPos };
-  for (const id of Object.keys(REGISTRY)) {
+  for (const id of ids) {
     const q = raw[id];
     const pp = pgPos[id];
     if (!q) {
@@ -152,5 +163,5 @@ export function computeLayout(env: LayoutEnv, s: LayoutInput): Layout {
     ww[id] = q.w;
     wh[id] = q.h;
   }
-  return { area, ww, wh, pos, gap, cols, rows, cw, focusIdx, boardIdx, first, empty, phys, pinMiss, total: Math.max(1, base) };
+  return { area, ww, wh, pos, gap, cols, rows, cw, first, empty, phys, full, fullScreens, pinMiss, total: Math.max(1, base) };
 }
