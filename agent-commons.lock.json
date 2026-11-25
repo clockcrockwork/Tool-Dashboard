@@ -1,0 +1,26 @@
+{
+  "lockVersion": 1,
+  "commons": {
+    "repo": "agent-commons",
+    "path": null,
+    "version": "1.5.0",
+    "revision": "de8eb9b0663c0d2de2e27c0dc9ffcb012e183447"
+  },
+  "manifest": "agent-manifest.json",
+  "targets": {
+    "claudeCommandsDir": ".claude/commands",
+    "consumerScriptsDir": "scripts/agent",
+    "workflowsDir": "docs/agent-workflows"
+  },
+  "overlaysDir": "docs/agent-workflows/overlays",
+  "inputs": {
+    "agent-manifest.json": "sha256:3af8ea44451e1dc7f4f2267958b9c039ce2037920c7d5bf8a2c891b74abbd30c",
+    "scripts/agent/system-qa-exec-config.mjs": "sha256:908cd0f649fb2e0f98662ea01a12e77918ac948f7ffa2173e5da56438658d457"
+  },
+  "outputs": {
+    ".claude/commands/system-qa.md": "sha256:023ae19f29199feb10c82f51fbea293ae86af532db2cc87a23b20660404cad09",
+    "docs/agent-workflows/system-qa.md": "sha256:9456d3b2924a81d0a98a9abd986b33fcebaadd081c52dfd6226d8d5ad7e21229",
+    "scripts/agent/check-system-qa.mjs": "sha256:d61abfa237298727012c88fd980333a7f8f9dafdafeaec75b86f9e589b1939f2",
+    "scripts/agent/verify-projection.js": "sha256:ded61890854f081a4835da8add62076b5a56ece27b869f78bb96163e4c630d49"
+  }
+}
