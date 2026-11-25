@@ -1,0 +1,21 @@
+{
+  "commons": {
+    "repo": "agent-commons",
+    "version": "1.5.0"
+  },
+  "picks": {
+    "groups": [
+      "projection-guard",
+      "system-qa"
+    ],
+    "assets": []
+  },
+  "targets": {
+    "workflowsDir": "docs/agent-workflows",
+    "claudeCommandsDir": ".claude/commands",
+    "consumerScriptsDir": "scripts/agent"
+  },
+  "overlaysDir": "docs/agent-workflows/overlays",
+  "values": {},
+  "execConfigModule": "scripts/agent/system-qa-exec-config.mjs"
+}
