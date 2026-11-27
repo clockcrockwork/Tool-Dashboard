@@ -4,6 +4,7 @@
  */
 import { fm, mmss } from '../shared/time';
 import { swText } from '../stopwatch/stopwatch';
+import type { AskCopy } from '../../app/runtime/permission';
 
 /** One recording: id = the time it started; `url` is an object URL of the audio (memory only). */
 export type Take = Readonly<{ id: number; t: number; dur: number; url: string }>;
@@ -63,8 +64,10 @@ export function restoreTake(takes: readonly Take[], tk: Take): Take[] | null {
   return [...takes, tk].sort((a, b) => a.t - b.t);
 }
 
-/** 許可のお願いの文（仕様書 4章「許可のお願い」: マイク）. */
-export const MIC_ASK = { title: 'マイクを使いますか？', text: '録音はこの端末の中だけに保存します。', ok: 'マイクを使う', alt: 'やめる' } as const;
-export const MIC_NO = { title: 'マイクを使えません', text: 'アドレスバー左のボタンで許可できます', ok: 'もう一度', alt: '閉じる' } as const;
-/** Line icon of the request (prototype `IX().mic`). */
-export const MIC_ICON = 'M12 4a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V7a3 3 0 0 0-3-3zM6 11.5a6 6 0 0 0 12 0M12 17.5V20';
+/**
+ * マイクの許可のお願いの文（仕様書 4章「許可のお願い」、プロトタイプ `pq.recorder`）. ボタン・断られたときの文（「マイクを使えません」
+ * 「アドレスバー左のボタンで許可できます」「もう一度」「閉じる」）は共通の許可のお願いの既定（`PERMS.mic`）。
+ * 理由の文はプロトタイプの「録音はこの端末の中だけに保存します。」から変えた: 録音は保存しない（再読み込みで消える）ので、
+ * 保存すると言わない（docs/lgd/deferred.md）。
+ */
+export const MIC_ASK: AskCopy = { title: 'マイクを使いますか？', text: '録音はこの端末の中だけで扱い、外に送りません。', ok: 'マイクを使う', alt: 'やめる' };

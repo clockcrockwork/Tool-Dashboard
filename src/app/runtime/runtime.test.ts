@@ -8,7 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, nextTick, watch } from 'vue';
 import { memoryStore } from '../store/persist';
 import { useWithoutPlacing } from '../store/sheets';
-import { VEILED_TOAST, notifyAskOf, notifyCover, resetNotifyApi } from './notify';
+import { VEILED_TOAST, notifyAskOf, resetNotifyApi } from './notify';
+import { permCover } from './permission';
 import { runtimeOf } from './runtime';
 import { fakeNotify, runDash, toastTexts, type RunDash } from './test-fixtures';
 import type { AlarmData } from '../../widgets/alarm/data';
@@ -93,6 +94,63 @@ describe('実行管理の基本', () => {
     expect(pomoRunOf(again.d, 'pomo')).toBe(POMO_IDLE);
     expect(swOf(again.d, 'stopwatch')).toBe(SW_IDLE);
     expect(runtimeOf(again.d).sched.has('pomo|')).toBe(false);
+  });
+});
+
+describe('後始末（onDispose: Runner を持たない継続実行）', () => {
+  it('called once when the placement leaves the order; not for unplacing, moving, the front view or another screen', () => {
+    fakeNotify('granted');
+    const { d } = boot(at(10, 24, 36));
+    const rt = runtimeOf(d);
+    const fn = vi.fn();
+    const other = vi.fn();
+    rt.onDispose('recorder', fn);
+    rt.onDispose('stopwatch', other);
+    d.g.off = { ...d.g.off, recorder: true };
+    d.ui.big = 'recorder';
+    d.go(2);
+    useWithoutPlacing(d, 'recorder');
+    expect(fn).not.toHaveBeenCalled();
+    d.g.order = d.g.order.filter(id => id !== 'recorder');
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(other).not.toHaveBeenCalled();
+    d.g.order = [...d.g.order, 'recorder'];
+    d.g.order = d.g.order.filter(id => id !== 'recorder');
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(rt.disposable()).toEqual(['stopwatch']);
+  });
+  it('an unregistered cleanup is not called; stopping the runtime calls the rest once; a failing one does not stop the others', () => {
+    fakeNotify('granted');
+    const { d, stop } = boot(at(10, 24, 36));
+    const rt = runtimeOf(d);
+    const gone = vi.fn();
+    const off = rt.onDispose('recorder', gone);
+    off();
+    off();
+    const bad = vi.fn(() => { throw new Error('x'); });
+    const ok = vi.fn();
+    rt.onDispose('pomo', bad);
+    rt.onDispose('pomo', ok);
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    stop();
+    r = null;
+    err.mockRestore();
+    expect(gone).not.toHaveBeenCalled();
+    expect(bad).toHaveBeenCalledTimes(1);
+    expect(ok).toHaveBeenCalledTimes(1);
+    expect(rt.disposable()).toEqual([]);
+    rt.dispose('pomo');
+    expect(ok).toHaveBeenCalledTimes(1);
+  });
+  it('active(): the 継続実行 placements whose run state says running (pomo, stopwatch), in board order', () => {
+    fakeNotify('granted');
+    const { d } = boot(at(10, 24, 36));
+    expect(runtimeOf(d).active()).toEqual([]);
+    pomoToggle(d, 'pomo');
+    setSw(d, 'stopwatch', toggleSw(SW_IDLE, d.now()));
+    expect(runtimeOf(d).active().sort()).toEqual(['pomo', 'stopwatch']);
+    pomoToggle(d, 'pomo');
+    expect(runtimeOf(d).active()).toEqual(['stopwatch']);
   });
 });
 
@@ -227,8 +285,8 @@ describe('アラーム（時刻の監視）', () => {
     switchAlarm(d, 'alarm', 1);
     expect(d.dataOf<AlarmData>('alarm').on).toEqual([true, true]);
     expect(notifyAskOf(d, 'alarm')).toBe('ask');
-    expect(notifyCover(d, 'alarm')?.title).toBe('鳴ったら通知しますか？');
-    notifyCover(d, 'alarm')?.alt?.fn();
+    expect(permCover(d, 'alarm')?.title).toBe('鳴ったら通知しますか？');
+    permCover(d, 'alarm')?.alt?.fn();
     const log = toastLog(d);
     vi.advanceTimersByTime(MIN);
     expect(log.filter(t => t === 'アラーム 22:30')).toHaveLength(1);
@@ -359,8 +417,8 @@ describe('ポモドーロ（継続実行）', () => {
     const { d } = boot(at(10, 24, 36));
     pomoToggle(d, 'pomo');
     expect(pomoRunOf(d, 'pomo').on).toBe(false);
-    expect(notifyCover(d, 'pomo')?.title).toBe('終わったら通知しますか？');
-    notifyCover(d, 'pomo')?.alt?.fn();
+    expect(permCover(d, 'pomo')?.title).toBe('終わったら通知しますか？');
+    permCover(d, 'pomo')?.alt?.fn();
     expect(pomoRunOf(d, 'pomo').on).toBe(true);
     expect(d.cfgOf('pomo', 'notify')).toBe(false);
     // A second answer (e.g. 「このまま始める」 after a refusal) does not start it twice.

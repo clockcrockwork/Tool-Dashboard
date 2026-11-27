@@ -12,7 +12,7 @@ const TAKES: Take[] = [0, 1, 2].map(i => ({ id: FIXED_NOW - (3 - i) * 600_000, t
 
 /**
  * 録音（`recorder`）。標準 2×2。録音ボタン＋経過時間＋入力レベル＋録音の行（再生・削除）。継続実行で、外しても・閉じても録音は続く。
- * マイクの許可のお願いは共通の枠の置き換え（`ask`）。断られたら直し方（`no`）。録音は保存しない（再読み込みで消える、最大6件）。
+ * マイクの許可のお願いは共通の許可のお願い（`askPerm`、共通の枠の置き換え。`ask`）。断られたら直し方（`no`）。録音は保存しない（再読み込みで消える、最大6件）。
  * `recording` は経過 1:23 の表示だけ（マイクは使わない。入力レベルは 0）。
  */
 const meta = {
@@ -24,7 +24,7 @@ const meta = {
     w: { control: { type: 'range', min: 2, max: 4, step: 1 }, description: '横のマス数' },
     h: { control: { type: 'range', min: 1, max: 3, step: 1 }, description: '縦のマス数' },
     state: { control: 'inline-radio', options: ['idle', 'takes', 'recording'], description: '録音なし／録音が3件／録音中' },
-    ask: { control: 'inline-radio', options: ['none', 'ask', 'no'], description: 'マイクの許可のお願い（共通の枠の cover）' },
+    ask: { control: 'inline-radio', options: ['none', 'ask', 'no'], description: 'マイクの許可のお願い（共通の許可のお願い）' },
     veil: { description: '「中身を隠す」がオンで、このウィジェットを人前では隠す' },
     edit: { description: '編集モード' },
   },

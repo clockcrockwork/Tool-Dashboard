@@ -3,8 +3,9 @@ import { Dashboard } from './store';
 import { memoryStore } from './persist';
 import {
   closeMenu, collapse, menuGeometry, menuHeight, menuKeyTarget, noticeOpen, placeTemp, selectMenuItems, tempSize, tipFor,
-  tourEnd, tourNext, tourView, TOUR_STEPS, updLater, updOpen, widgetMenuItems,
+  reloadStops, tourEnd, tourNext, tourView, TOUR_STEPS, updGo, updLater, updOpen, widgetMenuItems,
 } from './overlays';
+import { runtimeOf } from '../runtime/runtime';
 import type { MenuAnchor } from './types';
 
 const T0 = Date.parse('2026-11-19T10:24:36+09:00');
@@ -170,6 +171,52 @@ describe('top bars', () => {
     d.ui.edit = false;
     d.ui.rcvHide = T0 + 1;
     expect(noticeOpen(d)).toBe(false);
+  });
+  it('「再読み込み」 with nothing running reloads at once', () => {
+    const d = dash();
+    tourEnd(d);
+    d.ui.upd = true;
+    updGo(d);
+    expect(d.ui.dlg).toBeNull();
+    expect(updOpen(d)).toBe(false);
+    expect(d.ui.toasts.map(t => t.text)).toEqual(['新しい版にしました（見本）']);
+  });
+  it('「再読み込み」 while 録音・ポモドーロ・ストップウォッチ run asks first and names what stops (from the runtime)', () => {
+    const d = dash();
+    tourEnd(d);
+    d.ui.upd = true;
+    const rt = runtimeOf(d);
+    // Paused or idle runs, and kinds that are not 継続実行, are not named.
+    rt.set('pomo', { on: false, endAt: null, left: 300 });
+    rt.set('sketch', { on: true });
+    expect(reloadStops(d)).toEqual([]);
+    rt.set('recorder', { on: true, start: T0, takes: [], play: null });
+    rt.set('pomo', { on: true, endAt: T0 + 60_000, left: null });
+    rt.set('stopwatch', { run: true, base: 0, start: T0, laps: [] });
+    const order = d.g.order;
+    const want = ['pomo', 'stopwatch', 'recorder'].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    expect(rt.active()).toEqual(want);
+    const names = { pomo: 'ポモドーロ', stopwatch: 'ストップウォッチ', recorder: '録音' } as const;
+    expect(reloadStops(d)).toEqual(want.map(id => names[id as keyof typeof names]));
+    updGo(d);
+    expect(d.ui.dlg).toMatchObject({
+      title: '再読み込みしますか？', msg: reloadStops(d).join('、') + 'が止まります。入力した内容は保存されています。', two: true, okLabel: '再読み込み',
+    });
+    expect(updOpen(d)).toBe(true);
+    d.dialogCancel();
+    expect(updOpen(d)).toBe(true);
+    updGo(d);
+    d.dialogOk();
+    expect(d.ui.dlg).toBeNull();
+    expect(updOpen(d)).toBe(false);
+    expect(d.ui.toasts.map(t => t.text)).toContain('新しい版にしました（見本）');
+  });
+  it('a placement dropped from the order is not named', () => {
+    const d = dash();
+    runtimeOf(d).set('recorder', { on: true, start: T0, takes: [], play: null });
+    expect(reloadStops(d)).toEqual(['録音']);
+    d.g.order = d.g.order.filter(id => id !== 'recorder');
+    expect(reloadStops(d)).toEqual([]);
   });
   it('「あとで」 hides the update bar', () => {
     const d = dash();

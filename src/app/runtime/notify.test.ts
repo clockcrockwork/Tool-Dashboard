@@ -9,9 +9,10 @@ import { memoryStore } from '../store/persist';
 import { REGISTRY } from '../registry/registry';
 import { WIDGET_DATA } from '../../widgets';
 import {
-  OPEN_ONLY_NOTE, VEILED_BODY, VEILED_TAG, VEILED_TITLE, VEILED_TOAST, askNotify, notify, notifyAskOf, notifyCover, notifyOn,
+  OPEN_ONLY_NOTE, VEILED_BODY, VEILED_TAG, VEILED_TITLE, VEILED_TOAST, askNotify, notify, notifyAskOf, notifyOn,
   notifyPermOf, notifySettingKey, resetNotifyApi,
 } from './notify';
+import { permCover } from './permission';
 import { fakeNotify, toastTexts } from './test-fixtures';
 
 const T0 = new Date(2026, 10, 19, 10, 24, 36).getTime();
@@ -181,7 +182,7 @@ describe('許可のお願い（共通の枠の cover、明示の操作から）'
     const d = make();
     const go = vi.fn();
     askNotify(d, 'pomo', { title: '終わったら通知しますか？', text: 'このタブを見ていないときも' }, go);
-    const c = notifyCover(d, 'pomo');
+    const c = permCover(d, 'pomo');
     expect(c?.title).toBe('終わったら通知しますか？');
     expect(c?.ok?.label).toBe('通知を許可');
     expect(c?.alt?.label).toBe('通知しない');
@@ -191,7 +192,7 @@ describe('許可のお願い（共通の枠の cover、明示の操作から）'
     await Promise.resolve();
     expect(f.requests).toBe(1);
     expect(go).toHaveBeenCalledTimes(1);
-    expect(notifyCover(d, 'pomo')).toBeNull();
+    expect(permCover(d, 'pomo')).toBeNull();
     expect(notifyPermOf(d)).toBe('ok');
   });
   it('refused → 「通知を出せません」 with 「このまま始める」 (runs) or 「閉じる」; the permission is not saved', async () => {
@@ -199,11 +200,11 @@ describe('許可のお願い（共通の枠の cover、明示の操作から）'
     f.answer = 'denied';
     const d = make();
     const go = vi.fn();
-    askNotify(d, 'pomo', { title: 't', text: '', go: 'このまま始める' }, go);
-    notifyCover(d, 'pomo')?.ok?.fn();
+    askNotify(d, 'pomo', { title: 't', text: '', noOk: 'このまま始める' }, go);
+    permCover(d, 'pomo')?.ok?.fn();
     await Promise.resolve();
     await Promise.resolve();
-    const c = notifyCover(d, 'pomo');
+    const c = permCover(d, 'pomo');
     expect(c?.title).toBe('通知を出せません');
     expect(c?.warn).toBe(true);
     expect(c?.ok?.label).toBe('このまま始める');
@@ -219,16 +220,16 @@ describe('許可のお願い（共通の枠の cover、明示の操作から）'
     f.answer = 'default';
     const d = make();
     askNotify(d, 'alarm', { title: 't', text: '' });
-    notifyCover(d, 'alarm')?.ok?.fn();
+    permCover(d, 'alarm')?.ok?.fn();
     await Promise.resolve();
     await Promise.resolve();
     expect(notifyPermOf(d)).toBe('no');
     // Nothing waits for the answer (the alarm is on already): only 「閉じる」.
-    const c = notifyCover(d, 'alarm');
+    const c = permCover(d, 'alarm');
     expect(c?.ok?.label).toBe('閉じる');
     expect(c?.alt).toBeUndefined();
     c?.ok?.fn();
-    expect(notifyCover(d, 'alarm')).toBeNull();
+    expect(permCover(d, 'alarm')).toBeNull();
     expect(notifyPermOf(make())).toBe('');
   });
   it('「通知しない」: turns the kind\'s setting off (ポモドーロ), or stops asking this placement in this session (アラーム)', () => {
@@ -236,12 +237,12 @@ describe('許可のお願い（共通の枠の cover、明示の操作から）'
     const d = make();
     const go = vi.fn();
     askNotify(d, 'pomo', { title: 't', text: '' }, go);
-    notifyCover(d, 'pomo')?.alt?.fn();
+    permCover(d, 'pomo')?.alt?.fn();
     expect(go).toHaveBeenCalledTimes(1);
     expect(d.cfgOf('pomo', 'notify')).toBe(false);
     askNotify(d, 'alarm', { title: 't', text: '' });
-    notifyCover(d, 'alarm')?.alt?.fn();
-    expect(notifyCover(d, 'alarm')).toBeNull();
+    permCover(d, 'alarm')?.alt?.fn();
+    expect(permCover(d, 'alarm')).toBeNull();
     expect(askNotify(d, 'alarm', { title: 't', text: '' })).toBe(false);
     expect(d.cfg.alarm).toEqual({});
   });

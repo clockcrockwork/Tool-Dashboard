@@ -1,5 +1,6 @@
 /**
- * 録音のブラウザの側（マイク・MediaRecorder・入力レベル・再生・マイクの許可の状態）. テストでは `setRecDevice` で差し替える.
+ * 録音のブラウザの側（マイク・MediaRecorder・入力レベル・再生）. テストでは `setRecDevice` で差し替える.
+ * マイクの許可の状態は共通の許可のお願い（`src/app/runtime/permission.ts`）が読む。
  * 録音した音声は object URL としてメモリにだけ置き、保存しない（実装ガイド 6章）。
  */
 import { levelOf } from './recorder';
@@ -15,8 +16,6 @@ export type RecHandle = Readonly<{
 /** A take being played. */
 export type Playback = Readonly<{ stop: () => void }>;
 
-export type MicState = 'ok' | 'no' | '';
-
 export type RecDevice = Readonly<{
   /** Asks the browser for the microphone (only from 「マイクを使う」/「もう一度」) and starts recording. Rejects when refused. */
   open: () => Promise<RecHandle>;
@@ -24,8 +23,6 @@ export type RecDevice = Readonly<{
   play: (url: string, ended: () => void) => Promise<Playback>;
   url: (b: Blob) => string;
   revoke: (url: string) => void;
-  /** Permissions API (`microphone`): the state now, and its changes (`fn`). Returns the cleanup. */
-  watchMic: (fn: (s: MicState) => void) => () => void;
 }>;
 
 type AudioCtx = { createAnalyser: () => AnalyserNode; createMediaStreamSource: (s: MediaStream) => MediaStreamAudioSourceNode; close: () => Promise<void> };
@@ -39,8 +36,6 @@ function audioContext(): AudioCtx | null {
     return null;
   }
 }
-
-const mapState = (s: PermissionState): MicState => (s === 'granted' ? 'ok' : s === 'denied' ? 'no' : '');
 
 export const BROWSER_REC: RecDevice = {
   open: async () => {
@@ -85,22 +80,6 @@ export const BROWSER_REC: RecDevice = {
   },
   url: b => URL.createObjectURL(b),
   revoke: (u) => { try { URL.revokeObjectURL(u); } catch { /* not ours */ } },
-  watchMic: (fn) => {
-    let st: PermissionStatus | null = null;
-    let dead = false;
-    const on = (): void => { if (st) fn(mapState(st.state)); };
-    try {
-      void navigator.permissions.query({ name: 'microphone' }).then((s) => {
-        if (dead) return;
-        st = s;
-        fn(mapState(s.state));
-        s.addEventListener('change', on);
-      }, () => {});
-    } catch {
-      /* no Permissions API: the state is learnt from the request */
-    }
-    return () => { dead = true; st?.removeEventListener('change', on); };
-  },
 };
 
 let device: RecDevice = BROWSER_REC;

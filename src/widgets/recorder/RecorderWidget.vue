@@ -5,9 +5,9 @@
  * `takes`, `noTakes` in `renderVals()`, `recToggle`, `playTake`, `pq.recorder` in `xVals()`.
  *
  * - 継続実行（登録の `run: 'continuous'`）: 録音中のマイクと MediaRecorder は status.ts が持つので、この部品が作り直されても・
- *   外しても・一時利用を閉じても録音は続く。止めるのは「録音を止める」だけ。
+ *   外しても・一時利用を閉じても録音は続く。止めるのは「録音を止める」と、配置が並びから消えたときの後始末だけ。
  * - 経過は始めた時刻から計算し、経過と入力レベルの描き直しは表示中だけ（`useFaceClock`、120ms。登録の `refresh`）。
- * - マイクの許可のお願いは共通の枠の置き換え（`cover`）に出す（status.ts `recCover`）。
+ * - マイクの許可のお願いは共通の仕組み（`askPerm`）で、共通の枠が中身の置き換えに出す（登録の `perm: ['mic']`）。
  * - 録音は保存しない（再読み込みで消える、最大6件）。
  */
 import { computed } from 'vue';
@@ -15,7 +15,7 @@ import { useDash, useWidget } from '../../app/context';
 import WidgetFrame from '../../app/shell/WidgetFrame.vue';
 import { useFaceClock } from '../shared/time';
 import { levelScale, recView, takeRows } from './recorder';
-import { deleteTake, playTake, recCover, recLevel, recOf, recToggle } from './status';
+import { deleteTake, playTake, recLevel, recOf, recToggle } from './status';
 
 const props = defineProps<{ id: string }>();
 const d = useDash();
@@ -29,11 +29,10 @@ const level = computed(() => {
   return levelScale(true, recLevel(d, w.id));
 });
 const takes = computed(() => takeRows(run.value));
-const cover = computed(() => recCover(d, w.id));
 </script>
 
 <template>
-  <WidgetFrame :cover="cover">
+  <WidgetFrame>
     <div class="in" style="flex-direction: column; gap: 8px; padding: 16px">
       <div style="display: flex; align-items: center; gap: 14px">
         <button class="btn rec" :aria-label="v.label" :aria-pressed="run.on" style="min-width: 56px; min-height: 56px" @click="recToggle(d, w.id)"><svg class="i" aria-hidden="true" viewBox="0 0 24 24" style="width: 24px; height: 24px; fill: currentColor; stroke: none"><path :d="v.d" /></svg></button>
