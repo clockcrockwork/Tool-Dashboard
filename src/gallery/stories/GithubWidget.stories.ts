@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import GithubWidget from '../../widgets/github/GithubWidget.vue';
 import { setGithubState } from '../../widgets/github/status';
-import type { SourceState } from '../../widgets/rss/source';
+import type { SourceState } from '../../widgets/shared/source';
 import { widgetLgd } from '../storybook';
 
 type Args = { w: number; h: number; st: SourceState; veil: boolean; edit: boolean };

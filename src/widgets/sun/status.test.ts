@@ -115,6 +115,22 @@ describe('現在地の許可のお願い', () => {
     expect(sunRuntime(d).geo).toEqual({ lat: 35, lng: 135 });
   });
 
+  it('許可の答えが後から届いて許可済みになったら（読み込み直後・アドレスバーで許可）、カードを閉じて位置を取る', async () => {
+    const f = fakePerms();
+    const g = geo({ lat: 35.0, lng: 135.0 });
+    const d = make();
+    d.setCfg('sun', 'loc', '現在地');
+    mount(d);
+    expect(permAskOf(d, 'sun')).toEqual({ perm: 'geo', st: 'ask' });
+    f.change('geo', 'granted');
+    await nextTick();
+    await flush();
+    expect(permAskOf(d, 'sun')).toBeNull();
+    expect(g.calls).toBe(1);
+    expect(f.requests.geo).toBe(0);
+    expect(sunRuntime(d).geo).toEqual({ lat: 35, lng: 135 });
+  });
+
   it('人前では隠している間はカードを出さない（隠すのをやめたら出す）', async () => {
     fakePerms();
     const d = make();

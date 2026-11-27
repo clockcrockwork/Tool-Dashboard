@@ -43,8 +43,13 @@ export { selectOptions, type SelectKey, type SelectOption };
 /** Widgets with 「大きく表示」 (prototype `wMenu`). */
 export const BIG_IDS: readonly string[] = ['memo', 'sketch', 'translate', 'chat', 'share', 'table', 'script', 'imgconv'];
 
+/**
+ * Where focus returns when a menu closes: an element, or a function read at that moment (for a button that may be gone
+ * by then, such as 「都市を選ぶ」 on a card that closes once a city is chosen).
+ */
+export type MenuReturn = HTMLElement | (() => HTMLElement | null) | null;
 /** Runtime that is not part of the reactive state: where focus returns, and buttons folded into the menu. */
-type MenuRuntime = { ret: HTMLElement | null; extra: { l: string; el: HTMLElement }[]; focus: boolean };
+type MenuRuntime = { ret: MenuReturn; extra: { l: string; el: HTMLElement }[]; focus: boolean };
 const RT = new WeakMap<Dashboard, MenuRuntime>();
 export function menuRuntime(d: Dashboard): MenuRuntime {
   let r = RT.get(d);
@@ -103,7 +108,7 @@ export function anchorOf(root: HTMLElement, src: { x: number; y: number } | HTML
   return { ...a, rw: rr.width, rh: rr.height, al };
 }
 
-function setMenu(d: Dashboard, kind: MenuSpec['kind'], id: string, at: MenuAnchor, count: number, ret: HTMLElement | null): void {
+function setMenu(d: Dashboard, kind: MenuSpec['kind'], id: string, at: MenuAnchor, count: number, ret: MenuReturn): void {
   const r = menuRuntime(d);
   r.ret = ret;
   r.focus = true;
@@ -128,25 +133,43 @@ export function openWidgetMenu(d: Dashboard, root: HTMLElement, id: string, src:
   setMenu(d, 'widget', id, at, widgetMenuItems(d, id).length, ret ?? (src instanceof HTMLElement ? src : null) ?? activeEl());
 }
 
-/** 選択メニュー opened from its button (`.selb`). `label` names the listbox (「ホーム」「場所」…). */
-export function openSelectMenu(d: Dashboard, root: HTMLElement, key: string, label: string, btn: HTMLElement | null): void {
+/**
+ * 選択メニュー opened from its button (`.selb`). `label` names the listbox (「ホーム」「場所」…). Focus returns to `ret` when
+ * given (prototype `mnOpen({ ret })`), else to the button: pass `ret` when the button may be gone once an option is chosen.
+ */
+export function openSelectMenu(d: Dashboard, root: HTMLElement, key: string, label: string, btn: HTMLElement | null, ret?: MenuReturn): void {
   menuRuntime(d).extra = [];
   const at = anchorOf(root, btn, label);
-  setMenu(d, 'select', key, at, selectOptions(d, key).length, btn ?? activeEl());
+  setMenu(d, 'select', key, at, selectOptions(d, key).length, ret ?? btn ?? activeEl());
 }
 
 function activeEl(): HTMLElement | null {
   return typeof document !== 'undefined' && document.activeElement instanceof HTMLElement ? document.activeElement : null;
 }
 
-/** Close; with `ret` focus goes back to the button that opened it (prototype `mnClose`). */
+/**
+ * Focus an element that may not take focus by itself (a widget's `section`): it gets `tabindex="-1"` until it loses focus.
+ * Returns whether it has focus.
+ */
+export function focusBack(el: HTMLElement): boolean {
+  if (!el.isConnected) return false;
+  el.focus({ preventScroll: true });
+  if (document.activeElement === el || el.hasAttribute('tabindex')) return document.activeElement === el;
+  el.setAttribute('tabindex', '-1');
+  el.addEventListener('blur', () => { el.removeAttribute('tabindex'); }, { once: true });
+  el.focus({ preventScroll: true });
+  return document.activeElement === el;
+}
+
+/** Close; with `ret` focus goes back to the button that opened it, or to the `ret` it was given (prototype `mnClose`). */
 export function closeMenu(d: Dashboard, ret: boolean): void {
   const r = menuRuntime(d);
-  const el = r.ret;
+  const to = r.ret;
   r.ret = null;
   r.extra = [];
   if (d.ui.mn) Object.assign(d.ui, { mn: null, mnQ: '', mnAt: null });
-  if (ret && el) setTimeout(() => { if (el.isConnected) el.focus(); }, 0);
+  // Read after the next render: an option may have removed the button (a function `ret` then names another place).
+  if (ret && to) setTimeout(() => { const el = typeof to === 'function' ? to() : to; if (el) focusBack(el); }, 0);
 }
 
 /** Rows of the widget menu (prototype `wMenu`). */

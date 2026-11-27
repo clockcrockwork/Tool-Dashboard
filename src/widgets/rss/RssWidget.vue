@@ -3,7 +3,7 @@
  * RSS (rss) — 3×3, net: data. フィードの切替チップ＋選んだフィードの行（行の領域だけを縦に送る）.
  * Prototype: Main.dc.html section data-w="rss" (markup 1021–1039), values `renderVals()` `feeds` `feedItems`.
  *
- * - 見本のデータ（接続の点で見本と示す）。取得・更新は表示中だけ（`status.ts`・`source.ts`、登録の `refresh`）。
+ * - 見本のデータ（接続の点で見本と示す）。取得・更新は表示中だけ（`status.ts`・`../shared/source.ts`、登録の `refresh`）。
  * - 5つの状態は共通の枠の覆い（`stateClass`）。選んでいるフィードは保存しない（プロトタイプと同じ。配置ごとの runtime）。
  */
 import { computed } from 'vue';

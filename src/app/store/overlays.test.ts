@@ -103,16 +103,16 @@ describe('widget menu', () => {
 describe('select menu', () => {
   it('marks the chosen option and narrows by the filter', () => {
     const d = dash();
-    const all = selectMenuItems(d, 'sunloc');
+    const all = selectMenuItems(d, 'sunloc:sun');
     expect(all.map(x => x.l)).toEqual(['東京', '大阪', '札幌', '福岡', '那覇', '現在地']);
     expect(all.find(x => x.on)?.l).toBe('東京');
     d.ui.mnQ = '大';
-    expect(selectMenuItems(d, 'sunloc').map(x => x.l)).toEqual(['大阪']);
+    expect(selectMenuItems(d, 'sunloc:sun').map(x => x.l)).toEqual(['大阪']);
   });
   it('choosing an option applies it and closes', () => {
     const d = dash();
-    d.ui.mn = { kind: 'select', id: 'sunloc', x: 0, y: 0, origin: '', dock: '' };
-    selectMenuItems(d, 'sunloc').find(x => x.l === '札幌')?.tap();
+    d.ui.mn = { kind: 'select', id: 'sunloc:sun', x: 0, y: 0, origin: '', dock: '' };
+    selectMenuItems(d, 'sunloc:sun').find(x => x.l === '札幌')?.tap();
     expect(d.cfgOf('sun', 'loc')).toBe('札幌');
     expect(d.ui.mn).toBeNull();
   });

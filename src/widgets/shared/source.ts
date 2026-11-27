@@ -10,7 +10,7 @@
  *  - 表示されなくなった・部品が外れた（unmount）時点で取得と timer を止め、そのあとに届いた古い応答は捨てる。
  *  - 「もう一度」「接続する」は読み込み中を経て取り直す（プロトタイプ `stRetry`）。
  *
- * P2c の外部の情報の種類で共通にするため RSS に置いた。共通の部品の場所（`src/widgets/shared/`）へ移すかは UI/UX 実装層に任せる。
+ * P2c の外部の情報の種類（RSS・GitHub PR・今日は何の日）で共通の部品なので `src/widgets/shared/` に置く。
  */
 import { onScopeDispose, reactive, watch } from 'vue';
 import type { Dashboard } from '../../app/store/store';

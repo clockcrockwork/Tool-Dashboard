@@ -181,6 +181,28 @@ describe('select options and misc', () => {
     o[2]?.tap();
     expect(d.cfgOf('search', 'eng')).toBe('DuckDuckGo');
   });
+  it('sunloc:<配置ID> reads and writes the place of that placement only (review #5)', () => {
+    const d = make();
+    const id2 = d.addInstance('sun');
+    expect(id2).toBe('sun#2');
+    if (!id2) return;
+    const o2 = selectOptions(d, 'sunloc:' + id2);
+    expect(o2.map(x => x.n)).toEqual(['東京', '大阪', '札幌', '福岡', '那覇', '現在地']);
+    expect(o2.find(x => x.on)?.n).toBe('東京');
+    o2.find(x => x.n === '那覇')?.tap();
+    expect(d.cfgOf(id2, 'loc')).toBe('那覇');
+    expect(d.cfgOf('sun', 'loc')).toBe('東京');
+    expect(selectOptions(d, 'sunloc:sun').find(x => x.on)?.n).toBe('東京');
+    selectOptions(d, 'sunloc:sun').find(x => x.n === '札幌')?.tap();
+    expect(d.cfgOf('sun', 'loc')).toBe('札幌');
+    expect(d.cfgOf(id2, 'loc')).toBe('那覇');
+    expect(selectOptions(d, 'sunloc:' + id2).find(x => x.on)?.n).toBe('那覇');
+  });
+  it('sunloc without a sun placement has no options', () => {
+    const d = make();
+    expect(selectOptions(d, 'sunloc')).toEqual([]);
+    expect(selectOptions(d, 'sunloc:clock')).toEqual([]);
+  });
   it('collapsible sections default to look + layout', () => {
     const d = make();
     expect(sectionOpen(d, 'look')).toBe(true);

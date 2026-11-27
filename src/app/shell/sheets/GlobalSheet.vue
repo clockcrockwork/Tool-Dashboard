@@ -55,6 +55,22 @@ const ai = computed(() => {
 
 // 表示テスト (DEV only; 実装ガイド付録「本実装に入れない」)
 const DEMOS = [['ok', '通常'], ['load', '読込'], ['stale', '更新'], ['empty', '空'], ['err', '失敗']] as const;
+type DemoState = (typeof DEMOS)[number][0];
+/**
+ * 表示テスト「外部情報ウィジェットの状態」: 天気・GitHub PR・RSS の状態を選んだものにする（プロトタイプ `setDemo`）。
+ * 開発時だけ。各ウィジェットの状態の口は動的 import で読み、本番ビルドでは `import.meta.env.DEV` ごと消える（`e2e/production.spec.ts`）。
+ */
+function setDemo(v: DemoState): void {
+  st.demo = v;
+  if (import.meta.env.DEV) {
+    void Promise.all([import('../../../widgets/weather'), import('../../../widgets/github'), import('../../../widgets/rss')]).then(([wx, gh, rss]) => {
+      if (st.demo !== v) return;
+      wx.setWeatherState(d, v);
+      gh.setGithubState(d, v);
+      rss.setRssState(d, v);
+    });
+  }
+}
 const ENV_NAMES: Record<string, string> = { '': '自動', pc: 'PC', ios: 'iPhone', android: 'Android', app: 'アプリ' };
 const envSimLabel = computed(() => '案内: ' + (ENV_NAMES[st.simEnv] ?? '自動'));
 function cycEnv(): void {
@@ -114,7 +130,7 @@ function notYet(): void { d.toast('この表示テストは未実装です', 'in
     </CollapseSection>
 
     <CollapseSection v-if="DEV" title="表示テスト" :open="sectionOpen(d, 'test')" @toggle="toggleSection(d, 'test')">
-      <SegChoice :options="DEMOS" :model-value="st.demo" label="外部情報ウィジェットの状態" btn-style="padding: 0 4px; font-size: var(--fs-m)" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr))" @update:model-value="v => st.demo = v" />
+      <SegChoice :options="DEMOS" :model-value="st.demo" label="外部情報ウィジェットの状態" btn-style="padding: 0 4px; font-size: var(--fs-m)" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr))" @update:model-value="setDemo" />
       <p class="cap" style="margin: 8px 0">天気・GitHub PR・RSS の3つに、選んだ状態を当てはめます。</p>
       <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px">
         <button class="chip" @click="testPage">ページ読み込み</button>

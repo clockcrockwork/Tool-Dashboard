@@ -65,7 +65,7 @@ export const WidgetMenuBig: Story = {
 /** 選択メニュー（日の出・日の入りの「場所」、6個）。 */
 export const Select: Story = {
   name: '選択メニュー（場所）',
-  parameters: { lgd: { layout: 'bar', height: 360, setup: d => { openAt(d, 'select', 'sunloc', '場所'); } } satisfies LgdParams },
+  parameters: { lgd: { layout: 'bar', height: 360, setup: d => { openAt(d, 'select', 'sunloc:sun', '場所'); } } satisfies LgdParams },
 };
 
 /** 13個以上は先頭に絞り込みの欄（ホーム、ボード14）。 */
@@ -77,5 +77,5 @@ export const SelectFilter: Story = {
 /** 幅520px未満では下からのシート。 */
 export const SelectDock: Story = {
   name: '選択メニュー（幅520px未満は下から）',
-  parameters: { lgd: { layout: 'bar', height: 420, width: 390, setup: d => { openAt(d, 'select', 'sunloc', '場所', 390, 420); } } satisfies LgdParams },
+  parameters: { lgd: { layout: 'bar', height: 420, width: 390, setup: d => { openAt(d, 'select', 'sunloc:sun', '場所', 390, 420); } } satisfies LgdParams },
 };

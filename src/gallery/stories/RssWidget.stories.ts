@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import RssWidget from '../../widgets/rss/RssWidget.vue';
 import { setRssFeed, setRssState } from '../../widgets/rss/status';
-import type { SourceState } from '../../widgets/rss/source';
+import type { SourceState } from '../../widgets/shared/source';
 import { widgetLgd } from '../storybook';
 
 type Args = { w: number; h: number; feed: number; st: SourceState; veil: boolean; edit: boolean };

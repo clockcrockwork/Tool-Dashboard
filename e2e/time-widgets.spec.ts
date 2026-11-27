@@ -3,7 +3,8 @@ import { REGISTRY } from '../src/app/registry/registry';
 
 /**
  * P2a 時間のウィジェットの操作（機能・データのゲート）: 打刻→タイムログと個別の元に戻す、ポモドーロの許可のお願いと終わり、
- * アラームが鳴る、ストップウォッチは始めた時刻から計算する。時刻は page.clock で進める.
+ * アラームが鳴る、ストップウォッチは始めた時刻から計算する。時刻は page.clock で進める（`clock.install` の時計は実時間でも
+ * 進むので、期限の前後を確かめるときは準備のあとに `pauseAt` で止めてから `runFor` で進める）.
  * 実行管理（p2a-followup.md 1章）: 未配置のアラームが鳴る、一時利用で始めたポモドーロが閉じても一度だけ終わる・開き直しても
  * 二重に始まらない、人前では隠すの伏せた通知、設定パネルの「開いている間だけ」の一文、再読み込みで進行は消え設定は残る.
  */
@@ -94,12 +95,14 @@ test('ポモドーロ: 終わる時刻で終わり、完了を知らせる。計
 });
 
 test('アラーム: オンの時刻の分に入ると鳴る。スイッチは保存される', async ({ page }) => {
-  await open(page, '2026-11-19T06:59:50+09:00');
+  // `clock.install` の時計は実時間でも進む（読み込みとクリックで約1秒）。境目の前後を確かめるため、準備のあとで止めてから進める.
+  await open(page, '2026-11-19T06:59:00+09:00');
   const alarm = w(page, 'alarm');
   await alarm.getByRole('switch', { name: 'アラーム 22:30' }).click();
   await expect(page.locator('.toast').filter({ hasText: '22:30 オン' })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('lgd.v1:w:alarm') ?? '')).toContain('"on":[true,true]');
-  // Rings at 07:00:00 (the toast stays 3 s, so stop just after).
+  await page.clock.pauseAt(new Date('2026-11-19T06:59:50+09:00'));
+  // Rings at 07:00:00, not before (the toast stays 3 s; the clock is paused, so it stays while the assertions wait).
   await page.clock.runFor(9_000);
   await expect(page.locator('.toast').filter({ hasText: 'アラーム 07:00' })).toHaveCount(0);
   await page.clock.runFor(2_000);
@@ -138,15 +141,17 @@ const closeTemp = async (page: Page): Promise<void> => { await page.locator('.tm
 
 test.describe('実行管理（Dashboard が持つ。配置・表示と分ける）', () => {
   test('アラーム: 未配置で部品が無くても、オンの時刻に鳴る', async ({ page }) => {
-    await open(page, '2026-11-19T06:59:50+09:00', {}, { unplaced: ['alarm'] });
+    await open(page, '2026-11-19T06:59:00+09:00', {}, { unplaced: ['alarm'] });
     await expect(page.locator('.w[data-wid="alarm"]')).toHaveCount(0);
+    await page.clock.pauseAt(new Date('2026-11-19T06:59:50+09:00'));
     await page.clock.runFor(11_000);
     await expect(page.locator('.toast').filter({ hasText: 'アラーム 07:00' })).toBeVisible();
   });
 
   test('アラーム: 人前では隠すがオンでも鳴り、伏せた文だけを出す（時刻を出さない）', async ({ page }) => {
-    await open(page, '2026-11-19T06:59:50+09:00', { alarm: { cfg: { veil: true }, dv: 1, data: { on: [true, false] } } }, { gs: { veil: true } });
+    await open(page, '2026-11-19T06:59:00+09:00', { alarm: { cfg: { veil: true }, dv: 1, data: { on: [true, false] } } }, { gs: { veil: true } });
     await expect(w(page, 'alarm')).toHaveClass(/\bveil\b/);
+    await page.clock.pauseAt(new Date('2026-11-19T06:59:50+09:00'));
     await page.clock.runFor(11_000);
     await expect(page.locator('.toast').filter({ hasText: VEILED_TOAST })).toBeVisible();
     await expect(page.locator('.toasts')).not.toContainText('07:00');

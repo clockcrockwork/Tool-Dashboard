@@ -1,5 +1,5 @@
 /**
- * RSS の一時状態（保存しない）: 5つの状態、取った内容（表示中だけ取得・更新。`source.ts`）、選んでいるフィード.
+ * RSS の一時状態（保存しない）: 5つの状態、取った内容（表示中だけ取得・更新。`../shared/source.ts`）、選んでいるフィード.
  * 選んでいるフィードはプロトタイプでも保存しない（`feed` は保存のキー `PK()` に無い）ので、配置ごとの runtime に置き、再読み込みで
  * 最初のフィードに戻る。部品が作り直されても（画面の移動・前面表示）同じ配置なら残る。
  * 開発用の表示テストからは `setRssState(d, 'err')` のように呼ぶ。
@@ -7,7 +7,7 @@
 import { reactive } from 'vue';
 import { REGISTRY } from '../../app/registry/registry';
 import type { Dashboard } from '../../app/store/store';
-import { externalSource, type SourceState } from './source';
+import { externalSource, type SourceState } from '../shared/source';
 import { feedsEmpty, sampleFeeds, type Feed } from './rss';
 import { sampleRss } from './adapter';
 

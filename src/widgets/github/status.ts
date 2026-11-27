@@ -1,10 +1,10 @@
 /**
- * GitHub PR の一時状態（保存しない）: 5つの状態と、取った内容（表示中だけ取得・更新。`../rss/source.ts`）.
+ * GitHub PR の一時状態（保存しない）: 5つの状態と、取った内容（表示中だけ取得・更新。`../shared/source.ts`）.
  * 開発用の表示テストからは `setGithubState(d, 'err')` のように呼ぶ。
  */
 import { REGISTRY } from '../../app/registry/registry';
 import type { Dashboard } from '../../app/store/store';
-import { externalSource, type SourceState } from '../rss/source';
+import { externalSource, type SourceState } from '../shared/source';
 import type { Pr } from './github';
 import { sampleGithub } from './adapter';
 import { SAMPLE_PRS } from './sample';

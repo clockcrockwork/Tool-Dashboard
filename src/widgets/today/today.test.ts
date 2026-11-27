@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, nextTick, ref } from 'vue';
 import { Dashboard } from '../../app/store/store';
 import { memoryStore } from '../../app/store/persist';
-import { sampleAdapter } from '../rss/source';
+import { sampleAdapter } from '../shared/source';
 import { sampleDay } from './adapter';
 import { TODAY_NONE, todayKey, todayView } from './today';
 import { todaySource } from './status';
