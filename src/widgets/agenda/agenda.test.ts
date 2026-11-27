@@ -22,3 +22,14 @@ describe('agenda data', () => {
     expect(agendaData.sanitize({}, 0)).toBeNull();
   });
 });
+
+describe('agenda rows (prototype events / whenText)', () => {
+  it('日時順、今日・明日・「11.25」、時刻があれば添える、色は記録の色', async () => {
+    const { eventRows, whenText } = await import('./agenda');
+    const rows = eventRows([...initialAgenda(NOW).events].reverse(), NOW);
+    expect(rows.map(r => r.w + ' ' + r.n)).toEqual(['今日 14:00 レビュー', '明日 10:00 定例', '11.22 19:00 勉強会', '11.25 休み']);
+    expect(rows.map(r => r.c)).toEqual(['var(--a1)', 'var(--a2)', 'var(--a1)', 'var(--fill2)']);
+    expect(whenText(new Date(2026, 10, 18, 9, 5).getTime(), true, new Date(2026, 10, 19).getTime())).toBe('11.18 09:05');
+    expect(eventRows([], NOW)).toEqual([]);
+  });
+});

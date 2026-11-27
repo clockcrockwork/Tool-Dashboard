@@ -8,19 +8,17 @@
 import { computed } from 'vue';
 import { useDash, useWidget } from '../../app/context';
 import WidgetFrame from '../../app/shell/WidgetFrame.vue';
-import { notify } from '../../app/runtime/notify';
 import type { HabitData } from './data';
-import { HABIT_EMPTY, achievedKey, achievedText, habitView, toggleHabit } from './habit';
+import { HABIT_EMPTY, habitView } from './habit';
+import { habitTap } from './actions';
 
 const props = defineProps<{ id: string }>();
 const d = useDash();
 const w = useWidget(props.id);
-const items = computed(() => (w.data<HabitData>().items ?? []).map(habitView));
+const items = computed(() => w.data<HabitData>().items.map(habitView));
 
 function tap(id: number): void {
-  const r = toggleHabit(w.data<HabitData>().items, id);
-  w.setData<HabitData>({ ...w.data<HabitData>(), items: r.items });
-  if (r.done) notify(d, w.id, { key: achievedKey(w.id, r.done, d.now()), text: achievedText(r.done), kind: 'ok' });
+  habitTap(d, w.id, id);
 }
 function openItems(): void {
   Object.assign(d.ui, { edit: true, sel: w.id, panel: 'widget' });

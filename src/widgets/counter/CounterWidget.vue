@@ -9,7 +9,8 @@ import { computed, onBeforeUnmount, ref } from 'vue';
 import { useDash, useWidget } from '../../app/context';
 import WidgetFrame from '../../app/shell/WidgetFrame.vue';
 import type { CounterData, CounterItem } from './data';
-import { COUNTER_EMPTY, addRow, bump, countLabel, deleteLabel, removeRow, removedText, rename, setCount, stepOf, undoRemove } from './counter';
+import { COUNTER_EMPTY, addRow, bump, countLabel, deleteLabel, rename, setCount, stepOf } from './counter';
+import { counterRemove } from './actions';
 
 const props = defineProps<{ id: string }>();
 const d = useDash();
@@ -67,11 +68,7 @@ function add(): void {
   del.value = false;
 }
 function remove(x: CounterItem): void {
-  const r = removeRow(rows(), x.id);
-  if (!r.removed) return;
-  const removed = r.removed;
-  put(r.items);
-  d.toast(removedText(x), 'info', { label: '元に戻す', fn: () => { put(undoRemove(rows(), removed)); } });
+  counterRemove(d, w.id, x.id);
 }
 </script>
 
