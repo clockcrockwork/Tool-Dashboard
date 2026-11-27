@@ -1,5 +1,5 @@
 /**
- * 保存しないもの (実装ガイド 6章の除外, review #7) を今ある記録の定義（todo・links・memo・agenda）で確かめる。
+ * 保存しないもの (実装ガイド 6章の除外, review #7) を今ある記録の定義（todo・links・memo・agenda ほか、WIDGET_DATA のすべて）で確かめる。
  * 画面の一時状態（開いているシート・今の画面・前面表示・再生中かどうか・プレビューか・カーソル）、録音、画像変換の一覧と画像、現在地、
  * スクリプトの結果、会話保存オフの会話、生成途中の応答は data に入らない。書き方は src/widgets/README.md「保存しないもの」。
  */
@@ -28,6 +28,8 @@ const SHAPE: Readonly<Record<string, readonly [record: readonly string[], list: 
   alarm: [['on'], '', []],
   timelog: [['logs'], 'logs', ['id', 't', 'x']],
   punch: [['last', 'sessions', 'types'], 'types', ['id', 'n']],
+  habit: [['items'], 'items', ['ic', 'id', 'img', 'label', 'on']],
+  counter: [['items'], 'items', ['id', 'n', 'v']],
 };
 
 const saved = (kind: string, data: unknown): unknown => {

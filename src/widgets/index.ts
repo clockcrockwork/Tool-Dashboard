@@ -15,6 +15,8 @@ import { agendaData } from './agenda/data';
 import { alarmData } from './alarm/data';
 import { timelogData } from './timelog/data';
 import { punchData } from './punch/data';
+import { habitData } from './habit/data';
+import { counterData } from './counter/data';
 
 export const WIDGETS: Readonly<Record<string, Component>> = {
   clock: defineAsyncComponent(() => import('./clock/ClockWidget.vue')),
@@ -33,6 +35,14 @@ export const WIDGETS: Readonly<Record<string, Component>> = {
   timelog: defineAsyncComponent(() => import('./timelog/TimelogWidget.vue')),
   punch: defineAsyncComponent(() => import('./punch/PunchWidget.vue')),
   gantt: defineAsyncComponent(() => import('./gantt/GanttWidget.vue')),
+  // P2b 予定と記録
+  agenda: defineAsyncComponent(() => import('./agenda/AgendaWidget.vue')),
+  month: defineAsyncComponent(() => import('./month/MonthWidget.vue')),
+  week: defineAsyncComponent(() => import('./week/WeekWidget.vue')),
+  habit: defineAsyncComponent(() => import('./habit/HabitWidget.vue')),
+  counter: defineAsyncComponent(() => import('./counter/CounterWidget.vue')),
+  recorder: defineAsyncComponent(() => import('./recorder/RecorderWidget.vue')),
+  sketch: defineAsyncComponent(() => import('./sketch/SketchWidget.vue')),
 };
 
 /**
@@ -42,11 +52,12 @@ export const WIDGETS: Readonly<Record<string, Component>> = {
  */
 export const FULLSCREEN: Readonly<Record<string, Component>> = {
   clock: defineAsyncComponent(() => import('./clock/ClockFullScreen.vue')),
+  sketch: defineAsyncComponent(() => import('./sketch/SketchFullScreen.vue')),
 };
 
 /**
- * Saved records by kind (区画 `w:<配置ID>` の data; each placement keeps its own record). `agenda` is registered before its widget (P2b) so that
- * メモから予定への追加 is stored.
+ * Saved records by kind (区画 `w:<配置ID>` の data; each placement keeps its own record). `agenda` was registered before its widget so
+ * that メモから予定への追加 is stored.
  */
 export const WIDGET_DATA: Readonly<Record<string, WidgetDataDef<unknown>>> = {
   todo: todoData as WidgetDataDef<unknown>,
@@ -57,6 +68,9 @@ export const WIDGET_DATA: Readonly<Record<string, WidgetDataDef<unknown>>> = {
   alarm: alarmData as WidgetDataDef<unknown>,
   timelog: timelogData as WidgetDataDef<unknown>,
   punch: punchData as WidgetDataDef<unknown>,
+  // P2b 予定と記録. 月間・週間は記録を持たない。録音（音声）とスケッチの線は保存しない（実装ガイド 6章。各 status.ts の runtime）.
+  habit: habitData as WidgetDataDef<unknown>,
+  counter: counterData as WidgetDataDef<unknown>,
 };
 
 /**

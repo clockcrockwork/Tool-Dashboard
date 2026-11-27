@@ -200,6 +200,8 @@ const REFRESH: Readonly<Record<string, Refresh>> = {
   weather: VISIBLE_ONLY(30 * 60), rain: VISIBLE_ONLY(null), rss: VISIBLE_ONLY(null), github: VISIBLE_ONLY(null), today: VISIBLE_ONLY(null),
   // P2a: 残り・経過・勤務時間・今の位置の描き直し（計算は終わる時刻・始めた時刻から。鳴る・終わるは表示に関係なく時刻どおり）.
   pomo: VISIBLE_ONLY(1), stopwatch: VISIBLE_ONLY(0.1), punch: VISIBLE_ONLY(1), timelog: VISIBLE_ONLY(60),
+  // P2b: 今日の印・「今日」「明日」は日付で変わる（日が変わったら描き直す）。録音は録音中だけ経過と入力レベルを描き直す（計算は始めた時刻から）.
+  month: VISIBLE_ONLY(60), week: VISIBLE_ONLY(60), agenda: VISIBLE_ONLY(60), recorder: VISIBLE_ONLY(0.12),
 };
 
 /**
