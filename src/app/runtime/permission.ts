@@ -79,14 +79,6 @@ export const PERMS: Readonly<Record<Permission, PermRule>> = {
 };
 
 /**
- * 日の出・日の入り（P2c）の現在地の文（プロトタイプ `pq.sun`）. 「都市を選ぶ」は `alt`・`noAlt` に場所の選択メニューを渡す。
- * 断られたときの文の後ろは、いま代わりに出している都市（既定の東京）。P2c で `sun.ts` に移す。
- */
-export const SUN_GEO_ASK = (city = '東京'): AskCopy => ({
-  title: '現在地を使いますか？', text: '位置は端末の外に送りません', ok: '位置を使う', alt: '都市を選ぶ',
-  noText: 'アドレスバー左のボタンで許可できます。いまは' + city + 'で表示中', noAlt: '都市を選ぶ',
-});
-/**
  * スクリプト（P2d）のクリップボードの文（プロトタイプ `pq.script`）. 「手入力にする」は `alt`・`noAlt` に入力元の切り替えを渡す。
  * 断られたときの文はプロトタイプに無いので、直し方と代わりの手段を足した（P2d で `script.ts` に移す）。
  */

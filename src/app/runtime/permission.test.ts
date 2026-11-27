@@ -10,7 +10,7 @@ import { memoryStore } from '../store/persist';
 import { REGISTRY, type Permission } from '../registry/registry';
 import { WIDGET_DATA } from '../../widgets';
 import {
-  PERMS, SCRIPT_CLIP_ASK, SUN_GEO_ASK, askPerm, closePermAsk, permAskOf, permCover, permOf, resetPermBrowser, setPermAsk,
+  PERMS, SCRIPT_CLIP_ASK, askPerm, closePermAsk, permAskOf, permCover, permOf, resetPermBrowser, setPermAsk,
   type BrowserPerm,
 } from './permission';
 import { askNotify } from './notify';
