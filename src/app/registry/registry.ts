@@ -12,6 +12,9 @@
  * - `run` the run lifetime and how a run starts (`RunLife`, p2a-followup.md 1章). Display updates stay in `refresh` only.
  *   Kinds with `perm: ['notify']` notify through `src/app/runtime/notify.ts`; their 通知の設定 is the `tg` field `notify`
  *   when the kind has one (ポモドーロ「完了を通知」、ハビット「達成を通知」), else always on (アラーム: the switches are the setting).
+ * - `perm` (現在地・通知・マイク・クリップボード): the permission request is the shared one (`src/app/runtime/permission.ts`,
+ *   drawn by the frame in place of the content); a kind may ask only for the permissions listed here, and every kind with a
+ *   `perm` has the state `perm` (`registry.test.ts`).
  * - `REGISTRY_ORDER` is the catalog order (5 categories + local AI); `DEFAULT_ORDER` is the board order.
  */
 export type FieldType = 'tg' | 'sg' | 'st' | 'rg' | 'tx' | 'tm' | 'dt';
@@ -33,6 +36,12 @@ export type Category = '時間' | '予定と記録' | '情報' | '道具' | 'ロ
 export type NetKind = '' | 'data' | 'dl' | 'own';
 export type Permission = 'geo' | 'notify' | 'mic' | 'clipboard';
 export type Size = readonly [number, number];
+/** A key of `keys` (`KeyboardEvent.key` names; `Digit1-9` = the digit keys 1–9). */
+export type KeyBase =
+  | 'Tab' | 'Enter' | 'Escape' | 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight' | 'PageUp' | 'PageDown' | 'Home' | 'End'
+  | 'Digit1-9';
+/** A key with its modifiers (`Mod` = Ctrl/⌘), e.g. `Shift+Tab`, `Mod+Enter`, `Alt+Digit1-9`. */
+export type KeyName = `${'' | 'Mod+' | 'Alt+' | 'Shift+' | 'Mod+Shift+'}${KeyBase}`;
 /**
  * States a widget can show (実装ガイド 4章 `states`): 読み込み中 `load`, 更新中 `stale`, 空 `empty`, 失敗 `err`
  * (the frame's state overlay `.sto`, 仕様書 3章「状態」), 古い内容 `old` (net: data offline: the filled dot and the last
@@ -91,7 +100,7 @@ export type WidgetDef = Readonly<{
   /** 実行の寿命と開始の条件 (`RunLife`). */
   run: RunLife;
   /** Keys handled inside the widget only (`Mod` = Ctrl/⌘). Checked against the shell keys; shown in 操作ヒント later. */
-  keys: readonly string[];
+  keys: readonly KeyName[];
   /**
    * Heavy widget: rendered only while its screen is the current or a neighbouring one, in the front view or temporary use
    * (実装ガイド 8章「開く速さ」). Off for every kind so far.
@@ -200,6 +209,8 @@ const REFRESH: Readonly<Record<string, Refresh>> = {
   weather: VISIBLE_ONLY(30 * 60), rain: VISIBLE_ONLY(null), rss: VISIBLE_ONLY(null), github: VISIBLE_ONLY(null), today: VISIBLE_ONLY(null),
   // P2a: 残り・経過・勤務時間・今の位置の描き直し（計算は終わる時刻・始めた時刻から。鳴る・終わるは表示に関係なく時刻どおり）.
   pomo: VISIBLE_ONLY(1), stopwatch: VISIBLE_ONLY(0.1), punch: VISIBLE_ONLY(1), timelog: VISIBLE_ONLY(60),
+  // P2b: 今日の印・「今日」「明日」は日付で変わる（日が変わったら描き直す）。録音は録音中だけ経過と入力レベルを描き直す（計算は始めた時刻から）.
+  month: VISIBLE_ONLY(60), week: VISIBLE_ONLY(60), agenda: VISIBLE_ONLY(60), recorder: VISIBLE_ONLY(0.12),
 };
 
 /**
@@ -213,8 +224,12 @@ const RUN: Readonly<Partial<Record<string, RunLife>>> = {
   script: 'request', imgconv: 'request', translate: 'request', chat: 'request',
 };
 
-/** `keys` per kind (仕様書 10章「表」, 12章「キー操作」). Inputs that only use Enter need no entry. */
-const KEYS: Readonly<Record<string, readonly string[]>> = {
+/**
+ * `keys` per kind (仕様書 10章「表」, 12章「キー操作」, 4章「数のステッパー」: PageUp/PageDown で10段). Inputs that only use
+ * Enter need no entry.
+ */
+const KEYS: Readonly<Record<string, readonly KeyName[]>> = {
+  counter: ['PageUp', 'PageDown'],
   table: ['Tab', 'Shift+Tab', 'Enter', 'Shift+Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape'],
   script: ['Mod+Enter', 'Tab', 'Shift+Tab', 'Enter', 'Escape', 'Alt+Digit1-9'],
 };

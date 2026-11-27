@@ -4,10 +4,10 @@
  * 一時停止中は残りの秒数を持つ。どちらも保存しない（実装ガイド 6章: 再生中かどうか・画面の一時状態）.
  */
 import { mmss } from '../shared/time';
-import type { AskText } from '../../app/runtime/notify';
+import type { AskCopy } from '../../app/runtime/permission';
 
 /** The permission request (prototype `pq.pomo`), shown by the frame through the shared notification. */
-export const POMO_ASK: AskText = { title: '終わったら通知しますか？', text: 'このタブを見ていないときも、集中の時間が終わったことを知らせます。', go: 'このまま始める' };
+export const POMO_ASK: AskCopy = { title: '終わったら通知しますか？', text: 'このタブを見ていないときも、集中の時間が終わったことを知らせます。', noOk: 'このまま始める' };
 
 /** `on`: running until `endAt`; paused: `left` seconds remain (null = the full time, like the prototype's null). */
 export type PomoRun = Readonly<{ on: boolean; endAt: number | null; left: number | null }>;

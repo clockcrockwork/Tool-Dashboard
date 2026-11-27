@@ -16,6 +16,7 @@ import PatternSection from '../parts/PatternSection.vue';
 import ThemeStages from '../parts/ThemeStages.vue';
 import { setNotifyAsk } from '../../app/runtime/notify';
 import { ALARM_ASK } from '../../widgets/alarm/alarm';
+import { setRecAsk } from '../../widgets/recorder/status';
 
 /** 1マス 170×150px の見本の箱に、そのウィジェットだけを置いた Dashboard。 */
 const only = (id: string, more?: DashSetup): DashSetup => d => { solo(d, id, [1, 1]); more?.(d); };
@@ -29,9 +30,12 @@ const STATES = [
   ['s-empty', '空', 'まだ何もありません', '接続する', ''],
   ['s-err', '失敗', '取得できませんでした', 'もう一度', '最終更新 09:42'],
 ] as const;
-/** 許可のお願い（共通の通知が `perm: ['notify']` の種類の枠に出す。仕様書 4章「許可のお願い」）. */
+/** 許可のお願い（共通の許可のお願いが `perm` の種類の枠に出す。仕様書 4章「許可のお願い」）. 通知は共通の通知から. */
 const askAlarm: DashSetup = d => { setNotifyAsk(d, 'alarm', 'ask', ALARM_ASK); };
 const noAlarm: DashSetup = d => { setNotifyAsk(d, 'alarm', 'no', ALARM_ASK); };
+/** マイク（録音）: 共通の許可のお願い（`askPerm(d, id, 'mic', …)`）。文は録音が渡す（保存すると言わない）. */
+const askMic: DashSetup = d => { setRecAsk(d, 'recorder', 'ask'); };
+const noMic: DashSetup = d => { setRecAsk(d, 'recorder', 'no'); };
 const navNormal: DashSetup = d => { boards(d, 4); };
 const navSecond: DashSetup = d => { boards(d, 4); d.ui.page = 1; };
 const navEdit: DashSetup = d => { boards(d, 4); d.ui.edit = true; };
@@ -54,6 +58,8 @@ const navMany: DashSetup = d => { boards(d, 12); d.ui.page = 2; };
         <figure class="smp"><div class="box"><DashScope :prepare="only('alarm')"><div class="snapf" style="width: 170px; height: 150px"><div class="snapi"><PendingWidget id="alarm" /></div></div></DashScope></div><figcaption>準備中（1×1: 薄く残してトースト）</figcaption></figure>
         <figure class="smp"><div class="box"><DashScope :prepare="only('alarm', askAlarm)"><div class="snapf" style="width: 344px; height: 150px"><div class="snapi"><WidgetFrame id="alarm"><div class="in" /></WidgetFrame></div></div></DashScope></div><figcaption>許可のお願い（通知。共通の通知が出す）</figcaption></figure>
         <figure class="smp"><div class="box"><DashScope :prepare="only('alarm', noAlarm)"><div class="snapf" style="width: 344px; height: 150px"><div class="snapi"><WidgetFrame id="alarm"><div class="in" /></WidgetFrame></div></div></DashScope></div><figcaption>許可のお願い（断られたとき）</figcaption></figure>
+        <figure class="smp"><div class="box"><DashScope :prepare="only('recorder', askMic)"><div class="snapf" style="width: 344px; height: 150px"><div class="snapi"><WidgetFrame id="recorder"><div class="in" /></WidgetFrame></div></div></DashScope></div><figcaption>許可のお願い（マイク。共通の許可のお願いが出す）</figcaption></figure>
+        <figure class="smp"><div class="box"><DashScope :prepare="only('recorder', noMic)"><div class="snapf" style="width: 344px; height: 150px"><div class="snapi"><WidgetFrame id="recorder"><div class="in" /></WidgetFrame></div></div></DashScope></div><figcaption>許可のお願い（マイク・断られたとき）</figcaption></figure>
       </ThemeStages>
       <dl class="beh"><div><dt>読み上げ</dt><dd>枠は <code>role="group"</code> で、見えない見出し（登録名）で名付ける。</dd></div><div><dt>大きさ</dt><dd>1マス 170×150px（標準の密度）を基準に、横1〜4、縦1〜3。</dd></div><div><dt>状態</dt><dd>オフラインの印と、状態の覆い（読み込み・更新中・空・失敗）は部品シートの 12章 の見本を、枠の部品だけで並べたもの。</dd></div></dl>
     </PatternSection>

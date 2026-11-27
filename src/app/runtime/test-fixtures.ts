@@ -6,32 +6,74 @@ import { effectScope } from 'vue';
 import { Dashboard } from '../store/store';
 import { memoryStore, type SectionStore } from '../store/persist';
 import { WIDGETS, WIDGET_DATA, WIDGET_RUNNERS } from '../../widgets';
-import { setNotifyApi, type NotifyApi } from './notify';
+import { setNotifyApi } from './notify';
+import { setPermBrowser, type BrowserPerm, type PermBrowser } from './permission';
+import type { Permission } from '../registry/registry';
 import { runtimeOf, type PageVisibility } from './runtime';
 
-export type FakeNotify = NotifyApi & {
+export type FakePerms = PermBrowser & {
+  /** What the browser says now, per permission. */
+  st: Record<Permission, BrowserPerm>;
+  /** What the browser prompt answers. */
+  answer: Record<Permission, BrowserPerm>;
+  requests: Record<Permission, number>;
+  /** Simulates a change in the browser settings (Permissions API `change`). */
+  change: (p: Permission, s: BrowserPerm) => void;
+};
+
+/** Replaces the browser side of every permission (Permissions API, prompts). Unlisted ones are `prompt`. */
+export function fakePerms(init: Partial<Record<Permission, BrowserPerm>> = {}): FakePerms {
+  const listeners = new Map<Permission, Set<(s: BrowserPerm) => void>>();
+  const all = (v: BrowserPerm): Record<Permission, BrowserPerm> => ({ geo: v, notify: v, mic: v, clipboard: v });
+  const f: FakePerms = {
+    st: { ...all('prompt'), ...init }, answer: all('granted'), requests: { geo: 0, notify: 0, mic: 0, clipboard: 0 },
+    read: p => f.st[p],
+    watch: (p, fn) => {
+      const set = listeners.get(p) ?? new Set();
+      listeners.set(p, set);
+      set.add(fn);
+      return () => { set.delete(fn); };
+    },
+    request: (p) => { f.requests[p]++; f.st[p] = f.answer[p]; return Promise.resolve(f.answer[p]); },
+    change: (p, s) => { f.st[p] = s; listeners.get(p)?.forEach((fn) => { fn(s); }); },
+  };
+  setPermBrowser(f);
+  return f;
+}
+
+export type FakeNotify = {
+  /** `Notification.permission` (null: notifications are not available here). */
   perm: NotificationPermission | null;
   /** What 「許可」 in the browser prompt answers. */
   answer: NotificationPermission;
   tabHidden: boolean;
   shown: { title: string; body: string; tag: string }[];
-  requests: number;
+  readonly requests: number;
   /** Simulates a change in the browser settings (Permissions API `change`). */
   change: (p: NotificationPermission) => void;
+  /** The fake of every permission (the notification one follows `perm` / `answer`). */
+  perms: FakePerms;
 };
 
+const toBrowser = (p: NotificationPermission | null): BrowserPerm => (p === null ? 'none' : p === 'default' ? 'prompt' : p);
+const toNotification = (p: BrowserPerm): NotificationPermission | null => (p === 'none' ? null : p === 'prompt' ? 'default' : p);
+
+/** Replaces the browser side of notifications (sending, `document.hidden`) and of the permissions. */
 export function fakeNotify(perm: NotificationPermission | null = 'default'): FakeNotify {
-  const listeners = new Set<() => void>();
+  const perms = fakePerms({ notify: toBrowser(perm) });
   const f: FakeNotify = {
-    perm, answer: 'granted', tabHidden: false, shown: [], requests: 0,
-    permission: () => f.perm,
-    request: () => { f.requests++; f.perm = f.answer; return Promise.resolve(f.answer); },
+    get perm() { return toNotification(perms.st.notify); },
+    set perm(v) { perms.st.notify = toBrowser(v); },
+    get answer() { return toNotification(perms.answer.notify) ?? 'denied'; },
+    set answer(v) { perms.answer.notify = toBrowser(v); },
+    get requests() { return perms.requests.notify; },
+    tabHidden: false, shown: [], perms,
+    change: (p) => { perms.change('notify', toBrowser(p)); },
+  };
+  setNotifyApi({
     show: (title, body, tag) => { f.shown.push({ title, body, tag }); },
     hidden: () => f.tabHidden,
-    onChange: (fn) => { listeners.add(fn); return () => { listeners.delete(fn); }; },
-    change: (p) => { f.perm = p; listeners.forEach(fn => { fn(); }); },
-  };
-  setNotifyApi(f);
+  });
   return f;
 }
 

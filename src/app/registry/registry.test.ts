@@ -73,10 +73,12 @@ describe('refresh / keys / lazy / icon / share', () => {
     expect(def('todo').refresh).toBeUndefined();
   });
   it('keys are written as key names and never take a shell key outside the widget without being listed', () => {
-    const NAME = /^((Mod|Alt|Shift)\+)*(Tab|Enter|Escape|Arrow(Up|Down|Left|Right)|Digit1-9)$/;
+    const NAME = /^((Mod|Alt|Shift)\+)*(Tab|Enter|Escape|Arrow(Up|Down|Left|Right)|Page(Up|Down)|Home|End|Digit1-9)$/;
     for (const r of defs) for (const k of r.keys) expect(k, r.id).toMatch(NAME);
     expect(def('table').keys).toContain('Escape');
     expect(def('script').keys).toContain('Mod+Enter');
+    // 仕様書 4章「数のステッパー」: PageUp/PageDown で10段（カウンターの数の欄）.
+    expect(def('counter').keys).toEqual(['PageUp', 'PageDown']);
   });
   it('no implemented kind is lazy (the first 7 keep rendering as before)', () => {
     for (const id of STARTER) expect(def(id).lazy, id).toBe(false);
@@ -144,10 +146,17 @@ describe('run (実行の寿命と開始の条件、p2a-followup.md 1章)', () =>
   });
 });
 
-describe('通知の許可のお願い（共通の枠）と states', () => {
+describe('許可のお願い（共通の枠）と states', () => {
   it('every kind with perm notify can wait for the permission (states perm), and has the open-only sentence', () => {
     const notifying = defs.filter(r => r.perm.includes('notify'));
     expect(notifying.map(r => r.id).sort()).toEqual(['alarm', 'habit', 'pomo']);
     for (const r of notifying) expect(r.states, r.id).toContain('perm');
+  });
+  it('mic / geo / clipboard too: the kinds that can show the request are the ones with states perm (permission.test.ts asks each)', () => {
+    const by = (p: string): string[] => defs.filter(r => r.perm.some(x => x === p)).map(r => r.id).sort();
+    expect(by('mic')).toEqual(['recorder']);
+    expect(by('geo')).toEqual(['rain', 'sun', 'weather']);
+    expect(by('clipboard')).toEqual(['clip', 'share']);
+    for (const p of ['mic', 'geo', 'clipboard']) for (const id of by(p)) expect(def(id).states, id).toContain('perm');
   });
 });

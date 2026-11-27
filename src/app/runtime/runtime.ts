@@ -7,13 +7,18 @@
  * - **種類ごとの処理（`Runner`）**: 期限を待つ種類（アラームの見張り、ポモドーロの完了）が登録する。Dashboard が動いている間、
  *   その種類の配置ごとに1回 `start` を呼ぶ（View の mount と関係なく、未配置でも）。処理の無い種類は何も動かさない。
  *   配置が並びから消えたら（読み込み・元に戻す）その処理を止め、期限を取り消す。
+ * - **後始末（`onDispose`）**: `Runner` を持たない継続実行（録音のマイクと MediaRecorder、再生中の音）は、始めたときに
+ *   その配置の後始末を登録する。配置が並びから消えたとき（読み込み・元に戻す）と、実行管理を止めたとき（Dashboard の終わり）に
+ *   1度だけ呼ぶ。外す・置き場所・画面・前面表示・一時利用・unmount では呼ばない（それは止める理由にならない）。
+ * - **実行中の一覧（`active`）**: 継続実行の種類（登録の `run: 'continuous'`）で、実行状態が動いている（`on: true`、
+ *   ストップウォッチは `run: true`）配置。新しい版の「再読み込み」の確認で「何が止まるか」に使う。
  * - **期限**: `Scheduler`（次の期限に合わせた timer 1本）。タブが裏から戻ったら（`visibilitychange`）期限の来たものを
  *   すぐ判定し直す。古い期限・古い callback を捨てるのは、期限を入れ直す（同じ key）か実行 ID を見比べて行う。
  * - **担当のタブ**: `OwnerLock`（P3 で Web Locks）。知らせ（音・通知）の前に `owns()` を見る。今は常に担当。
  */
 import { effectScope, reactive, shallowReactive, watch, type EffectScope } from 'vue';
 import type { Dashboard } from '../store/store';
-import { kindOf } from '../registry/instances';
+import { defOf, kindOf } from '../registry/instances';
 import { Scheduler } from './scheduler';
 import { THIS_TAB, type OwnerLock } from './owner';
 import { notify, type NotifyMsg, type NotifySent } from './notify';
@@ -65,6 +70,13 @@ export type RuntimeOptions = Readonly<{ owner?: OwnerLock; page?: PageVisibility
 
 type Slot = Readonly<{ rid: number; v: unknown }>;
 
+/** A run state that says it is running: `on: true` (ポモドーロ・録音) or `run: true` (ストップウォッチ). */
+function isRunning(v: unknown): boolean {
+  if (!v || typeof v !== 'object') return false;
+  const o = v as { on?: unknown; run?: unknown };
+  return o.on === true || o.run === true;
+}
+
 export class Runtime {
   readonly sched: Scheduler;
   /** The tab is in front (follows `visibilitychange` while started). Views stop fine redrawing while false. */
@@ -75,6 +87,7 @@ export class Runtime {
   private owner: OwnerLock = THIS_TAB;
   private stopFn: (() => void) | null = null;
   private readonly scopes = new Map<string, EffectScope>();
+  private readonly disposers = new Map<string, Set<() => void>>();
 
   constructor(d: Dashboard) {
     this.d = d;
@@ -97,6 +110,52 @@ export class Runtime {
     this.slots[id] = { rid, v };
     return rid;
   }
+  /**
+   * Placements of 継続実行 kinds (`run: 'continuous'`) running now, in board order (`on: true`, or `run: true` for the
+   * stopwatch). What a reload would stop.
+   */
+  active(): string[] {
+    return this.d.g.order.filter(id => defOf(id)?.run === 'continuous' && isRunning(this.slots[id]?.v));
+  }
+
+  // ---------- 後始末 ----------
+  /**
+   * Registers a cleanup of a placement's continuing run that has no `Runner` (the microphone of a recording). It is called
+   * once, when the placement leaves the order (reading a file, undo) or when the runtime stops; not when the placement is
+   * unplaced, moved, shown in front, closed from temporary use or unmounted. Returns the unregistration (call it when the
+   * run ends by itself).
+   */
+  onDispose(id: string, fn: () => void): () => void {
+    let set = this.disposers.get(id);
+    if (!set) {
+      set = new Set();
+      this.disposers.set(id, set);
+    }
+    set.add(fn);
+    const own = set;
+    return () => {
+      own.delete(fn);
+      if (!own.size && this.disposers.get(id) === own) this.disposers.delete(id);
+    };
+  }
+  /** Runs and forgets the cleanups of a placement (each at most once). */
+  dispose(id: string): void {
+    const set = this.disposers.get(id);
+    if (!set) return;
+    this.disposers.delete(id);
+    for (const fn of set) {
+      try {
+        fn();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  }
+  /** Placements with a cleanup registered. */
+  disposable(): string[] {
+    return [...this.disposers.keys()];
+  }
+
   // ---------- 動かす ----------
   get running(): boolean {
     return this.stopFn !== null;
@@ -133,6 +192,10 @@ export class Runtime {
         for (const id of [...this.scopes.keys()]) if (!ids.includes(id)) end(id);
         for (const id of ids) begin(id);
       }, { immediate: true, flush: 'sync' });
+      // Cleanups of placements that left the order (reading a file, undo). Unplacing keeps the placement in the order.
+      watch(() => [...this.d.g.order], (ids) => {
+        for (const id of [...this.disposers.keys()]) if (!ids.includes(id)) this.dispose(id);
+      }, { immediate: true, flush: 'sync' });
     });
     // A tab coming back from the background: deadlines whose timer was held back are judged now, by the clock.
     const offPage = page.onChange(() => {
@@ -143,6 +206,7 @@ export class Runtime {
     this.stopFn = () => {
       root.stop();
       for (const id of [...this.scopes.keys()]) end(id);
+      for (const id of [...this.disposers.keys()]) this.dispose(id);
       offPage();
       offOwner();
       this.sched.stop();

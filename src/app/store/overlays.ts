@@ -6,7 +6,8 @@
  * only render and wire DOM events.
  */
 import { shallowRef } from 'vue';
-import { defOf, kindOf } from '../registry/instances';
+import { defOf, kindOf, nameOf } from '../registry/instances';
+import { runtimeOf } from '../runtime/runtime';
 import type { Dashboard } from './store';
 import { STORE_NOTE, detectEnv, envGuide, pendingToast, placeAt, selectOptions, sheetState, targetBoard, type EnvGuide, type SelectKey, type SelectOption } from './sheets';
 import type { DialogSpec, MenuAnchor, MenuSpec, NoticeBar } from './types';
@@ -320,10 +321,34 @@ export function updLater(d: Dashboard): void {
   d.ui.updLater = true;
   d.toast('次に開いたときに新しい版になります', 'info');
 }
-/** 「再読み込み」. The real reload arrives with the Service Worker in P3; until then it acts like the prototype. */
-export function updGo(d: Dashboard): void {
+/**
+ * What a reload stops (prototype `updGo` `busy`): the names of the running 継続実行 placements of the runtime (録音、ポモドーロ、
+ * ストップウォッチ…; `runtimeOf(d).active()`), each name once, in board order. Their run state is not saved (実装ガイド 6章).
+ * The prototype's スクリプトの実行・ローカルAI・画像の変換 join through the runtime when those kinds are made (P2d・P2e).
+ */
+export function reloadStops(d: Dashboard): string[] {
+  return [...new Set(runtimeOf(d).active().map(nameOf))];
+}
+
+/** The confirmation of 「再読み込み」 while something runs (prototype `dlg: 'reload'`). */
+export function reloadDialog(d: Dashboard, stops: readonly string[]): DialogSpec {
+  return {
+    title: '再読み込みしますか？', msg: stops.join('、') + 'が止まります。入力した内容は保存されています。', two: true, okLabel: '再読み込み',
+    onOk: () => { doReload(d); },
+  };
+}
+
+/** The reload itself. The real reload arrives with the Service Worker in P3; until then it acts like the prototype. */
+function doReload(d: Dashboard): void {
   Object.assign(d.ui, { upd: false, updLater: false, dlg: null });
   d.toast('新しい版にしました（見本）', 'ok');
+}
+
+/** 「再読み込み」: asks first when something would stop (`reloadStops`), else reloads. */
+export function updGo(d: Dashboard): void {
+  const stops = reloadStops(d);
+  if (stops.length) { d.ui.dlg = reloadDialog(d, stops); return; }
+  doReload(d);
 }
 
 /** Page loading bar `.pgb` for `ms` milliseconds (prototype `testPage`). */

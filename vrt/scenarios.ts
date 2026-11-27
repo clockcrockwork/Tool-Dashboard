@@ -237,6 +237,131 @@ export const p2aScenarios: Scenario[] = [
 
 scenarios.push(...p2aScenarios);
 
+// ---------------------------------------------------------------- P2b（分類「予定と記録」）
+
+/**
+ * P2b の7種だけを「ボード 1」に置いた seed（作り方は P2A_BOARD と同じ）。
+ * place は7種とも g0 を明示する（スケッチの既定は g2、カウンター・録音の既定は g3 のため）。
+ * 記録（予定・ハビットの項目・カウンター）は seed せず、両対象の既定の見本のまま撮る。
+ *
+ * desktop（8列×5行）: 1行目 週間カレンダー(4×1)・予定(2×2)・月間カレンダー(2×2) / 2行目 ハビット(2×1)・カウンター(2×2) /
+ *   3〜4行目 録音(2×2)・スケッチ(2×2)。1画面に7種がすべて入る（実際の配置は docs/lgd/vrt.md の表）。
+ * mobile（2列×5行）: 3ページに分かれる。1ページ目 週間カレンダー(2×1 に縮む)・予定・月間カレンダー /
+ *   2ページ目 ハビット・カウンター・録音 / 3ページ目 スケッチ。
+ */
+export const P2B_ORDER = ['week', 'agenda', 'month', 'habit', 'counter', 'recorder', 'sketch'] as const;
+const P2B_BOARD = {
+  ...DONE,
+  groups: [{ id: 'g0', n: 'ボード 1' }],
+  order: [...P2B_ORDER],
+  off: {},
+  place: Object.fromEntries(P2B_ORDER.map((id) => [id, 'g0'])),
+};
+
+/**
+ * スケッチの全画面ページ。線は mobile でもマウス（pointerType mouse）で描く。プロトタイプは `.dash *{touch-action:manipulation}` が
+ * 後から当たって全画面の面 `.fsw-surf{touch-action:none}` を打ち消しており、タッチで描くと 16px ほど動いた所でブラウザがパンを始めて
+ * pointercancel になり、線が途切れる（2026-11-27 に確認。ウィジェットの中の手書きパッドは style で none なので途切れない）。
+ * プロトタイプの不具合を基準にしないため、touch-action に左右されないマウスで描く。
+ */
+const SKETCH_FULL = '.fsw[data-w="sketch"]';
+/**
+ * 全画面のスケッチに描く2筆（ページの中心からの px）。何も描かない全画面のスケッチはほぼ無地で、本実装が「準備中です」でも
+ * 合格ラインを越えてしまう（2026-11-27 に desktop で SSIM 0.966 を確認）ので、描いた線で比べる。
+ * 線分は水平・垂直・45° だけにして、点の座標の丸め方（プロトタイプは小数1桁）で線が揺れないようにする。
+ * 幅は mobile（390px）にも入る ±150px、下の帯（ペンの選択）より上に収める。
+ */
+const SKETCH_STROKE_1: [number, number][] = [
+  [-150, -150],
+  [-75, -75],
+  [0, -150],
+  [75, -75],
+  [150, -150],
+];
+const SKETCH_STROKE_2: [number, number][] = [
+  [-150, 20],
+  [150, 20],
+  [50, 120],
+  [-150, 120],
+];
+
+const P2B_MOBILE_ONLY ='desktop は p2b-board の1画面に7種がすべて写るので、mobile の2・3ページ目だけを撮る';
+
+export const p2bScenarios: Scenario[] = [
+  {
+    name: 'p2b-board',
+    title: 'P2b: 予定と記録の7種を1枚のボードに置いた状態（mobile は1ページ目）',
+    seed: P2B_BOARD,
+    ready: w('week'),
+  },
+  {
+    name: 'p2b-board-2',
+    title: 'P2b: 同じボードの2ページ目（mobile。ハビット・カウンター・録音）',
+    seed: P2B_BOARD,
+    viewports: ['mobile'],
+    skipNote: P2B_MOBILE_ONLY,
+    steps: (vp) => goPageOnMobile(vp, 2),
+    ready: w('counter'),
+  },
+  {
+    name: 'p2b-board-3',
+    title: 'P2b: 同じボードの3ページ目（mobile。スケッチ）',
+    seed: P2B_BOARD,
+    viewports: ['mobile'],
+    skipNote: P2B_MOBILE_ONLY,
+    steps: (vp) => goPageOnMobile(vp, 3),
+    ready: w('sketch'),
+  },
+  {
+    name: 'p2b-counter-delete',
+    title: 'P2b: カウンターの「項目を削除するモード」（各項目に削除ボタン、増減の操作が消える）',
+    seed: P2B_BOARD,
+    steps: (vp) => [
+      ...goPageOnMobile(vp, 2),
+      { do: 'click', sel: `${w('counter')} button[aria-label="項目を削除するモード"]`, note: 'カウンター下部の帯のごみ箱' },
+      { do: 'waitFor', sel: `${w('counter')} button[aria-label="水 を削除"]`, note: '1件目「水」の削除ボタン' },
+      { do: 'mouseAway' },
+    ],
+    ready: `${w('counter')} button[aria-label="項目を削除するモード"][aria-pressed="true"]`,
+  },
+  {
+    name: 'p2b-habit-settings',
+    title: 'P2b: 編集モードでハビットをタップした「ウィジェットの設定」（項目の編集・達成を通知）',
+    seed: P2B_BOARD,
+    steps: (vp) => [
+      ...goPageOnMobile(vp, 2),
+      ...openEdit,
+      { do: 'click', sel: w('habit'), note: '編集モード中のハビット' },
+      { do: 'waitFor', sel: SEL.sheetWidget },
+      // mobile のシートは「項目」の一覧が下に隠れるので、「項目を追加」まで送って項目の編集を写す（desktop は最初から全部写る）
+      ...(vp === 'mobile'
+        ? ([
+            { do: 'scrollIntoView', sel: `${SEL.sheetWidget} button:has-text("項目を追加")`, note: 'シートの中を「項目を追加」までスクロール' },
+            { do: 'wait', ms: 600, note: 'スクロールの終わり' },
+          ] satisfies Step[])
+        : []),
+    ],
+    ready: SEL.sheetWidget,
+  },
+  {
+    name: 'p2b-sketch-full',
+    title: 'P2b: スケッチを全画面にしたページに2筆描いた状態（黒・普通の線のジグザグ、オレンジ・太い線の折れ線）',
+    seed: { ...P2B_BOARD, pgW: { sketch: true } },
+    steps: [
+      { do: 'click', sel: '.nav .dot[aria-label="スケッチ"]', note: '全画面ページの点（aria-label="スケッチ"）' },
+      { do: 'wait', ms: 1000, note: 'スムーズスクロールの終わり' },
+      { do: 'draw', sel: SKETCH_FULL, path: SKETCH_STROKE_1, input: 'mouse', note: '既定のペン（黒・普通の線）でジグザグ。mobile もマウス（SKETCH_FULL の注記）' },
+      { do: 'click', sel: `${SKETCH_FULL} button[aria-label="オレンジのペン"]` },
+      { do: 'click', sel: `${SKETCH_FULL} button[aria-label="太い線"]` },
+      { do: 'draw', sel: SKETCH_FULL, path: SKETCH_STROKE_2, input: 'mouse', note: 'オレンジ・太い線で折れ線' },
+      { do: 'mouseAway' },
+    ],
+    ready: SKETCH_FULL,
+  },
+];
+
+scenarios.push(...p2bScenarios);
+
 export function selectScenarios(opts: { scenarios?: string[]; viewports?: ViewportName[] }): Scenario[] {
   const want = opts.scenarios?.length ? new Set(opts.scenarios) : null;
   return scenarios.filter((s) => !want || want.has(s.name));

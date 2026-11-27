@@ -163,6 +163,57 @@ async function touchLongPress(page: Page, target: Locator, ms: number): Promise<
   }
 }
 
+/** 折れ線の頂点（中心からの px のずれ）を、8px ごとの整数の点に細かく分ける */
+export function densePath(path: [number, number][], every = 8): [number, number][] {
+  const out: [number, number][] = [];
+  path.forEach(([x1, y1], i) => {
+    const prev = path[i - 1];
+    if (!prev) {
+      out.push([x1, y1]);
+      return;
+    }
+    const [x0, y0] = prev;
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) throw new Error(`draw の線分は水平・垂直・45° にしてください: (${x0},${y0})→(${x1},${y1})`);
+    const n = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / every));
+    for (let k = 1; k <= n; k++) {
+      // 45° の線分は dx = ±dy なので、k を n で割った位置も整数にそろえれば線の上に乗る
+      const t = Math.min(Math.abs(dx || dy), Math.round((Math.abs(dx || dy) * k) / n));
+      out.push([x0 + Math.sign(dx) * t, y0 + Math.sign(dy) * t]);
+    }
+  });
+  return out;
+}
+
+/** 要素の中心を原点に1筆描く。desktop はマウス、mobile（タッチ）は CDP の touchStart → touchMove → touchEnd */
+async function drawStroke(page: Page, target: Locator, path: [number, number][], touch: boolean): Promise<void> {
+  const box = await target.boundingBox();
+  if (!box) throw new Error('描く対象の位置がとれません');
+  const cx = Math.round(box.x + box.width / 2);
+  const cy = Math.round(box.y + box.height / 2);
+  const [first, ...rest] = densePath(path).map(([x, y]) => ({ x: cx + x, y: cy + y }));
+  if (!first) return;
+  if (!touch) {
+    await page.mouse.move(first.x, first.y);
+    await page.mouse.down();
+    for (const p of rest) await page.mouse.move(p.x, p.y);
+    await page.mouse.up();
+    return;
+  }
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [first] });
+    for (const p of rest) {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [p] });
+      await page.waitForTimeout(16);
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  } finally {
+    await cdp.detach().catch(() => {});
+  }
+}
+
 const STEP_TIMEOUT = 8000;
 
 export async function runSteps(page: Page, steps: Step[], viewport: ViewportName): Promise<void> {
@@ -210,6 +261,12 @@ export async function runSteps(page: Page, steps: Step[], viewport: ViewportName
         case 'mouseAway':
           await mouseAway(page, viewport);
           break;
+        case 'draw': {
+          const l = pick(page, st.sel, st.nth);
+          await l.waitFor({ state: 'visible', timeout: STEP_TIMEOUT });
+          await drawStroke(page, l, st.path, (st.input ?? (touch ? 'touch' : 'mouse')) === 'touch');
+          break;
+        }
       }
       // 状態遷移（シートの開閉など）を落ち着かせる
       if (st.do !== 'wait' && st.do !== 'waitFor') await page.waitForTimeout(350);
