@@ -681,10 +681,13 @@ export function readIconFile(d: Dashboard, file: File | undefined, done: (url: s
 
 // ---------------------------------------------------------------- select menus (選択メニュー; drawn by the overlays layer)
 
-export type SelectKey = 'home' | 'tgt' | 'move' | 'sunloc' | `f:${string}`;
+export type SelectKey = 'home' | 'tgt' | 'move' | `sunloc:${string}` | `f:${string}`;
 export type SelectOption = { n: string; on: boolean; tap: () => void };
 
-/** Options for a select menu. `f:<key>` uses the widget shown in the settings sheet. */
+/**
+ * Options for a select menu. `f:<key>` uses the widget shown in the settings sheet; `sunloc:<配置ID>` is the place of that
+ * 日の出・日の入り placement (`sun`, `sun#2`, …: each placement keeps its own 「場所」).
+ */
 export function selectOptions(d: Dashboard, key: string): SelectOption[] {
   const groups = d.g.groups;
   if (key === 'home') {
@@ -700,9 +703,11 @@ export function selectOptions(d: Dashboard, key: string): SelectOption[] {
     const sp = sel ? d.layout.value.pos[sel] : undefined;
     return groups.map((gr, gi) => ({ n: gr.n, on: !!sp && sp.gi === gi, tap: () => { if (sel) moveToBoard(d, sel, gr.id); } }));
   }
-  if (key === 'sunloc') {
-    const cur = d.cfgOf('sun', 'loc');
-    return (REGISTRY.sun?.f.find(f => f.k === 'loc')?.o ?? []).map(c => ({ n: c, on: c === cur, tap: () => { d.setCfg('sun', 'loc', c); } }));
+  if (key.startsWith('sunloc:')) {
+    const id = key.slice('sunloc:'.length);
+    if (kindOf(id) !== 'sun') return [];
+    const cur = d.cfgOf(id, 'loc');
+    return (defOf(id)?.f.find(f => f.k === 'loc')?.o ?? []).map(c => ({ n: c, on: c === cur, tap: () => { d.setCfg(id, 'loc', c); } }));
   }
   if (key.startsWith('f:')) {
     const sel = settingsTarget(d);

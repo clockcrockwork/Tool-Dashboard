@@ -41,7 +41,7 @@ const todoMenu = (d: Dashboard, root: HTMLElement): boolean => {
 const sunSelect: DashSetup = d => {
   const at: MenuAnchor = { l: 16, t: 420, w: 140, h: 44, rw: 390, rh: 844, al: '場所' };
   d.ui.mnAt = at;
-  d.ui.mn = { kind: 'select', id: 'sunloc', ...menuGeometry('select', at, menuHeight(selectOptions(d, 'sunloc').map(() => ({ sep: false })), false)) };
+  d.ui.mn = { kind: 'select', id: 'sunloc:sun', ...menuGeometry('select', at, menuHeight(selectOptions(d, 'sunloc:sun').map(() => ({ sep: false })), false)) };
 };
 
 type Shot = readonly [device: 'd' | 'm', caption: string, prepare: DashSetup, after?: (d: Dashboard, root: HTMLElement) => boolean];

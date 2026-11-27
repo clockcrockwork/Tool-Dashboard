@@ -27,6 +27,8 @@ export interface Target {
 export const PROTO_KEY = 'lgdash.v1';
 /** 本実装の全体設定の保存キー */
 export const APP_KEY = 'lgd.v1:global';
+/** 本実装のウィジェットごとの区画の保存キーの頭（`lgd.v1:w:<配置ID>`） */
+export const APP_WIDGET_PREFIX = 'lgd.v1:w:';
 
 /** seed → プロトタイプの localStorage */
 export function protoStorage(seed: Seed | null | undefined): StorageEntries {
@@ -38,9 +40,17 @@ export function protoStorage(seed: Seed | null | undefined): StorageEntries {
  * 全体の区画には版 `v: 1` を付ける（無くても 1 と読まれるが、本番が書く形にそろえる）。
  * order / off / place / groups / tourDone / pgW はプロトタイプと同じ名前・同じ意味（配置 ID = 種類 ID）なのでそのまま渡す。
  * groups の `n`（ボード名）は本実装では読まない（番号から付け直す）が、害はないので残す。
+ * `cfg`（ウィジェットの設定。プロトタイプは `cfg: { <種類>: { <項目>: 値 } }` を全体の JSON に持つ）は、本実装では
+ * ウィジェットごとの区画 `lgd.v1:w:<配置ID>` の `{ v: 1, cfg }` に分けて入れる（記録 `data` は入れない＝既定の見本）。
  */
 export function appStorage(seed: Seed | null | undefined): StorageEntries {
-  return seedEntries(APP_KEY, seed ? { v: 1, ...seed } : seed);
+  if (!seed) return seedEntries(APP_KEY, seed);
+  const { cfg, ...global } = seed;
+  const out = seedEntries(APP_KEY, { v: 1, ...global });
+  if (cfg && typeof cfg === 'object') {
+    for (const [id, c] of Object.entries(cfg as Record<string, unknown>)) out.push([`${APP_WIDGET_PREFIX}${id}`, JSON.stringify({ v: 1, cfg: c })]);
+  }
+  return out;
 }
 
 /** 本実装の index.html と同じ viewport メタ */

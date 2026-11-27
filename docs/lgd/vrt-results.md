@@ -66,3 +66,7 @@
 ## 2026-11-27 P2b 予定と記録（ブランチ `feat/lgd-p2b-records`）
 
 結果: **84 / 84 合格**（既存 64 ＋ P2b 20）。P2b の6シナリオ（`p2b-board`・`p2b-board-2`・`p2b-board-3`・`p2b-counter-delete`・`p2b-habit-settings`・`p2b-sketch-full`）はすべて SSIM 1.0000・差分率 0.00%。全体の最小は従来どおり dialog（乱数の QR）と、メモの初期本文の変更による desktop の差（`deferred.md`）。撮影の Chromium は 157（基準と同じ）。
+
+## 2026-11-27 P2c 情報（ブランチ `feat/lgd-p2c-info`）
+
+結果: **106 / 106 合格**（既存 84 ＋ P2c 22）。P2c の最小は `p2c-sun-place` mobile（SSIM 0.973・差分率 0.79%。選択メニューを開いた状態での許可のカードの文字の濃さ）。日の出・日の入りの段階表示は 0.993〜0.997。

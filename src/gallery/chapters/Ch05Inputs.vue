@@ -41,7 +41,7 @@ const noop = (): void => undefined;
 const openSelect = (d: Dashboard): void => {
   d.setCfg('sun', 'loc', '大阪');
   d.ui.mnAt = { l: 0, t: 0, w: 0, h: 0, rw: 1000, rh: 1000, al: '場所' };
-  d.ui.mn = { kind: 'select', id: 'sunloc', x: 0, y: 0, origin: '0 0', dock: '' };
+  d.ui.mn = { kind: 'select', id: 'sunloc:sun', x: 0, y: 0, origin: '0 0', dock: '' };
 };
 </script>
 
