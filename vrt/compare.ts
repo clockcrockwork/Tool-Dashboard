@@ -38,6 +38,8 @@ async function main(): Promise<number> {
     await rm(join(dirs.actual, `${s.id}.png`), { force: true });
     await rm(join(dirs.diff, `${s.id}.png`), { force: true });
     const row: ResultRow = { id: s.id, scenario: s.scenario.name, title: s.scenario.title, viewport: s.viewport, theme: s.theme, status: 'error', images: {} };
+    const mask = typeof s.scenario.mask === 'function' ? s.scenario.mask(s.viewport) : (s.scenario.mask ?? []);
+    if (mask.length) row.masked = mask;
     try {
       baselines.set(s.id, await readFile(join(dirs.baselines, `${s.id}.png`)));
       row.images.baseline = `baselines/${s.id}.png`;
@@ -58,6 +60,7 @@ async function main(): Promise<number> {
   }
 
   const browser = target ? await launchBrowser() : null;
+  const browserVersion = browser?.version() ?? null;
   try {
     if (target && browser) {
       console.log(`本実装 ${target.url} を ${shots.length} 枚撮影します`);
@@ -103,7 +106,7 @@ async function main(): Promise<number> {
     thresholds: PASS,
     pixelmatch: PIXELMATCH,
     ssimOptions: SSIM_OPTIONS,
-    environment: environmentInfo(),
+    environment: { ...environmentInfo(), browser: browserVersion },
     totals: totals(results),
     results,
     gallery: await loadGalleryReport(),

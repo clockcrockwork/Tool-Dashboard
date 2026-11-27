@@ -173,12 +173,23 @@ const goPageOnMobile = (vp: ViewportName, n: number): Step[] =>
 
 const P2A_MOBILE_ONLY = 'desktop は p2a-board の1画面に8種がすべて写るので、mobile の2・3ページ目だけを撮る';
 
+/**
+ * 打刻は利用者の決定（2026-11-27、docs/lgd/p2a-followup.md 4章）でセッションと業務の種類に作り直し、プロトタイプと見た目が違う。
+ * 打刻が写る画面では、打刻の範囲を両対象とも同じ色で覆い隠して比べる（基準画像もプロトタイプから覆って撮る）。
+ * 打刻の新しい見た目は Storybook（PunchWidget）と e2e（e2e/punch.spec.ts）で確かめる。
+ * p2a-pomo-settings は打刻がシートの下に隠れているので覆わない（覆うとシートの中身まで塗ってしまう）。
+ */
+const PUNCH_MASK = [w('punch')];
+const PUNCH_MASK_NOTE = '打刻は利用者の決定で作り直したため（p2a-followup.md 4章）、両対象で覆い隠して比べる';
+
 export const p2aScenarios: Scenario[] = [
   {
     name: 'p2a-board',
     title: 'P2a: 時間の8種を1枚のボードに置いた状態（mobile は1ページ目）',
     seed: P2A_BOARD,
     ready: w('gantt'),
+    mask: PUNCH_MASK,
+    maskNote: PUNCH_MASK_NOTE,
   },
   {
     name: 'p2a-board-2',
@@ -188,6 +199,8 @@ export const p2aScenarios: Scenario[] = [
     skipNote: P2A_MOBILE_ONLY,
     steps: (vp) => goPageOnMobile(vp, 2),
     ready: w('stopwatch'),
+    mask: PUNCH_MASK,
+    maskNote: PUNCH_MASK_NOTE,
   },
   {
     name: 'p2a-board-3',
@@ -217,6 +230,8 @@ export const p2aScenarios: Scenario[] = [
       { do: 'waitFor', sel: SEL.toast, state: 'detached', timeout: 15000, note: '「出勤 10:24」のトーストが消えるまで待つ（本実装は「元に戻す」付きで 10 秒。プロトタイプは 3 秒）' },
     ],
     ready: (vp) => (vp === 'mobile' ? w('punch') : w('timelog')),
+    mask: PUNCH_MASK,
+    maskNote: PUNCH_MASK_NOTE,
   },
 ];
 
