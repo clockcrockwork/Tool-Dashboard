@@ -27,7 +27,7 @@ const SHAPE: Readonly<Record<string, readonly [record: readonly string[], list: 
   agenda: [['events'], 'events', ['c', 'hasTime', 'id', 'n', 'ts']],
   alarm: [['on'], '', []],
   timelog: [['logs'], 'logs', ['id', 't', 'x']],
-  punch: [['stamps'], 'stamps', ['id', 'k', 't']],
+  punch: [['last', 'sessions', 'types'], 'types', ['id', 'n']],
 };
 
 const saved = (kind: string, data: unknown): unknown => {
