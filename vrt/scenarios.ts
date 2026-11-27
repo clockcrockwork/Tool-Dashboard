@@ -362,6 +362,83 @@ export const p2bScenarios: Scenario[] = [
 
 scenarios.push(...p2bScenarios);
 
+// ---------------------------------------------------------------- P2c（分類「情報」）
+
+/**
+ * P2c の5種だけを「ボード 1」に置いた seed（作り方は P2A_BOARD と同じ）。
+ * place は5種とも g0 を明示する（GitHub PR・RSS の既定は g1、名言の既定は g3 のため）。
+ * 見本（PR・フィード・名言）は seed せず、両対象の既定の見本のまま撮る。
+ * 実際の配置は docs/lgd/vrt.md の「P2c のシナリオ」の表。
+ */
+export const P2C_ORDER = ['sun', 'today', 'quote', 'github', 'rss'] as const;
+const P2C_BOARD = {
+  ...DONE,
+  groups: [{ id: 'g0', n: 'ボード 1' }],
+  order: [...P2C_ORDER],
+  off: {},
+  place: Object.fromEntries(P2C_ORDER.map((id) => [id, 'g0'])),
+};
+
+/** 日の出・日の入りの場所の選択メニュー（プロトタイプの `mnOpen({ t: 'sel', src: 'sunloc', al: '場所' })`。選択肢は role="option"） */
+const SUN_PLACE_MENU = '.mnuw.open .mnu[role="listbox"][aria-label="場所"]';
+
+const P2C_MOBILE_ONLY = 'desktop は p2c-board の1画面に5種がすべて写るので、mobile の2ページ目だけを撮る';
+
+export const p2cScenarios: Scenario[] = [
+  {
+    name: 'p2c-board',
+    title: 'P2c: 情報の5種を1枚のボードに置いた状態（mobile は1ページ目）',
+    seed: P2C_BOARD,
+    ready: w('sun'),
+  },
+  {
+    name: 'p2c-board-2',
+    title: 'P2c: 同じボードの2ページ目（mobile。RSS）',
+    seed: P2C_BOARD,
+    viewports: ['mobile'],
+    skipNote: P2C_MOBILE_ONLY,
+    steps: (vp) => goPageOnMobile(vp, 2),
+    ready: w('rss'),
+  },
+  {
+    name: 'p2c-sun-2',
+    title: 'P2c: 日の出・日の入りを縦2（2×2）に広げた状態（太陽の弧・昼の長さ・薄明・ゴールデンアワー）',
+    seed: { ...P2C_BOARD, sizes: { sun: [2, 2] } },
+    ready: w('sun'),
+  },
+  {
+    name: 'p2c-sun-3',
+    title: 'P2c: 日の出・日の入りを縦3（2×3）に広げた状態（縦2の内容＋7日間の日の出と日の入り）',
+    seed: { ...P2C_BOARD, sizes: { sun: [2, 3] } },
+    ready: w('sun'),
+  },
+  {
+    name: 'p2c-rss-feed',
+    title: 'P2c: RSS の切替チップで2つ目のフィード「Design」を選んだ状態',
+    seed: P2C_BOARD,
+    steps: (vp) => [
+      ...goPageOnMobile(vp, 2),
+      { do: 'click', sel: `${w('rss')} button[aria-pressed]:has-text("Design")`, note: 'フィードの切替チップ（Dev / Design / Tools）' },
+      { do: 'waitFor', sel: `${w('rss')} button[aria-pressed="true"]:has-text("Design")` },
+      { do: 'mouseAway' },
+    ],
+    ready: `${w('rss')} button[aria-pressed="true"]:has-text("Design")`,
+  },
+  {
+    name: 'p2c-sun-place',
+    title: 'P2c: 日の出・日の入りの場所が「現在地」で許可のお願いが出ている状態から「都市を選ぶ」で開いた場所の選択メニュー',
+    seed: { ...P2C_BOARD, cfg: { sun: { loc: '現在地' } } },
+    steps: [
+      { do: 'waitFor', sel: `${w('sun')} .perm`, note: '「現在地を使いますか？」（位置の許可は未確認のまま）' },
+      { do: 'click', sel: `${w('sun')} .perm button:has-text("都市を選ぶ")` },
+      { do: 'waitFor', sel: SUN_PLACE_MENU, note: '場所の選択メニュー（mobile は画面の下に寄せて出る）' },
+    ],
+    ready: `${SUN_PLACE_MENU} [role="option"][aria-selected="true"]:has-text("現在地")`,
+  },
+];
+
+scenarios.push(...p2cScenarios);
+
 export function selectScenarios(opts: { scenarios?: string[]; viewports?: ViewportName[] }): Scenario[] {
   const want = opts.scenarios?.length ? new Set(opts.scenarios) : null;
   return scenarios.filter((s) => !want || want.has(s.name));
