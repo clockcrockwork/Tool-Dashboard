@@ -14,13 +14,36 @@ export const VIEWPORTS: Record<ViewportName, { width: number; height: number; is
 };
 
 /**
- * Chromium を起動する。PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH があればそれを使う。
+ * 基準画像を撮った Chromium の版。版が違うとフォントの代替（`⌘` など）や描画がわずかに変わり、
+ * 文字の多い画面で合格ラインを割ることがある（2026-11-27 の help mobile、SSIM 0.93）。違う版で撮ったら警告する。
+ */
+export const BASELINE_BROWSER_VERSION = '157.0.8103.78';
+
+/**
+ * Chromium を起動する。VRT_CHROMIUM_EXECUTABLE_PATH があればそれを使う。
+ * e2e 用の PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH は**使わない**（e2e のコマンドと同じシェルで回したときに、
+ * 基準画像と違う版の Chromium で撮ってしまうのを防ぐ）。
  * Playwright が期待する版の Chromium が無い環境（プリインストール版と版番号がずれている等）では、
  * PLAYWRIGHT_BROWSERS_PATH（既定 /opt/pw-browsers）にある chromium_headless_shell / chromium を探して使う。
  * `playwright install` はしない。
  */
 export async function launchBrowser(): Promise<Browser> {
-  const explicit = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
+  const b = await launchChromium();
+  if (!warnedVersion) {
+    warnedVersion = true;
+    if (process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH && !process.env.VRT_CHROMIUM_EXECUTABLE_PATH) {
+      console.warn('[vrt] PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH は e2e 用なので使いません（再現度テストの Chromium は VRT_CHROMIUM_EXECUTABLE_PATH で指定）');
+    }
+    if (b.version() !== BASELINE_BROWSER_VERSION) {
+      console.warn(`[vrt] 警告: Chromium ${b.version()} で撮ります。基準画像は ${BASELINE_BROWSER_VERSION} で撮ったので、文字の描画の差で数値が下がることがあります`);
+    }
+  }
+  return b;
+}
+let warnedVersion = false;
+
+async function launchChromium(): Promise<Browser> {
+  const explicit = process.env.VRT_CHROMIUM_EXECUTABLE_PATH;
   if (explicit) return chromium.launch({ executablePath: explicit });
   try {
     return await chromium.launch();
@@ -176,7 +199,7 @@ export async function runSteps(page: Page, steps: Step[], viewport: ViewportName
           await page.keyboard.press(st.key);
           break;
         case 'waitFor':
-          await pick(page, st.sel, st.nth).waitFor({ state: st.state ?? 'visible', timeout: STEP_TIMEOUT });
+          await pick(page, st.sel, st.nth).waitFor({ state: st.state ?? 'visible', timeout: st.timeout ?? STEP_TIMEOUT });
           break;
         case 'wait':
           await page.waitForTimeout(st.ms);
@@ -209,13 +232,18 @@ export async function waitFonts(page: Page): Promise<void> {
   });
 }
 
+/** 覆い隠す範囲（Scenario.mask）を塗る色。両対象で同じ色にする */
+export const MASK_COLOR = '#FF00FF';
+
 /**
  * 2回続けて同じ画像になるまで撮る（最大 maxTries 回）。CSS アニメーションは animations: 'disabled' で止める。
+ * mask のセレクタに当たる要素は MASK_COLOR で塗りつぶす（Playwright の screenshot の mask）。
  */
-export async function stableScreenshot(page: Page, maxTries = 6): Promise<{ png: Buffer; stable: boolean }> {
+export async function stableScreenshot(page: Page, mask: string[] = [], maxTries = 6): Promise<{ png: Buffer; stable: boolean }> {
   let prev: Buffer | null = null;
+  const masks = mask.map((sel) => page.locator(sel));
   for (let i = 0; i < maxTries; i++) {
-    const png = await page.screenshot({ animations: 'disabled', caret: 'hide', scale: 'css', fullPage: false });
+    const png = await page.screenshot({ animations: 'disabled', caret: 'hide', scale: 'css', fullPage: false, mask: masks, maskColor: MASK_COLOR });
     if (prev && prev.equals(png)) return { png, stable: true };
     prev = png;
     await page.waitForTimeout(300);
@@ -250,7 +278,8 @@ export async function capture(input: CaptureInput): Promise<{ png: Buffer; stabl
     await mouseAway(page, input.viewport);
     await waitFonts(page);
     await page.waitForTimeout(400);
-    return await stableScreenshot(page);
+    const mask = typeof input.scenario.mask === 'function' ? input.scenario.mask(input.viewport) : (input.scenario.mask ?? []);
+    return await stableScreenshot(page, mask);
   } catch (e) {
     const extra = errors.length ? `（ページのエラー: ${errors.slice(0, 2).join(' / ')}）` : '';
     throw new Error(`${(e as Error).message}${extra}`);

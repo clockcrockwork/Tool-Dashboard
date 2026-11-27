@@ -5,10 +5,16 @@
  */
 import { defineAsyncComponent, type Component } from 'vue';
 import type { WidgetDataDef } from '../app/store/store';
+import type { Runner } from '../app/runtime/runtime';
+import { alarmRunner } from './alarm/runner';
+import { pomoRunner } from './pomo/runner';
 import { todoData } from './todo/data';
 import { linksData } from './links/data';
 import { memoData } from './memo/data';
 import { agendaData } from './agenda/data';
+import { alarmData } from './alarm/data';
+import { timelogData } from './timelog/data';
+import { punchData } from './punch/data';
 
 export const WIDGETS: Readonly<Record<string, Component>> = {
   clock: defineAsyncComponent(() => import('./clock/ClockWidget.vue')),
@@ -18,6 +24,15 @@ export const WIDGETS: Readonly<Record<string, Component>> = {
   todo: defineAsyncComponent(() => import('./todo/TodoWidget.vue')),
   links: defineAsyncComponent(() => import('./links/LinksWidget.vue')),
   memo: defineAsyncComponent(() => import('./memo/MemoWidget.vue')),
+  // P2a 時間
+  world: defineAsyncComponent(() => import('./world/WorldWidget.vue')),
+  alarm: defineAsyncComponent(() => import('./alarm/AlarmWidget.vue')),
+  pomo: defineAsyncComponent(() => import('./pomo/PomoWidget.vue')),
+  stopwatch: defineAsyncComponent(() => import('./stopwatch/StopwatchWidget.vue')),
+  countdown: defineAsyncComponent(() => import('./countdown/CountdownWidget.vue')),
+  timelog: defineAsyncComponent(() => import('./timelog/TimelogWidget.vue')),
+  punch: defineAsyncComponent(() => import('./punch/PunchWidget.vue')),
+  gantt: defineAsyncComponent(() => import('./gantt/GanttWidget.vue')),
 };
 
 /**
@@ -38,4 +53,18 @@ export const WIDGET_DATA: Readonly<Record<string, WidgetDataDef<unknown>>> = {
   links: linksData as WidgetDataDef<unknown>,
   memo: memoData as WidgetDataDef<unknown>,
   agenda: agendaData as WidgetDataDef<unknown>,
+  // P2a 時間. ポモドーロ・ストップウォッチの計測は保存しない（runtime、各 status.ts）。世界時計・カウントダウン・タイムスケジュールは記録を持たない.
+  alarm: alarmData as WidgetDataDef<unknown>,
+  timelog: timelogData as WidgetDataDef<unknown>,
+  punch: punchData as WidgetDataDef<unknown>,
+};
+
+/**
+ * Handlers the Dashboard's runtime starts for every placement of these kinds while it runs (`src/app/runtime/runtime.ts`;
+ * registry `run`: `watch` / `continuous`). Loaded eagerly (small), independent of whether the view is placed or drawn.
+ * Kinds whose run can be computed from a start time (stopwatch) need none.
+ */
+export const WIDGET_RUNNERS: Readonly<Record<string, Runner>> = {
+  alarm: alarmRunner,
+  pomo: pomoRunner,
 };

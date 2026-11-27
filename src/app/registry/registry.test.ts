@@ -3,9 +3,9 @@
  * keep later registrations consistent with the frame (net, perm → states) and the shell keys.
  */
 import { describe, expect, it } from 'vitest';
-import { OVERLAY_STATES, PRIV_DEFAULT, REGISTRY, STARTER, buildRegistry, type WidgetDef } from './registry';
+import { OVERLAY_STATES, PRIV_DEFAULT, REGISTRY, RUN_CLASS, STARTER, buildRegistry, type WidgetDef } from './registry';
 import { storeOf } from './store-ref';
-import { WIDGETS, WIDGET_DATA } from '../../widgets';
+import { WIDGETS, WIDGET_DATA, WIDGET_RUNNERS } from '../../widgets';
 import { Dashboard, veilSetting } from '../store/store';
 import { memoryStore, widgetKey } from '../store/persist';
 
@@ -113,5 +113,41 @@ describe('prototype-only settings (実装ガイド 付録「確認用の機能�
   it('only 傘の「サンプル」 is marked dev (hidden from the settings sheet in production builds)', () => {
     const dev = defs.flatMap(r => r.f.filter(f => f.dev).map(f => r.id + '.' + f.k));
     expect(dev).toEqual(['rain.demo']);
+  });
+});
+
+describe('run (実行の寿命と開始の条件、p2a-followup.md 1章)', () => {
+  it('every kind has a class; the non-passive ones are those of the follow-up table and the spec', () => {
+    // 「46種」 in the documents; the registry has 51 entries (including the 6 data-display parts). Every one has a class.
+    expect(defs).toHaveLength(51);
+    const by = (life: string): string[] => defs.filter(r => r.run === life).map(r => r.id).sort();
+    expect(by('continuous')).toEqual(['mixer', 'music', 'pomo', 'recorder', 'stopwatch']);
+    expect(by('watch')).toEqual(['alarm', 'share']);
+    expect(by('request')).toEqual(['chat', 'imgconv', 'script', 'translate']);
+    expect(by('none')).toHaveLength(defs.length - 11);
+    for (const r of defs) expect(Object.keys(RUN_CLASS), r.id).toContain(r.run);
+  });
+  it('display updates stay in refresh: 表示更新 kinds are passive runs with a refresh; pomo combines both', () => {
+    for (const id of ['clock', 'world', 'weather', 'rain', 'rss', 'github', 'countdown', 'gantt', 'today', 'punch', 'timelog']) {
+      expect(def(id).run, id).toBe('none');
+      expect(def(id).refresh, id).toBeDefined();
+    }
+    expect(def('pomo').run).toBe('continuous');
+    expect(def('pomo').refresh).toEqual({ every: 1, visible: true });
+    for (const id of ['todo', 'memo', 'links']) { expect(def(id).run).toBe('none'); expect(def(id).refresh).toBeUndefined(); }
+  });
+  it('handlers of the runtime exist only for kinds that wait for a deadline, and match their class', () => {
+    expect(Object.keys(WIDGET_RUNNERS).sort()).toEqual(['alarm', 'pomo']);
+    for (const k of Object.keys(WIDGET_RUNNERS)) expect(['continuous', 'watch'], k).toContain(def(k).run);
+    // The stopwatch is computed from its start time: no handler.
+    expect(WIDGET_RUNNERS.stopwatch).toBeUndefined();
+  });
+});
+
+describe('通知の許可のお願い（共通の枠）と states', () => {
+  it('every kind with perm notify can wait for the permission (states perm), and has the open-only sentence', () => {
+    const notifying = defs.filter(r => r.perm.includes('notify'));
+    expect(notifying.map(r => r.id).sort()).toEqual(['alarm', 'habit', 'pomo']);
+    for (const r of notifying) expect(r.states, r.id).toContain('perm');
   });
 });

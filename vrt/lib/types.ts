@@ -21,7 +21,7 @@ export type Step =
   /** キー入力 */
   | { do: 'press'; key: string; note?: string }
   /** 要素が表示されるまで待つ */
-  | { do: 'waitFor'; sel: string; nth?: number; state?: 'visible' | 'hidden' | 'attached' | 'detached'; note?: string }
+  | { do: 'waitFor'; sel: string; nth?: number; state?: 'visible' | 'hidden' | 'attached' | 'detached'; timeout?: number; note?: string }
   /** 固定時間待つ（アニメーション・遅延表示の待ち合わせ） */
   | { do: 'wait'; ms: number; note?: string }
   /** 要素をスクロールして見える位置へ */
@@ -47,6 +47,14 @@ export interface Scenario {
   steps?: Step[] | ((vp: ViewportName) => Step[]);
   /** 撮影直前に待つ要素（安定待ちの目印） */
   ready?: string | ((vp: ViewportName) => string);
+  /**
+   * 覆い隠す範囲。Playwright の screenshot の `mask` に渡し、要素の範囲を同じ色（`MASK_COLOR`）で塗りつぶして撮る。
+   * プロトタイプ（基準画像）と本実装の両方に同じセレクタで効く。利用者の決定でプロトタイプと見た目を変えた部品など、
+   * プロトタイプと比べられない範囲だけに使う（見つからない・画面外のセレクタは何も塗らない）。
+   */
+  mask?: string[] | ((vp: ViewportName) => string[]);
+  /** mask を付けた理由（レポートとドキュメント用） */
+  maskNote?: string;
   /** 除外したビューポートの理由（レポートとドキュメント用） */
   skipNote?: string;
 }

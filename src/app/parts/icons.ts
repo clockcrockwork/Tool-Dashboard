@@ -25,4 +25,6 @@ export const IC = {
   pause: 'M8 5v14M16 5v14',
   /** 準備中（使えるようになるまで待つ）: a clock face. */
   soon: 'M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zM12 7.5V12l3 2',
+  /** 鐘（通知の許可のお願い、prototype `IX().bell`）. */
+  bell: 'M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5h4',
 } as const;

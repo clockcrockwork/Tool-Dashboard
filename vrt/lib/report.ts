@@ -2,7 +2,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PASS, PIXELMATCH, SSIM_OPTIONS } from './metrics.ts';
-import { FIXED_TIME, LOCALE, TIMEZONE } from './env.ts';
+import { BASELINE_BROWSER_VERSION, FIXED_TIME, LOCALE, TIMEZONE } from './env.ts';
 import { VRT_DIR } from './targets.ts';
 import type { GalleryReport } from './gallery.ts';
 
@@ -21,6 +21,8 @@ export interface ResultRow {
   sizeMismatch?: boolean;
   unstable?: boolean;
   error?: string;
+  /** 覆い隠した範囲のセレクタ（両対象で同じ色に塗った。Scenario.mask） */
+  masked?: string[];
   /** vrt/ からの相対パス */
   images: { baseline?: string; actual?: string; diff?: string };
 }
@@ -31,7 +33,7 @@ export interface Summary {
   thresholds: typeof PASS;
   pixelmatch: typeof PIXELMATCH;
   ssimOptions: typeof SSIM_OPTIONS;
-  environment: { time: string; timezone: string; locale: string };
+  environment: { time: string; timezone: string; locale: string; browser?: string | null; baselineBrowser?: string };
   totals: Record<Status, number> & { all: number };
   results: ResultRow[];
   gallery: GalleryReport | null;
@@ -82,7 +84,9 @@ export function renderHtml(s: Summary): string {
 <h3><span class="st ${r.status}">${STATUS_JA[r.status]}</span> ${esc(r.scenario)} · ${esc(r.viewport)} · ${esc(r.theme)} <small>${esc(r.title)}</small></h3>
 <p class="m">SSIM <b>${num(r.ssim)}</b>（基準 ≥ ${s.thresholds.ssim}） · 差分率 <b>${pct(r.diffRatio)}</b>（基準 ≤ ${pct(s.thresholds.diffRatio)}）${
         r.diffPixels !== undefined ? ` · ${r.diffPixels.toLocaleString('ja-JP')} 画素` : ''
-      }${r.sizeMismatch ? ' · <b class="ng">大きさが違う</b>' : ''}${r.unstable ? ' · 画面が安定しなかった' : ''}</p>
+      }${r.sizeMismatch ? ' · <b class="ng">大きさが違う</b>' : ''}${r.unstable ? ' · 画面が安定しなかった' : ''}${
+        r.masked?.length ? ` · 覆い隠し（両対象）: <code>${esc(r.masked.join(', '))}</code>` : ''
+      }</p>
 ${r.error ? `<pre class="err">${esc(r.error)}</pre>` : ''}
 <div class="tri ${r.viewport}"><figure>${img(r.images.baseline, '基準')}<figcaption>基準（プロトタイプ）</figcaption></figure><figure>${img(
         r.images.actual,
@@ -139,7 +143,7 @@ pre.err{white-space:pre-wrap;color:var(--ng);background:transparent;margin:0 0 8
 @media (max-width:700px){.tri{grid-template-columns:1fr}}
 </style></head><body><main>
 <h1>再現度レポート（プロトタイプ ↔ 本実装）</h1>
-<p class="note">${esc(s.generatedAt)} · 実装 ${esc(s.appUrl ?? '（起動できず）')} · 時刻 ${esc(s.environment.time)}（${esc(s.environment.timezone)}, ${esc(s.environment.locale)}）</p>
+<p class="note">${esc(s.generatedAt)} · 実装 ${esc(s.appUrl ?? '（起動できず）')} · 時刻 ${esc(s.environment.time)}（${esc(s.environment.timezone)}, ${esc(s.environment.locale)}） · Chromium ${esc(s.environment.browser ?? '-')}（基準 ${esc(s.environment.baselineBrowser ?? '-')}）</p>
 <p class="note">合格ライン: 1画面ごとに SSIM ≥ ${s.thresholds.ssim} かつ 差分画素率 ≤ ${pct(s.thresholds.diffRatio)}（pixelmatch threshold ${s.pixelmatch.threshold}、アンチエイリアス無視）</p>
 <div class="sum"><div>合格<b>${t.pass} / ${t.all}</b></div><div>不合格<b>${t.fail}</b></div><div>撮影失敗<b>${t.error}</b></div><div>基準なし<b>${t['no-baseline']}</b></div></div>
 <h2>結果</h2>
@@ -168,5 +172,5 @@ export async function writeReport(s: Summary): Promise<string> {
 }
 
 export function environmentInfo(): Summary['environment'] {
-  return { time: FIXED_TIME, timezone: TIMEZONE, locale: LOCALE };
+  return { time: FIXED_TIME, timezone: TIMEZONE, locale: LOCALE, baselineBrowser: BASELINE_BROWSER_VERSION };
 }

@@ -9,6 +9,9 @@
  *   of `vd`), `states` the shared states the frame may show, `refresh` how the widget updates, `keys` keys used only inside
  *   the widget, `lazy` do not render until shown. `icon` and `share` stay undefined until decided (実装ガイド 7.6).
  *   `store` (record name and version) is not duplicated here: see `storeOf()` in `./store-ref.ts` (from `WIDGET_DATA`).
+ * - `run` the run lifetime and how a run starts (`RunLife`, p2a-followup.md 1章). Display updates stay in `refresh` only.
+ *   Kinds with `perm: ['notify']` notify through `src/app/runtime/notify.ts`; their 通知の設定 is the `tg` field `notify`
+ *   when the kind has one (ポモドーロ「完了を通知」、ハビット「達成を通知」), else always on (アラーム: the switches are the setting).
  * - `REGISTRY_ORDER` is the catalog order (5 categories + local AI); `DEFAULT_ORDER` is the board order.
  */
 export type FieldType = 'tg' | 'sg' | 'st' | 'rg' | 'tx' | 'tm' | 'dt';
@@ -45,6 +48,25 @@ export const OVERLAY_STATES: readonly WidgetState[] = ['load', 'stale', 'empty',
  * (true for every kind: 未配置・表示中でない画面では更新しない).
  */
 export type Refresh = Readonly<{ every: number | null; visible: boolean }>;
+/**
+ * 実行の寿命と開始の条件 (p2a-followup.md 1章「登録に足す『実行の分類』」). 表示の更新は `refresh` だけで表し、ここに重ねない
+ * （ポモドーロは残りの描き直しが `refresh`、完了の判定が `continuous`）。実行状態は保存しない（実装ガイド 6章）。
+ *
+ * | 値 | 分類 | 始まり → 終わり | 配置・表示との関係 |
+ * | --- | --- | --- | --- |
+ * | `none` | 受動（`refresh` があれば表示更新） | 入力・操作のときだけ変わる | 表示更新は見えている間だけ（`refresh.visible`） |
+ * | `continuous` | 継続実行 | 明示して始める → 止める・一時停止・完了 | 関係しない（外しても・閉じても続く） |
+ * | `watch` | 時刻・イベントの監視 | 設定でオン・接続 → オフ・解除。期限やイベントを待つ | 関係しない（未配置でも見張る） |
+ * | `request` | 要求実行 | 明示した Run → 終了・失敗・取消・上限 | 表示や配置で勝手に Run しない |
+ *
+ * 期限を Dashboard が見張る種類（アラーム・ポモドーロ）は、`src/widgets/index.ts` の `WIDGET_RUNNERS` に処理を登録する
+ * （`src/app/runtime/runtime.ts`）。開始時刻から計算できるもの（ストップウォッチ）は処理を登録せず、見えない間は時を刻まない。
+ */
+export type RunLife = 'none' | 'continuous' | 'watch' | 'request';
+/** Names of the classes (p2a-followup.md 1章の表). `none` is 受動, or 表示更新 when the kind has `refresh`. */
+export const RUN_CLASS: Readonly<Record<RunLife, string>> = {
+  none: '受動', continuous: '継続実行', watch: '時刻・イベントの監視', request: '要求実行',
+};
 
 export type WidgetDef = Readonly<{
   id: string;
@@ -66,6 +88,8 @@ export type WidgetDef = Readonly<{
   states: readonly WidgetState[];
   /** Undefined: the widget does not update by itself. */
   refresh?: Refresh;
+  /** 実行の寿命と開始の条件 (`RunLife`). */
+  run: RunLife;
   /** Keys handled inside the widget only (`Mod` = Ctrl/⌘). Checked against the shell keys; shown in 操作ヒント later. */
   keys: readonly string[];
   /**
@@ -174,6 +198,19 @@ const VISIBLE_ONLY = (every: number | null): Refresh => ({ every, visible: true 
 const REFRESH: Readonly<Record<string, Refresh>> = {
   clock: VISIBLE_ONLY(1), world: VISIBLE_ONLY(1), gantt: VISIBLE_ONLY(60), countdown: VISIBLE_ONLY(60),
   weather: VISIBLE_ONLY(30 * 60), rain: VISIBLE_ONLY(null), rss: VISIBLE_ONLY(null), github: VISIBLE_ONLY(null), today: VISIBLE_ONLY(null),
+  // P2a: 残り・経過・勤務時間・今の位置の描き直し（計算は終わる時刻・始めた時刻から。鳴る・終わるは表示に関係なく時刻どおり）.
+  pomo: VISIBLE_ONLY(1), stopwatch: VISIBLE_ONLY(0.1), punch: VISIBLE_ONLY(1), timelog: VISIBLE_ONLY(60),
+};
+
+/**
+ * `run` per kind (p2a-followup.md 1章の表と仕様書の各ウィジェットの説明). Kinds not listed are `none` (受動、`refresh` が
+ * あれば表示更新): 時計・世界時計・カウントダウン・タイムスケジュール・天気・傘・RSS・GitHub PR・今日は何の日・タイムログ・
+ * 打刻（勤務中かどうかは記録から時刻の差で出す）・ハビット（「達成を通知」は押したときの知らせ）・スライドショーなど.
+ */
+const RUN: Readonly<Partial<Record<string, RunLife>>> = {
+  pomo: 'continuous', stopwatch: 'continuous', recorder: 'continuous', music: 'continuous', mixer: 'continuous',
+  alarm: 'watch', share: 'watch',
+  script: 'request', imgconv: 'request', translate: 'request', chat: 'request',
 };
 
 /** `keys` per kind (仕様書 10章「表」, 12章「キー操作」). Inputs that only use Enter need no entry. */
@@ -203,6 +240,7 @@ export function buildRegistry(year: number): Readonly<Record<string, WidgetDef>>
       states: STATES[id] ?? [],
       keys: KEYS[id] ?? [],
       lazy: LAZY.includes(id),
+      run: RUN[id] ?? 'none',
       ...(REFRESH[id] ? { refresh: REFRESH[id] } : {}),
       ...(r.ts ? { ts: r.ts } : {}),
     };

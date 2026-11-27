@@ -143,6 +143,100 @@ export const scenarios: Scenario[] = [
   },
 ];
 
+// ---------------------------------------------------------------- P2a（分類「時間」）
+
+/**
+ * P2a の8種だけを「ボード 1」に置いた seed。order にないウィジェットは両対象とも「外す」になる
+ * （プロトタイプの sane()・本実装の sanitizeGlobal() とも、order と off があれば order にない種類を off にする）。
+ * place は8種とも g0 を明示する（世界時計・打刻などは既定の置き場所が別ボードのため）。
+ *
+ * desktop（8列×5行）: 1行目 タイムスケジュール(4×1)・世界時計・アラーム / 2行目 ポモドーロ・カウントダウン・
+ *   ストップウォッチ(2×2)・打刻(2×2) / 3〜5行目 タイムログ(2×3)。1画面に8種がすべて入る。
+ * mobile（2列×5行）: 3ページに分かれる。1ページ目 タイムスケジュール・世界時計・アラーム・ポモドーロ・カウントダウン /
+ *   2ページ目 ストップウォッチ・打刻 / 3ページ目 タイムログ。
+ */
+export const P2A_ORDER = ['gantt', 'world', 'alarm', 'pomo', 'countdown', 'stopwatch', 'punch', 'timelog'] as const;
+const P2A_BOARD = {
+  ...DONE,
+  groups: [{ id: 'g0', n: 'ボード 1' }],
+  order: [...P2A_ORDER],
+  off: {},
+  place: Object.fromEntries(P2A_ORDER.map((id) => [id, 'g0'])),
+};
+
+const w = (kind: string): string => `.w[data-w="${kind}"]`;
+/** 下部バーのページの点（ボードが複数ページのとき「ボード 1の2」など） */
+const dotPage = (n: number): string => `.nav .dot[aria-label="ボード 1の${n}"]`;
+/** mobile だけ n ページ目へ移る（点をタップ → スクロールの終わりを待つ） */
+const goPageOnMobile = (vp: ViewportName, n: number): Step[] =>
+  vp === 'mobile' ? [{ do: 'click', sel: dotPage(n), note: `下部バーの点で ${n} ページ目へ` }, { do: 'wait', ms: 1000, note: 'スムーズスクロールの終わり' }] : [];
+
+const P2A_MOBILE_ONLY = 'desktop は p2a-board の1画面に8種がすべて写るので、mobile の2・3ページ目だけを撮る';
+
+/**
+ * 打刻は利用者の決定（2026-11-27、docs/lgd/p2a-followup.md 4章）でセッションと業務の種類に作り直し、プロトタイプと見た目が違う。
+ * 打刻が写る画面では、打刻の範囲を両対象とも同じ色で覆い隠して比べる（基準画像もプロトタイプから覆って撮る）。
+ * 打刻の新しい見た目は Storybook（PunchWidget）と e2e（e2e/punch.spec.ts）で確かめる。
+ * p2a-pomo-settings は打刻がシートの下に隠れているので覆わない（覆うとシートの中身まで塗ってしまう）。
+ */
+const PUNCH_MASK = [w('punch')];
+const PUNCH_MASK_NOTE = '打刻は利用者の決定で作り直したため（p2a-followup.md 4章）、両対象で覆い隠して比べる';
+
+export const p2aScenarios: Scenario[] = [
+  {
+    name: 'p2a-board',
+    title: 'P2a: 時間の8種を1枚のボードに置いた状態（mobile は1ページ目）',
+    seed: P2A_BOARD,
+    ready: w('gantt'),
+    mask: PUNCH_MASK,
+    maskNote: PUNCH_MASK_NOTE,
+  },
+  {
+    name: 'p2a-board-2',
+    title: 'P2a: 同じボードの2ページ目（mobile。ストップウォッチ・打刻）',
+    seed: P2A_BOARD,
+    viewports: ['mobile'],
+    skipNote: P2A_MOBILE_ONLY,
+    steps: (vp) => goPageOnMobile(vp, 2),
+    ready: w('stopwatch'),
+    mask: PUNCH_MASK,
+    maskNote: PUNCH_MASK_NOTE,
+  },
+  {
+    name: 'p2a-board-3',
+    title: 'P2a: 同じボードの3ページ目（mobile。タイムログ）',
+    seed: P2A_BOARD,
+    viewports: ['mobile'],
+    skipNote: P2A_MOBILE_ONLY,
+    steps: (vp) => goPageOnMobile(vp, 3),
+    ready: w('timelog'),
+  },
+  {
+    name: 'p2a-pomo-settings',
+    title: 'P2a: 編集モードでポモドーロをタップした「ウィジェットの設定」（集中する時間・完了を通知）',
+    seed: P2A_BOARD,
+    steps: [...openEdit, { do: 'click', sel: w('pomo'), note: '編集モード中のポモドーロ' }, { do: 'waitFor', sel: SEL.sheetWidget }],
+    ready: SEL.sheetWidget,
+  },
+  {
+    name: 'p2a-punch-in',
+    title: 'P2a: 打刻で「出勤」し、ストップウォッチをスタートした状態（タイムログにも「出勤」が入る）',
+    seed: P2A_BOARD,
+    steps: (vp) => [
+      ...goPageOnMobile(vp, 2),
+      { do: 'click', sel: `${w('punch')} button:has-text("出勤")`, note: '打刻の「出勤」（10:24 に出勤、勤務 0:00:00）' },
+      { do: 'click', sel: `${w('stopwatch')} button[aria-label="スタート・ストップ"]`, note: '時刻固定なので 00:00.0 のまま走行中の表示になる' },
+      { do: 'mouseAway' },
+      { do: 'waitFor', sel: SEL.toast, state: 'detached', timeout: 15000, note: '「出勤 10:24」のトーストが消えるまで待つ（本実装は「元に戻す」付きで 10 秒。プロトタイプは 3 秒）' },
+    ],
+    ready: (vp) => (vp === 'mobile' ? w('punch') : w('timelog')),
+    mask: PUNCH_MASK,
+    maskNote: PUNCH_MASK_NOTE,
+  },
+];
+
+scenarios.push(...p2aScenarios);
+
 export function selectScenarios(opts: { scenarios?: string[]; viewports?: ViewportName[] }): Scenario[] {
   const want = opts.scenarios?.length ? new Set(opts.scenarios) : null;
   return scenarios.filter((s) => !want || want.has(s.name));

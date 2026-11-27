@@ -60,7 +60,7 @@ npm run vrt -- --help
 
 | 項目 | 値 |
 | --- | --- |
-| ブラウザ | Chromium（Playwright）。`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` があればそれ。Playwright 既定の版が入っていなければ `PLAYWRIGHT_BROWSERS_PATH`（既定 `/opt/pw-browsers`）の `chromium_headless_shell` などを探して使う（`playwright install` はしない） |
+| ブラウザ | Chromium（Playwright）。`VRT_CHROMIUM_EXECUTABLE_PATH` があればそれ。Playwright 既定の版が入っていなければ `PLAYWRIGHT_BROWSERS_PATH`（既定 `/opt/pw-browsers`）の `chromium_headless_shell` などを探して使う（`playwright install` はしない）。e2e 用の `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` は**使わない**（下の「Chromium の版」） |
 | desktop | 1440×900、deviceScaleFactor 1 |
 | mobile | 390×844、deviceScaleFactor 1、`isMobile` + `hasTouch`、UA は Pixel 7（Android Chrome） |
 | テーマ | Playwright の `colorScheme`（light / dark）で切り替え。アプリ側のテーマ設定は「自動」のまま |
@@ -68,13 +68,14 @@ npm run vrt -- --help
 | 乱数 | `Math.random` を決まった種の疑似乱数に差し替え（ペアリングコード・QR などを毎回同じにする） |
 | 待ち合わせ | 下部バー `.nav .nbar` の表示 → `document.fonts.ready` → 手順 → シナリオの目印要素 → `document.fonts.ready` |
 | 撮影 | `animations: 'disabled'`、`caret: 'hide'`。2回続けて同じ画像になるまで撮り直す（最大 6 回） |
+| 覆い隠し | シナリオの `mask` のセレクタに当たる要素の範囲を `#FF00FF` で塗って撮る（Playwright の screenshot の `mask`）。基準画像と本実装の両方に同じセレクタで効く（下の「覆い隠す範囲」） |
 | マウス | 撮影直前に desktop は左下隅 (0, 899) へ逃がす（hover・ツールチップの差を消す） |
 
 時刻固定は `setFixedTime` を使う。`Date` / `Date.now()` だけが止まり、`setTimeout` / `setInterval` / `requestAnimationFrame` は実時間で動き続ける。そのため 0.7 秒の長押し判定やトーストの表示時間はそのまま働き、時計の秒（36）は進まない。`page.clock.install` + `pauseAt` だとタイマーまで止まり、描画の更新や長押しが進まなくなるので使わない。
 
 ## シナリオ
 
-定義は `vrt/scenarios.ts`。すべて desktop / mobile × light / dark の4通り（12 シナリオ × 4 = 48 枚）。mobile で除外したものは無い。
+定義は `vrt/scenarios.ts`。基本は desktop / mobile × light / dark の4通り。共通の 12 シナリオ（48 枚）と P2a の 5 シナリオ（16 枚。うち `p2a-board-2`・`p2a-board-3` は mobile だけ）で、合わせて 17 シナリオ・64 枚。
 
 | 名前 | 状態 | seed | 手順（共通セレクタ） | 撮影前の目印 |
 | --- | --- | --- | --- | --- |
@@ -90,12 +91,57 @@ npm run vrt -- --help
 | `dialog` | 確認ダイアログ | `tourDone` | 全体の設定 → 「端末をつなぐ」→ 1台目（iPhone）の「解除」 | `.dlg.open[role="alertdialog"]` |
 | `toast` | 元に戻す付きトースト | `tourDone` | `menu` の手順 → `[role="menuitem"]:has-text("ボードから外す")` | `.toasts .toast button` |
 | `fullscreen-clock` | 時計の全画面ページ | `tourDone`, `pgW: {clock: true}` | 下部バーの点 `.nav .dot[aria-label="時計"]` | `.fsw[data-w="clock"]` |
+| `p2a-board` | P2a（時間）の8種だけを置いたボード。mobile は1ページ目。**打刻を覆う** | `P2A_BOARD` | なし | `.w[data-w="gantt"]` |
+| `p2a-board-2` | 同じボードの2ページ目（**mobile のみ**）。ストップウォッチ・打刻。**打刻を覆う** | `P2A_BOARD` | 下部バーの点 `.nav .dot[aria-label="ボード 1の2"]` → 1 秒待つ | `.w[data-w="stopwatch"]` |
+| `p2a-board-3` | 同じボードの3ページ目（**mobile のみ**）。タイムログ | `P2A_BOARD` | 点 `.nav .dot[aria-label="ボード 1の3"]` → 1 秒待つ | `.w[data-w="timelog"]` |
+| `p2a-pomo-settings` | 編集中にポモドーロをタップした「ウィジェットの設定」（集中する時間・完了を通知） | `P2A_BOARD` | 編集 → `.w[data-w="pomo"]` をクリック | `.sheet.open[aria-label="ウィジェットの設定"]` |
+| `p2a-punch-in` | 打刻で出勤し、ストップウォッチを走らせた状態。タイムログの末尾に「10:24 出勤」が入る。**打刻を覆う** | `P2A_BOARD` | （mobile は点で2ページ目へ）→ `.w[data-w="punch"] button:has-text("出勤")` → `.w[data-w="stopwatch"] button[aria-label="スタート・ストップ"]` → トースト `.toasts .toast` が消える（detached）まで待つ | desktop `.w[data-w="timelog"]` / mobile `.w[data-w="punch"]` |
 
 補足:
 
 - `dialog`: プロトタイプの「初期状態に戻す」「ボードを削除」は確認ダイアログを出さずに「元に戻す」付きトーストで済ませる作りなので、本番にもある確認ダイアログとして「端末の接続解除」を使う（`削除の確認` ボタンは表示テスト用なので使わない）。
 - `fullscreen-clock`: seed で全画面にした時計は最後のページになる。編集 → 時計 → 大きさ「全画面」→ 完了でも同じ状態になるが、手順が長いので seed を使う。
+- P2a（分類「時間」）のシナリオは下の「P2a のシナリオ」を参照。
 - 長押しは CDP の `Input.dispatchTouchEvent`（touchStart → 待つ → touchEnd）で行う。Playwright の `touchscreen` には押し続ける API が無いため。
+
+### P2a のシナリオ（世界時計・アラーム・ポモドーロ・ストップウォッチ・カウントダウン・タイムログ・打刻・タイムスケジュール）
+
+**seed `P2A_BOARD`**（`vrt/scenarios.ts`）: `tourDone: true`、`groups: [{id: 'g0'}]`、`order` は下の8種、`off: {}`、`place` は8種とも `g0`。
+
+```
+order = gantt, world, alarm, pomo, countdown, stopwatch, punch, timelog
+```
+
+- `order` と `off`（空でよい）を両方入れると、プロトタイプの `sane()`・本実装の `sanitizeGlobal()` とも **order に無い種類を「外す」にする**。8種だけが置かれ、ほかは外れる。
+- `place` を明示するのは、世界時計・ストップウォッチ・カウントダウン（既定 `g2`）、タイムログ・打刻（既定 `g3`）の既定の置き場所が「ボード 1」以外だから。`groups` を入れないとプロトタイプは `place` を捨てる（`sane()`）ので、`groups` も入れる。
+- 配置（並び順で上から詰める。両対象とも同じアルゴリズム）:
+
+  | ビューポート | 格子 | 配置 |
+  | --- | --- | --- |
+  | desktop 1440×900 | 8列×5行 | 1行目 タイムスケジュール(4×1)・世界時計・アラーム / 2行目 ポモドーロ・カウントダウン・ストップウォッチ(2×2)・打刻(2×2) / 3〜5行目 タイムログ(2×3)。**1画面に8種すべて** |
+  | mobile 390×844 | 2列×5行 | 1ページ目 タイムスケジュール(2×1 に縮む)・世界時計・アラーム・ポモドーロ・カウントダウン / 2ページ目 ストップウォッチ・打刻 / 3ページ目 タイムログ。下部バーに点が3つ（`ボード 1の1`〜`ボード 1の3`） |
+
+- mobile は1画面に収まらないので、`p2a-board`（1ページ目）・`p2a-board-2`・`p2a-board-3` の3枚で8種を覆う。2・3ページ目は下部バーの点をタップしてスムーズスクロールさせ、1 秒待ってから撮る。desktop の2・3ページ目は無いので撮らない（`viewports: ['mobile']`）。
+- タイムログの「入力補助の帯」（作業・会議・休憩・移動・完了）は設定「定型ボタンを表示」の既定がオンなので、どの P2a シナリオにも写る。
+
+**時刻で変わるものを止める工夫**:
+
+- 時刻は他と同じく `setFixedTime`（`Date.now()` だけ止まり、タイマーは実時間）。世界時計（東京 10:24 / ロンドン 01:24 / ニューヨーク 20:24）、タイムスケジュールの現在線、タイムログの見本の記録（07:24・08:49・09:59）と今日の位置、カウントダウン（年末まで 42 日）はこれで決まる。
+- **ストップウォッチ**: 経過は `Date.now() - 開始時刻` で出すので、時刻固定のもとではスタートしても `00:00.0` のまま「走行中」（一時停止アイコン）の表示で止まる。100ms ごとの再描画があっても画素は変わらない。ラップは経過 0 だと記録されないので押さない。本実装も経過を `Date.now()`（`d.now()`）から出せば同じになる（`performance.now()` を使うと進んでしまう）。
+- **ポモドーロ**: 残りは `setInterval` の1秒ごとに 1 ずつ減らす作り（時刻ではなく回数）なので、スタートすると撮影中に `24:59`、`24:58`… と進み、安定しない。そのためスタートした状態は撮らず、止まった `25:00` と設定シートだけを撮る。
+- **打刻**: 出勤すると「出勤 10:24」のトースト（操作なし・3 秒）が出る。写り込みの有無が撮影のタイミングで変わらないよう、`waitFor` の `state: 'detached'` でトーストが消えるのを待ってから撮る（手順の時間制限 8 秒以内）。勤務時間は `0:00:00`、打刻の行は「出 10:24」のまま動かない。
+- 2回続けて撮った基準画像の差（2026-11-24）: 16 枚中 10 枚がバイト単位で一致、残りも SSIM 0.9998 以上・差分画素率 0.012% 以下（ガラスのぼかしの丸め）。
+
+**打刻を覆い隠す（2026-11-27〜）**: 打刻は利用者の決定でセッションと業務の種類に作り直し（`p2a-followup.md` 4章）、プロトタイプと見た目が違う。`p2a-board`・`p2a-board-2`・`p2a-punch-in` では打刻（`.w[data-w="punch"]`）を両対象とも覆い隠して比べる（基準画像もプロトタイプから覆って撮り直した）。mobile の `p2a-board` は打刻が2ページ目（画面の外）なので何も塗られない。`p2a-pomo-settings` は打刻がシートの下に隠れているので覆わない（覆うとシートの中身まで塗る）。
+
+- **打刻の新しい見た目は再現度テストでは確かめない。** Storybook の `PunchWidget`（状態 off / in / break / done / night、大きさ、人前では隠す、編集中）と、e2e `e2e/punch.spec.ts`（種類の選択と再読み込み、種類の追加・名前・削除と元に戻す、v1 の記録の移行とロック、夜勤の集計）で確かめる。
+- **`p2a-punch-in` の desktop に残る差**: 打刻を覆っても、タイムログの末尾の行は本実装が「10:24 出勤（本業）」（行の文に業務の種類を入れる決定、4章の4）、プロトタイプが「10:24 出勤」で違う。差分画像で、赤い画素（light 151・dark 165）のうち 133・143 がこの行の「（本業）」に集まり、残りはガラスのぼかしの丸めの散らばった点だけであることを確かめた（2026-11-27）。SSIM 0.998・差分率 0.01% で合格ライン内なので、この行は覆わずに比べる（タイムログの残りの部分の比較を失わないため）。
+
+**本実装との比較で気を付けること**:
+
+- 本実装に P2a の8種が揃うまでは「準備中です」の札が出て不合格（`p2a-punch-in` は「出勤」ボタンが無いので撮影失敗）になるのが正しい。配置（格子の位置と大きさ）は seed の変換だけで既に一致している（2026-11-24 に確認）。
+- 打刻の「出勤」はタイムログにも記録する（設定「タイムログにも記録」の既定オン）。`p2a-punch-in` の desktop はタイムログの末尾の「10:24 出勤」まで写るので、打刻とタイムログの連携が無いと差になる。
+- アラーム・ポモドーロは通知の許可を使う種類だが、操作するまで許可の案内は出ない。
 
 ### seed（保存データ）
 
@@ -104,9 +150,28 @@ npm run vrt -- --help
 | 対象 | キー | 変換 |
 | --- | --- | --- |
 | プロトタイプ | `lgdash.v1` | `protoStorage(seed)` |
-| 本実装 | `lgd.v1:global` | `appStorage(seed)` |
+| 本実装 | `lgd.v1:global` | `appStorage(seed)`。版 `v: 1` を足す。order / off / place / groups / tourDone / pgW は同じ名前・同じ意味（配置 ID = 種類 ID）なのでそのまま |
 
-本実装の保存形式がプロトタイプと分かれてきたら（キーの分割、項目名の違いなど）、`appStorage` で変換する。seed はページの最初の読み込み時に一度だけ入る（`sessionStorage` の印で再読み込み時は入れない）。
+本実装の保存形式がプロトタイプと分かれてきたら（キーの分割、項目名の違いなど）、`appStorage` で変換する。ウィジェットごとの区画 `lgd.v1:w:<配置ID>` はまだ seed していない（どのシナリオも既定の記録・設定のまま）。seed はページの最初の読み込み時に一度だけ入る（`sessionStorage` の印で再読み込み時は入れない）。
+
+## 覆い隠す範囲（mask）
+
+利用者の決定でプロトタイプと見た目を変えた部品など、**プロトタイプと比べられない範囲だけ**をシナリオの `mask` で覆う。
+
+```ts
+{
+  name: 'p2a-board',
+  ...
+  mask: ['.w[data-w="punch"]'],          // 関数 (vp) => string[] でもよい
+  maskNote: '打刻は利用者の決定で作り直したため…',
+}
+```
+
+- 撮影の最後（`stableScreenshot`）で Playwright の `page.screenshot({ mask, maskColor: '#FF00FF' })` に渡す。要素の枠（bounding box）を不透明に塗る。見つからない・画面の外の要素は塗らない。塗りは一番上に重なるので、シートなどの下にある部品を覆うとシートの中身まで塗ってしまう。そういう画面では覆わない。
+- **基準画像と本実装の両方に同じセレクタで効く**ので、セレクタはどちらにもある共通のもの（`.w[data-w="…"]` など）にする。`mask` を足した・変えたシナリオは、基準画像を**プロトタイプから**撮り直す（`npm run vrt:baseline -- -s <scenario>`）。本実装の画像で基準を上書きしない。
+- 撮り直した基準画像は、前の基準画像と比べて覆った範囲の外が変わっていないことを確かめる（2026-11-27 の打刻では10枚とも、変わった画素はすべて覆った範囲の中）。
+- 覆った範囲の見た目は、Storybook のストーリーと e2e で確かめる。レポートの各カードに「覆い隠し（両対象）」とセレクタが出る（`summary.json` の `results[].masked`）。
+- 覆うのは比べられない理由が決まっているときだけ。合格ラインを割ったから覆う、には使わない。
 
 ## シナリオの足し方
 
@@ -168,5 +233,6 @@ npm run vrt -- --help
 - **`dialog` の背景**: 端末をつなぐシートの QR コード（ペアリングコードから作る）が暗幕の下にうっすら写る。プロトタイプは決まった乱数で毎回同じ QR になるが、本実装のコード生成が違えばこの部分は差になる。
 - **dev サーバーと HMR**: `npm run vrt` は dev サーバーを使うので、撮影中にソースを書き換えるとページが再読み込みされ、その画面だけ結果がぶれる（メニューが閉じる等）。数値がおかしいときはもう一度その画面だけ回す（`npm run vrt -- -s menu -v mobile`）。安定させたいときは `npm run build && npm run preview` して `--url` で渡す。
 - **ポート 4174 が使用中**: 何が応答しているか分からないので撮らずに「撮影失敗」にする。起動済みの本実装を使うなら `--url` を付ける。
-- **Chromium の版**: 基準画像と比較は同じ Chromium で撮ること。版が変わるとフォントの描画やぼかしがわずかに変わる。基準画像は `chromium_headless_shell` 157.0.8103.78 で作った。
+- **Chromium の版**: 基準画像と比較は同じ Chromium で撮ること。版が変わるとフォントの描画やぼかしがわずかに変わる。基準画像は `chromium_headless_shell` 157.0.8103.78 で作った（`vrt/lib/env.ts` の `BASELINE_BROWSER_VERSION`。違う版で撮ると警告を出し、`summary.json` の `environment.browser` とレポートの見出しに版を記録する）。
+  - 2026-11-27: e2e 用の `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome`（Chrome for Testing 153.0.8010.12）を付けたシェルで `npm run vrt` を回すと、`help` mobile が SSIM 0.93 で不合格になった。`kbd`（`ui-monospace, SFMono-Regular, Menlo, monospace`。Linux では総称の monospace からフォントを選ぶ）の文字の描き方が版で違い、`Esc`・`Ctrl`・`⌘` などのキーの枠と、`⌘` の枠の幅の違いで折り返しがずれた2つ目のヒントより下の行が差になるため（差分画像で確認）。同じ本実装を 157 で撮れば 0.9998 で合格する（コードの差ではない）。そのため再現度テストは `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` を読まないようにし、別の Chromium を使うときは `VRT_CHROMIUM_EXECUTABLE_PATH` で明示する。
 - **プロトタイプの癖**: 長押し判定は 0.7 秒（指が 12px 動くと取り消し）。トーストは操作付きなら 10 秒、それ以外は 3 秒で消える（撮影はその前に終わる）。モバイルでは初期ボードが2ページに分かれる。

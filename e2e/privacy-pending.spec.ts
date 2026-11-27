@@ -7,6 +7,9 @@ import type { Dashboard } from '../src/app/store/store';
  * review #9: 未実装の種類は「準備中」で置き換え、追加を成功扱いにしない。
  */
 const T0 = new Date('2026-11-19T10:24:36+09:00');
+/** An unimplemented kind for the 準備中 checks (P2a implemented アラーム; メーター is in the last category, P2f). */
+const PENDING = 'meter';
+const PN = REGISTRY[PENDING]?.n ?? PENDING;
 
 type Seed = Readonly<{ global?: Record<string, unknown>; widgets?: Record<string, Record<string, unknown>> }>;
 
@@ -60,8 +63,8 @@ test.describe('人前では隠す (review #6)', () => {
 
   test('1×1 failure and 準備中 + hidden: no state overlay, no content, no toast (shown again: the toast comes)', async ({ page }) => {
     await open(page, {
-      global: { gs: { veil: true }, sizes: { weather: [1, 1], alarm: [1, 1] }, ...placeAlso('alarm') },
-      widgets: { weather: { cfg: { veil: true } }, alarm: { cfg: { veil: true } } },
+      global: { gs: { veil: true }, sizes: { weather: [1, 1], [PENDING]: [1, 1] }, ...placeAlso(PENDING) },
+      widgets: { weather: { cfg: { veil: true } }, [PENDING]: { cfg: { veil: true } } },
     });
     await page.evaluate(async () => {
       const d = (window as Window & { __lgdDash?: Dashboard }).__lgdDash;
@@ -70,29 +73,29 @@ test.describe('人前では隠す (review #6)', () => {
       m.setWeatherState(d, 'err');
     });
     const wx = page.locator('.w[data-wid="weather"]');
-    const alarm = page.locator('.w[data-wid="alarm"]');
+    const alarm = page.locator('.w[data-wid="' + PENDING + '"]');
     await expect(wx).toHaveClass(/\bveil\b/);
     await expect(wx).not.toHaveClass(/\bs-err\b/);
     await expect(wx.locator('.sto')).toHaveCount(0);
     await expect(wx.locator('.in')).toBeHidden();
     await expect(alarm.locator('.pmw')).toHaveCount(0);
     await expect(alarm.locator('.in')).toBeHidden();
-    for (const g of ['天気', 'アラーム']) {
+    for (const g of ['天気', PN]) {
       const tree = await page.getByRole('group', { name: g, exact: true }).ariaSnapshot();
       expect(tree).not.toContain('取得できませんでした');
       expect(tree).not.toContain('準備中');
     }
     const quiet = await toastsDuring(page, 3000);
-    expect(quiet.filter(t => t.includes('天気') || t.includes('アラーム'))).toEqual([]);
+    expect(quiet.filter(t => t.includes('天気') || t.includes(PN))).toEqual([]);
 
     // Control: shown again, the same widgets do announce themselves (so the check above is meaningful).
     await wx.getByRole('button', { name: '天気を表示する' }).click();
-    await alarm.getByRole('button', { name: 'アラームを表示する' }).click();
+    await alarm.getByRole('button', { name: PN + 'を表示する' }).click();
     await expect(wx).toHaveClass(/\bs-err\b/);
     await expect(alarm.locator('.pmw')).toHaveCount(1);
     const loud = await toastsDuring(page, 3000);
     expect(loud.some(t => t.includes('天気：取得できませんでした'))).toBe(true);
-    expect(loud.some(t => t.includes('アラーム：準備中です'))).toBe(true);
+    expect(loud.some(t => t.includes(PN + '：準備中です'))).toBe(true);
   });
 
   test('normal → full screen while hidden: the full-screen view is not drawn, only the eye mark and 表示する', async ({ page }) => {
@@ -144,31 +147,31 @@ test.describe('準備中の種類 (review #9)', () => {
     await expect(page.locator('.sheet.open[aria-label="ウィジェットを追加"]')).toBeVisible();
   }
 
-  test('＋ 追加 does not place it and says 「アラーム は準備中です」', async ({ page }) => {
+  test('＋ 追加 does not place it and says 「〇〇 は準備中です」', async ({ page }) => {
     await open(page);
     await openAdd(page);
     const add = page.locator('.sheet.open[aria-label="ウィジェットを追加"]');
-    await add.getByRole('button', { name: 'アラームを「ボード 1」に追加' }).click();
-    await expect(page.locator('.toast').filter({ hasText: 'アラーム は準備中です' })).toBeVisible();
-    await expect(page.locator('.toast').filter({ hasText: 'アラーム は準備中です' }).getByRole('button')).toHaveCount(0);
-    await expect(page.locator('.w[data-wid="alarm"]')).toHaveCount(0);
+    await add.getByRole('button', { name: PN + 'を「ボード 1」に追加' }).click();
+    await expect(page.locator('.toast').filter({ hasText: PN + ' は準備中です' })).toBeVisible();
+    await expect(page.locator('.toast').filter({ hasText: PN + ' は準備中です' }).getByRole('button')).toHaveCount(0);
+    await expect(page.locator('.w[data-wid="' + PENDING + '"]')).toHaveCount(0);
     // Still listed as not placed (▶ and ＋ remain).
-    await expect(add.getByRole('button', { name: 'アラームを置かずに使う' })).toBeVisible();
+    await expect(add.getByRole('button', { name: PN + 'を置かずに使う' })).toBeVisible();
   });
 
   test('▶ 置かずに使う opens the 準備中 replacement in front (not an empty face)', async ({ page }) => {
     await open(page);
     await openAdd(page);
-    await page.locator('.sheet.open[aria-label="ウィジェットを追加"]').getByRole('button', { name: 'アラームを置かずに使う' }).click();
-    const w = page.locator('.w[data-wid="alarm"]');
+    await page.locator('.sheet.open[aria-label="ウィジェットを追加"]').getByRole('button', { name: PN + 'を置かずに使う' }).click();
+    const w = page.locator('.w[data-wid="' + PENDING + '"]');
     await expect(w).toHaveClass(/\bbig\b/);
     await expect(w.locator('.perm')).toContainText('準備中です');
     await expect(w.locator('.perm')).toContainText('このウィジェットは次の版で使えるようになります');
   });
 
   test('a saved placement of an unimplemented kind shows 準備中', async ({ page }) => {
-    await open(page, { global: placeAlso('alarm') });
-    const w = page.locator('.w[data-wid="alarm"]');
+    await open(page, { global: placeAlso(PENDING) });
+    const w = page.locator('.w[data-wid="' + PENDING + '"]');
     await expect(w).toBeVisible();
     await expect(w.getByRole('group', { name: '準備中です' })).toBeVisible();
   });
