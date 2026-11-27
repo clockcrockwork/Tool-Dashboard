@@ -52,6 +52,15 @@ export type RunCtx = Readonly<{
  */
 export type Runner = Readonly<{ start: (ctx: RunCtx) => void }>;
 
+/**
+ * 要求実行（登録の `run: 'request'`: スクリプト・画像変換・翻訳・AI の生成）の取り決めだけ（P2 の各分類・P4 で作る）.
+ * 明示した Run で `set(id, { phase: 'run', … })` して実行 ID を得る。終了・失敗・取消・上限で `phase` を変えて止める。
+ * 上限は `at(開始の時刻 + 上限, …)` の期限で、取消・やり直しは実行 ID が変わるので、古い実行の結果（遅れて届いた応答）は
+ * 実行 ID を見比べて捨てる。表示・配置の変化（mount・置き場所・画面）で Run しない。時刻・イベントの監視のうち接続で始まるもの
+ * （受け渡しの受信）は、接続の設定を `watch` する `Runner` で表す。
+ */
+export type RequestPhase = 'run' | 'done' | 'fail' | 'cancel' | 'limit';
+
 export type RuntimeOptions = Readonly<{ owner?: OwnerLock; page?: PageVisibility }>;
 
 type Slot = Readonly<{ rid: number; v: unknown }>;
@@ -88,11 +97,6 @@ export class Runtime {
     this.slots[id] = { rid, v };
     return rid;
   }
-  /** Placements with a run state (for 一覧・一時利用 to show what runs; the kind decides what counts as running). */
-  ids(): string[] {
-    return Object.keys(this.slots);
-  }
-
   // ---------- 動かす ----------
   get running(): boolean {
     return this.stopFn !== null;

@@ -62,7 +62,7 @@ test('打刻: 出勤でタイムログにも記録し、元に戻すはその行
   const saved = await page.evaluate(() => [localStorage.getItem('lgd.v1:w:timelog') ?? '', localStorage.getItem('lgd.v1:w:punch') ?? '']);
   expect(saved[0]).toContain('会議');
   expect(saved[0]).not.toContain('出勤');
-  expect(saved[1]).toContain('"stamps":[]');
+  expect(saved[1]).toContain('"sessions":[]');
 });
 
 test('ポモドーロ: 通知の許否がまだなら共通の枠の許可のお願い。「通知しない」で設定を切って始める', async ({ page }) => {
@@ -129,8 +129,9 @@ async function openAdd(page: Page): Promise<void> {
   await page.locator('.sheet.open[aria-label="ウィジェット一覧"]').getByRole('button', { name: 'ウィジェットを追加' }).click();
   await expect(page.locator('.sheet.open[aria-label="ウィジェットを追加"]')).toBeVisible();
 }
+/** ▶ 置かずに使う from 「ウィジェットを追加」 (closing temporary use returns to that sheet, so it may be open already). */
 async function useWithoutPlacing(page: Page, name: string): Promise<void> {
-  await openAdd(page);
+  if (!await page.locator('.sheet.open[aria-label="ウィジェットを追加"]').isVisible()) await openAdd(page);
   await page.locator('.sheet.open[aria-label="ウィジェットを追加"]').getByRole('button', { name: name + 'を置かずに使う' }).click();
 }
 const closeTemp = async (page: Page): Promise<void> => { await page.locator('.tmpbar.open').getByRole('button', { name: '戻る' }).click(); };
@@ -210,13 +211,19 @@ test.describe('実行管理（Dashboard が持つ。配置・表示と分ける�
   test('設定パネル: 通知を使う種類には「開いている間だけ知らせます」の一文（共通の部品）', async ({ page }) => {
     await open(page, '2026-11-19T10:24:36+09:00');
     await page.locator('.nav button[aria-label="ウィジェットを編集"]').click();
-    await w(page, 'pomo').click();
     const sheet = page.locator('.sheet.open[aria-label="ウィジェットの設定"]');
+    const settingsOf = async (kind: string): Promise<void> => {
+      await w(page, kind).click();
+      await expect(sheet.locator('.sh .st')).toHaveText(REGISTRY[kind]?.n ?? '');
+    };
+    const closeSheet = async (): Promise<void> => { await sheet.getByRole('button', { name: '設定を閉じる' }).click(); await expect(sheet).toHaveCount(0); };
+    await settingsOf('pomo');
     await expect(sheet).toContainText('ダッシュボードを開いている間だけ知らせます');
-    await w(page, 'alarm').click();
-    await expect(sheet).toContainText('アラーム');
+    await closeSheet();
+    await settingsOf('alarm');
     await expect(sheet).toContainText('ダッシュボードを開いている間だけ知らせます');
-    await w(page, 'countdown').click();
+    await closeSheet();
+    await settingsOf('countdown');
     await expect(sheet).not.toContainText('開いている間だけ');
   });
 });

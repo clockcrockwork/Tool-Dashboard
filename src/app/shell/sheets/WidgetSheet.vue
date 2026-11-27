@@ -43,7 +43,10 @@ const pinPos = computed(() => (pin.value ? String(pin.value[1] + 1) + '列 ' + S
 const pinMiss = computed(() => !!sel.value && !!L.value.pinMiss[sel.value]);
 const MOVES = [['左へ', -1, 0, SI.left], ['上へ', 0, -1, SI.up], ['下へ', 0, 1, SI.down], ['右へ', 1, 0, SI.right]] as const;
 const veilOn = computed(() => !!sel.value && d.veilOf(sel.value));
-/** 通知を使う種類 (`perm: ['notify']`): the shared sentence that notices arrive only while the page is open (実装ガイド 7.2). */
+/**
+ * 通知を使う種類 (`perm: ['notify']`): the shared sentence that notices arrive only while the page is open (実装ガイド 7.2).
+ * Put last, under the closing note, so the fixed order of the panel (仕様書 3章) does not move.
+ */
 const notifies = computed(() => !!def.value?.perm.includes('notify'));
 const curGi = computed(() => (sel.value ? L.value.pos[sel.value]?.gi ?? -1 : -1));
 
@@ -135,7 +138,6 @@ function onFile(e: Event, itemId: number): void {
         <div v-else-if="fv.kind === 'rg'" class="cvr"><input class="rg" type="range" :min="fv.f.min" :max="fv.f.max" :aria-label="fv.f.l" :value="Number(fv.v)" @input="setField(fv.f.k, Number(val($event)))"><span class="cap num" style="width: 20px; text-align: right">{{ fv.v }}</span></div>
       </FieldRow>
     </template>
-    <NotifyOpenNote v-if="notifies" />
 
     <template v-if="hasItems && sel">
       <div class="sl">項目</div>
@@ -164,5 +166,6 @@ function onFile(e: Event, itemId: number): void {
     <div class="fld" style="margin-top: 6px"><span>並び順</span><div style="display: flex; gap: 6px"><button class="btn" aria-label="前へ移動" @click="sel && shiftOrder(d, sel, -1)"><Icon :d="SI.left" /></button><button class="btn" aria-label="後ろへ移動" @click="sel && shiftOrder(d, sel, 1)"><Icon :d="SI.right" /></button></div></div>
     <button class="chip" style="width: 100%; margin-top: 12px" @click="sel && hideSelected(d, sel)"><Icon :d="SI.hide" :size="18" />このボードから外す</button>
     <p class="cap" style="margin: 8px 0 0; text-align: center">外したウィジェットは「ウィジェットを追加」からいつでも戻せます。</p>
+    <NotifyOpenNote v-if="notifies" />
   </aside>
 </template>
