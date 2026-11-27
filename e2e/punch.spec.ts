@@ -48,6 +48,12 @@ const savedPunch = (page: Page) => page.evaluate((k) => localStorage.getItem(k),
 type Saved = { v: number; dv: number; data: { types: { id: number; n: string }[]; last: number; sessions: { id: number; ty: number; n: string; st: number; en: number | null; br: { st: number; en: number | null }[] }[] } };
 const parse = (raw: string | null): Saved => JSON.parse(raw ?? 'null') as Saved;
 const T = (iso: string): number => new Date(iso).getTime();
+/** page.clock.install keeps time running from `at`, so a punch made right after lands a little after it. */
+const near = (actual: number | null | undefined, iso: string): void => {
+  expect(actual).not.toBeNull();
+  expect((actual ?? 0) - T(iso)).toBeGreaterThanOrEqual(0);
+  expect((actual ?? 0) - T(iso)).toBeLessThan(60_000);
+};
 
 test.use({ timezoneId: 'Asia/Tokyo', locale: 'ja-JP' });
 
@@ -72,10 +78,11 @@ test('(a) 副業を選んで出勤 → 再読み込みしても副業が選ば�
   expect(s.dv).toBe(2);
   expect(s.data.last).toBe(2);
   expect(s.data.sessions).toHaveLength(1);
-  expect(s.data.sessions[0]).toMatchObject({ ty: 2, n: '副業', st: T('2026-11-19T10:24:36+09:00'), en: null });
+  expect(s.data.sessions[0]).toMatchObject({ ty: 2, n: '副業', en: null });
+  near(s.data.sessions[0]?.st, '2026-11-19T10:24:36+09:00');
   // タイムログの行の文にも種類が入る.
   await toWidget(page, 'timelog');
-  await expect(w(page, 'timelog').locator('li.tl').last()).toContainText('出勤（副業）');
+  await expect(w(page, 'timelog').locator('li.tl').first()).toContainText('出勤（副業）');
 });
 
 test('(b) ＋で種類を追加 → 名前を変えて Enter → 削除 → 「元に戻す」で元の位置に戻る', async ({ page }) => {
@@ -192,7 +199,8 @@ test.describe('(d) 集計は出勤の時刻で決める', () => {
     await expect(punch).toContainText('今日 0:00　今月 8:00');
     const s = parse(await savedPunch(page));
     expect(s.data.sessions).toHaveLength(1);
-    expect(s.data.sessions[0]).toMatchObject({ st: T('2026-11-18T22:00:00+09:00'), en: T('2026-11-19T06:00:00+09:00') });
+    near(s.data.sessions[0]?.st, '2026-11-18T22:00:00+09:00');
+    near(s.data.sessions[0]?.en, '2026-11-19T06:00:00+09:00');
   });
 
   test('月末の夜勤: 10/31 22:00 に出勤して 11/1 に退勤したセッションは 11 月に入らない', async ({ page }) => {
