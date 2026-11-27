@@ -9,7 +9,8 @@
  *   「現在地」のまま開いたとき）。許可済みなら、表示中のときだけ（`isShown`）カードを出さずに位置を取る（プロトタイプ `_geoNeed`）。
  *   人前では隠している間はカードを出さない（隠すのをやめたら出す）。
  * - 断られた・取れなかったら東京（日本時間）で出し、トーストで知らせる（仕様書 11章）。カードは直し方と「もう一度」「都市を選ぶ」。
- * - 「都市を選ぶ」は場所の選択メニュー（`selectOptions` の `sunloc`）を開く。
+ * - 「都市を選ぶ」は場所の選択メニュー（`selectOptions` の `sunloc`）を開く。カードは場所が「現在地」の間は出したまま（選ばずに
+ *   閉じても残る。プロトタイプと同じ）で、都市を選ぶと閉じる。
  */
 import { reactive, watch } from 'vue';
 import type { Dashboard } from '../../app/store/store';
@@ -70,7 +71,11 @@ export function chooseCity(d: Dashboard, id: string): void {
 
 /** The request of a placement: the kind's sentences, getting the position as the request, 「都市を選ぶ」 for both alternatives. */
 export function sunAsk(d: Dashboard, id: string): AskOpts {
-  const pick = (): void => { chooseCity(d, id); };
+  const pick = (): void => {
+    chooseCity(d, id);
+    // 場所が「現在地」で位置が無い間はカードを出したまま（プロトタイプ `pq.sun` は状態から出す）。都市を選べば閉じる.
+    if (d.cfgOf(id, 'loc') === SUN_HERE && !sunRuntime(d).geo && permOf(d, 'geo') !== 'ok') askPerm(d, id, 'geo', sunAsk(d, id));
+  };
   return { copy: SUN_GEO_ASK(SUN_FALLBACK), request: () => locate(d), alt: pick, noAlt: pick };
 }
 

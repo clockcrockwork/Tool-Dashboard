@@ -165,7 +165,7 @@ export function sunView(now: number, where: SunWhere, tiers: SunTiers): SunView 
   const sT = sunOf(sd0), sN = sunOf(sd0 + DAY);
   const sY = tiers.t2 ? sunOf(sd0 - DAY) : null;
   const ok = isN(sT.r0) && isN(sT.r1);
-  const day = ok ? sunH >= (sT.r0 as number) && sunH < (sT.r1 as number) : sT.r0 === 'always';
+  const day = ok ? sunH >= (sT.r0) && sunH < (sT.r1) : sT.r0 === 'always';
   let head: string, sub: string, icon: string;
   if (!isN(sT.r0) || !isN(sT.r1)) {
     head = sT.r0 === 'always' ? '一日中沈みません' : '一日中昇りません'; sub = '白夜・極夜の時期です'; icon = iconPath('sun');

@@ -14,6 +14,7 @@ import {
   type BrowserPerm,
 } from './permission';
 import { askNotify } from './notify';
+import { SUN_GEO_ASK } from '../../widgets/sun/sun';
 import { fakePerms } from './test-fixtures';
 import { runtimeOf } from './runtime';
 

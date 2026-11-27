@@ -72,7 +72,8 @@ export function externalSource<T>(def: SourceDef<T>): Source<T> {
   const runtime = (d: Dashboard): SourceRuntime<T> => {
     let r = runtimes.get(d);
     if (!r) {
-      r = reactive({ st: 'ok', places: {} }) as SourceRuntime<T>;
+      const init: SourceRuntime<T> = { st: 'ok', places: {} };
+      r = reactive(init);
       runtimes.set(d, r);
     }
     return r;

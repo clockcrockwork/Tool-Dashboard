@@ -43,6 +43,12 @@ export const WIDGETS: Readonly<Record<string, Component>> = {
   counter: defineAsyncComponent(() => import('./counter/CounterWidget.vue')),
   recorder: defineAsyncComponent(() => import('./recorder/RecorderWidget.vue')),
   sketch: defineAsyncComponent(() => import('./sketch/SketchWidget.vue')),
+  // P2c 情報. RSS の選んでいるフィード・日の出の現在地は保存しない（各 status.ts の runtime）。どれも記録を持たない.
+  sun: defineAsyncComponent(() => import('./sun/SunWidget.vue')),
+  today: defineAsyncComponent(() => import('./today/TodayWidget.vue')),
+  quote: defineAsyncComponent(() => import('./quote/QuoteWidget.vue')),
+  github: defineAsyncComponent(() => import('./github/GithubWidget.vue')),
+  rss: defineAsyncComponent(() => import('./rss/RssWidget.vue')),
 };
 
 /**

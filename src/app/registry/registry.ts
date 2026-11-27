@@ -211,6 +211,8 @@ const REFRESH: Readonly<Record<string, Refresh>> = {
   pomo: VISIBLE_ONLY(1), stopwatch: VISIBLE_ONLY(0.1), punch: VISIBLE_ONLY(1), timelog: VISIBLE_ONLY(60),
   // P2b: 今日の印・「今日」「明日」は日付で変わる（日が変わったら描き直す）。録音は録音中だけ経過と入力レベルを描き直す（計算は始めた時刻から）.
   month: VISIBLE_ONLY(60), week: VISIBLE_ONLY(60), agenda: VISIBLE_ONLY(60), recorder: VISIBLE_ONLY(0.12),
+  // P2c: 日の出・日の入りは「日の入りまで」と今の位置を1分ごとに描き直す（端末の中の計算だけ）.
+  sun: VISIBLE_ONLY(60),
 };
 
 /**

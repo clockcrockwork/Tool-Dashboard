@@ -2,6 +2,8 @@ import { ESLint } from 'eslint';
 import { expect, it } from 'vitest';
 
 const eslint = new ESLint();
+// Typed lint is slow under a loaded machine (full `npm run check`); give it room instead of flaking at 5 s.
+const LINT_TIMEOUT_MS = 30_000;
 it('rejects browser globals and indirect global access in core', async () => {
   for (const code of [
     'document.title = "probe";', 'window.localStorage.getItem("probe");',
@@ -12,7 +14,7 @@ it('rejects browser globals and indirect global access in core', async () => {
     const [result] = await eslint.lintText(code, { filePath: 'src/core/operations.ts' });
     expect(result?.messages.some(m => m.ruleId === 'no-restricted-globals'), code).toBe(true);
   }
-});
+}, LINT_TIMEOUT_MS);
 it('checks TS and Vue negative fixtures with typed lint', async () => {
   for (const [filePath, code] of [
     ['src/core/operations.ts', 'export const bad: any = 1;'],
@@ -21,7 +23,7 @@ it('checks TS and Vue negative fixtures with typed lint', async () => {
     const [result] = await eslint.lintText(code, { filePath });
     expect(result?.messages.some(m => m.ruleId === '@typescript-eslint/no-explicit-any')).toBe(true);
   }
-});
+}, LINT_TIMEOUT_MS);
 it('rejects host imports and Parts/Tokens dependencies', async () => {
   for (const [filePath, code] of [
     ['src/core/operations.ts', 'import "vue";'],
@@ -34,12 +36,12 @@ it('rejects host imports and Parts/Tokens dependencies', async () => {
     const [result] = await eslint.lintText(code, { filePath });
     expect(result?.messages.some(m => m.ruleId === 'no-restricted-imports')).toBe(true);
   }
-});
+}, LINT_TIMEOUT_MS);
 
 it('rejects dynamic imports in core', async () => {
   const [result] = await eslint.lintText('export async function bad() { return await import("vue"); }', { filePath: 'src/core/operations.ts' });
   expect(result?.messages.some(m => m.ruleId === 'no-restricted-syntax')).toBe(true);
-});
+}, LINT_TIMEOUT_MS);
 
 // The v0 Dexie repository and its 'records' lint guard were removed with the Stage 1b board
 // (widget-schema-v0 §0 R8): persistence is now sectioned through src/app/store/persist.ts.

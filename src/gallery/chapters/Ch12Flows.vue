@@ -1,11 +1,12 @@
 <script setup lang="ts">
 /**
  * 12章 空・処理中・失敗・復旧。部品シート #flows と同じ並びで、ウィジェットごとの状態の流れを左から並べる。
- * 天気（5状態、`setWeatherState`）と TODO の空は本物のウィジェット。翻訳・スクリプト・画像変換・受け渡し・日の出は
- * P2 のウィジェットなので、原本（Parts.dc.html）の見本のマークアップをそのまま描く（クラスだけ、src/gallery/proto.ts）。
+ * 天気（5状態、`setWeatherState`）、TODO の空、日の出・日の入りの許可（`setSunAsk`）は本物のウィジェット。翻訳・スクリプト・
+ * 画像変換・受け渡しはまだ無い P2 のウィジェットなので、原本（Parts.dc.html）の見本のマークアップをそのまま描く（クラスだけ、src/gallery/proto.ts）。
  */
 import { onMounted, ref } from 'vue';
 import { setWeatherState, type WxState } from '../../widgets/weather';
+import { setSunAsk } from '../../widgets/sun/status';
 import { flowSnap } from '../proto';
 import type { DashSetup } from '../dash';
 import GalleryControls from '../parts/GalleryControls.vue';
@@ -21,6 +22,11 @@ type Fig = Readonly<{ kd: Kd; kdl?: string; b: string; w: number; h: number; p?:
 type Flow = Readonly<{ n: number; title: string; fl: string; kind: PatternKind; figs: readonly Fig[] }>;
 
 const wx = (st: WxState): Real => ({ id: 'weather', cols: 2, rows: 1, prepare: d => { setWeatherState(d, st); } });
+/** 日の出・日の入り: 場所が「現在地」で許可のお願い（`ask`）・断られた（`no`）、都市を選んで復旧（東京）. */
+const sun = (st: 'ask' | 'no' | null): Real => ({ id: 'sun', cols: 2, rows: 1, prepare: (d) => {
+  d.setCfg('sun', 'loc', st ? '現在地' : '東京');
+  setSunAsk(d, 'sun', st);
+} });
 const todoEmpty: Real = { id: 'todo', cols: 2, rows: 2, prepare: d => { d.data.todo = { items: [] }; } };
 
 const FLOWS: readonly Flow[] = [
@@ -57,10 +63,10 @@ const FLOWS: readonly Flow[] = [
     { kd: 'l', b: '送信待ち', w: 346, h: 486, p: '相手の確認を待つ。', arrow: '受け取った' },
     { kd: 'o', b: '未読あり', w: 346, h: 486, p: '新しい行を強調し、一覧ボタンに件数。' },
   ] },
-  { n: 5, title: '日の出・日の入り（許可）', fl: '許可が要る機能は、ブラウザに聞く前にウィジェットの中で説明する。', kind: 'markup', figs: [
-    { kd: 'l', kdl: 'お願い', b: 'お願い', w: 346, h: 153, p: '理由と「位置を使う」「都市を選ぶ」。', arrow: '断られた' },
-    { kd: 'x', b: '断られた', w: 346, h: 153, p: '直し方と、もう一度・都市を選ぶ。', arrow: '都市を選んだ' },
-    { kd: 'f', b: '復旧', w: 346, h: 153, p: '選んだ都市で表示。' },
+  { n: 5, title: '日の出・日の入り（許可）', fl: '許可が要る機能は、ブラウザに聞く前にウィジェットの中で説明する。', kind: 'vue', figs: [
+    { kd: 'l', kdl: 'お願い', b: 'お願い', w: 346, h: 153, p: '理由と「位置を使う」「都市を選ぶ」。', arrow: '断られた', real: sun('ask') },
+    { kd: 'x', b: '断られた', w: 346, h: 153, p: '直し方と、もう一度・都市を選ぶ。', arrow: '都市を選んだ', real: sun('no') },
+    { kd: 'f', b: '復旧', w: 346, h: 153, p: '選んだ都市で表示。', real: sun(null) },
   ] },
 ];
 
