@@ -27,7 +27,13 @@ export type Step =
   /** 要素をスクロールして見える位置へ */
   | { do: 'scrollIntoView'; sel: string; nth?: number; note?: string }
   /** マウスを画面外（左上）へ逃がす。hover 状態の差を消すため */
-  | { do: 'mouseAway'; note?: string };
+  | { do: 'mouseAway'; note?: string }
+  /**
+   * 1筆描く（既定は desktop がマウスのドラッグ、mobile が CDP のタッチ。`input` で固定できる）。
+   * `path` は要素の中心（整数に丸めた位置）からの px のずれ（整数）。線分は水平・垂直・45° にする
+   * （途中の点を 8px ごとに整数の位置で送るので、どの点も線分の上に乗り、点の丸め方の違いで線が揺れない）。
+   */
+  | { do: 'draw'; sel: string; nth?: number; path: [number, number][]; input?: 'mouse' | 'touch'; note?: string };
 
 /** 保存データ（seed）。対象ごとの localStorage への変換は targets.ts の seedFor で行う */
 export type Seed = Record<string, unknown>;
