@@ -5,10 +5,10 @@
  * まとめて鳴らすこともしない。
  */
 import type { FieldValue } from '../../app/registry/registry';
-import type { AskText } from '../../app/runtime/notify';
+import type { AskCopy } from '../../app/runtime/permission';
 
 /** The permission request when a switch is turned on (shown by the frame through the shared notification). */
-export const ALARM_ASK: AskText = { title: '鳴ったら通知しますか？', text: 'このタブを見ていないときも、アラームの時刻を知らせます。' };
+export const ALARM_ASK: AskCopy = { title: '鳴ったら通知しますか？', text: 'このタブを見ていないときも、アラームの時刻を知らせます。' };
 
 /** Settings fallback (prototype `alarmTimes`). */
 export const ALARM_DEFAULTS: readonly [string, string] = ['07:00', '22:30'];
