@@ -62,3 +62,7 @@
   - 対処（テスト実施層、`vrt/**`）: 再現度テストは `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` を読まない（使うときは `VRT_CHROMIUM_EXECUTABLE_PATH`）。基準画像と違う版で撮ると警告し、`summary.json` の `environment.browser` とレポートに版を記録する。今回の 64 枚は `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` を付けたシェルで回し、157 で撮られたことを確かめた。UI/UX 層の修正は不要。
 
 **機能・データのゲート**（再現度とは別）: `npm run check` 通過（lint・型・単体 37 ファイル 368 件・契約 4 ファイル 29 件）。`npm run build` 通過。e2e（Chromium 153、desktop-chromium・mobile-chromium）61 件合格・5 件は既存の条件付きスキップ・失敗 0。うち打刻の e2e `e2e/punch.spec.ts` 6 件 × 2 = 12 件（(a) 種類の選択が再読み込みで残る、(b) 種類の追加・名前・削除と元に戻すで元の位置、(c) v1 の移行で dv:2 に／組にできない v1 はロックして保存 bytes を変えない、(d) 夜勤は出勤した日・月に入る、月末の夜勤は翌月に入らない）。WebKit（Playwright）・実機 Safari は未確認。
+
+## 2026-11-27 P2b 予定と記録（ブランチ `feat/lgd-p2b-records`）
+
+結果: **84 / 84 合格**（既存 64 ＋ P2b 20）。P2b の6シナリオ（`p2b-board`・`p2b-board-2`・`p2b-board-3`・`p2b-counter-delete`・`p2b-habit-settings`・`p2b-sketch-full`）はすべて SSIM 1.0000・差分率 0.00%。全体の最小は従来どおり dialog（乱数の QR）と、メモの初期本文の変更による desktop の差（`deferred.md`）。撮影の Chromium は 157（基準と同じ）。
