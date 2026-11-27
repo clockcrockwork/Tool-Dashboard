@@ -8,7 +8,8 @@ import { provideDash } from '../context';
 import type { Dashboard } from '../store/store';
 import { AUTO_FOCUS_KIND } from '../registry/registry';
 import { kindOf } from '../registry/instances';
-import { FULLSCREEN, WIDGETS } from '../../widgets';
+import { FULLSCREEN, WIDGETS, WIDGET_RUNNERS } from '../../widgets';
+import { startRuntime } from '../runtime/runtime';
 import { IC } from '../parts/icons';
 import Icon from '../parts/LineIcon.vue';
 import BottomNav from './BottomNav.vue';
@@ -162,6 +163,8 @@ function listen<K extends keyof WindowEventMap>(type: K, fn: (e: WindowEventMap[
 
 onMounted(() => {
   cleanups.push(d.start());
+  // 実行管理: alarms and pomodoro finish by their deadline while the Dashboard runs, placed or not (runtime/runtime.ts).
+  cleanups.push(startRuntime(d, WIDGET_RUNNERS));
   d.onGo = (p, smooth) => { scrollTo(p, smooth); };
   measure();
   const ro = new ResizeObserver(() => { measure(); fixScroll(); });

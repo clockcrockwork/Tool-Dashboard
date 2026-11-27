@@ -3,12 +3,13 @@
  * ストップウォッチ (stopwatch) — 2×2. 大きな経過時間＋ラップ3行＋ラップ／スタート・ストップ／リセット.
  * Prototype: Main.dc.html section data-w="stopwatch"; `swTime`, `laps`, `swD`, `swToggle`, `swLap`, `swReset`.
  * 経過は始めた時刻から計算する（stopwatch.ts）。0.1秒の描き直しは、動いていて・表示中で・タブが前にあるときだけ（プロトタイプの
- * 「隠れている間は描き直さない」と、表示中だけ更新、実装ガイド 8章）。計測は保存しない（status.ts）.
+ * 「隠れている間は描き直さない」と、表示中だけ更新、実装ガイド 8章。`useFaceClock`）。計測は Dashboard の実行管理にあり、
+ * 見えなくても・未配置でも基準の時刻を持ち続ける（status.ts）。保存しない.
  */
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed } from 'vue';
 import { useDash, useWidget } from '../../app/context';
 import WidgetFrame from '../../app/shell/WidgetFrame.vue';
-import { isShown } from '../../app/store/visibility';
+import { useFaceClock } from '../shared/time';
 import { PAUSE_D, PLAY_D, elapsed, lapRows, lapSw, swText, toggleSw, SW_IDLE } from './stopwatch';
 import { setSw, swOf } from './status';
 
@@ -16,23 +17,11 @@ const props = defineProps<{ id: string }>();
 const d = useDash();
 const w = useWidget(props.id);
 const s = computed(() => swOf(d, w.id));
-/** The time the face was last drawn for (only advanced while it is drawn). */
-const at = ref(d.now());
+/** The time the face was last drawn for (advanced every 0.1 s only while running and shown). */
+const at = useFaceClock(d, w.id, () => s.value.run, 100);
 const time = computed(() => swText(elapsed(s.value, at.value)));
 const laps = computed(() => lapRows(s.value));
 const icon = computed(() => (s.value.run ? PAUSE_D : PLAY_D));
-
-const tabShown = ref(typeof document === 'undefined' || !document.hidden);
-const onVis = (): void => { tabShown.value = !document.hidden; };
-document.addEventListener('visibilitychange', onVis);
-let iv: ReturnType<typeof setInterval> | undefined;
-watch(() => s.value.run && tabShown.value && isShown(d, w.id), on => {
-  clearInterval(iv);
-  iv = undefined;
-  at.value = d.now();
-  if (on) iv = setInterval(() => { at.value = d.now(); }, 100);
-}, { immediate: true });
-onBeforeUnmount(() => { clearInterval(iv); document.removeEventListener('visibilitychange', onVis); });
 
 function toggle(): void {
   const now = d.now();

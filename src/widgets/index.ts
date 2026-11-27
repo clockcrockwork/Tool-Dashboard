@@ -5,6 +5,9 @@
  */
 import { defineAsyncComponent, type Component } from 'vue';
 import type { WidgetDataDef } from '../app/store/store';
+import type { Runner } from '../app/runtime/runtime';
+import { alarmRunner } from './alarm/runner';
+import { pomoRunner } from './pomo/runner';
 import { todoData } from './todo/data';
 import { linksData } from './links/data';
 import { memoData } from './memo/data';
@@ -54,4 +57,14 @@ export const WIDGET_DATA: Readonly<Record<string, WidgetDataDef<unknown>>> = {
   alarm: alarmData as WidgetDataDef<unknown>,
   timelog: timelogData as WidgetDataDef<unknown>,
   punch: punchData as WidgetDataDef<unknown>,
+};
+
+/**
+ * Handlers the Dashboard's runtime starts for every placement of these kinds while it runs (`src/app/runtime/runtime.ts`;
+ * registry `run`: `watch` / `continuous`). Loaded eagerly (small), independent of whether the view is placed or drawn.
+ * Kinds whose run can be computed from a start time (stopwatch) need none.
+ */
+export const WIDGET_RUNNERS: Readonly<Record<string, Runner>> = {
+  alarm: alarmRunner,
+  pomo: pomoRunner,
 };

@@ -3,6 +3,7 @@ import ToastStack from '../../app/shell/ToastStack.vue';
 import { useDash } from '../../app/context';
 import type { Toast } from '../../app/store/types';
 import type { LgdParams } from '../storybook';
+import { VEILED_TOAST } from '../../app/runtime/notify';
 
 type ToastArgs = { kind: Toast['kind']; text: string; act: boolean; spin: boolean; bottom: boolean; offline: boolean };
 
@@ -61,6 +62,13 @@ export const WithUndo: Story = { name: '元に戻す付き', args: { text: 'TODO
 
 /** 進行中。終わったら同じ場所で完了の知らせに替わる。 */
 export const Busy: Story = { name: '進行中', args: { text: '書き出しています', spin: true } };
+
+/**
+ * 伏せた通知（p2a-followup.md 2章）: 人前では隠しているウィジェットの知らせ（アラーム・ポモドーロの完了など）は、どの種類でも
+ * この文にする。ウィジェット名・時刻・内容は出さない。タブが裏にあって許可済みなら、ブラウザの通知も
+ * 見出し「通知があります」・本文「人前では隠すがオンなので、内容はダッシュボードで確認してください」で出す（共通の通知 `notify.ts`）。
+ */
+export const Veiled: Story = { name: '伏せた通知（人前では隠す）', args: { text: VEILED_TOAST } };
 
 /** 3つまで積む（新しいものが下）。 */
 export const Stack: Story = {

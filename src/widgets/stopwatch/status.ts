@@ -1,26 +1,16 @@
 /**
- * ストップウォッチの一時状態（保存しない。プロトタイプと同じく再読み込みで消える）. Dashboard ごと・置いた1個ごとに持つので、
- * 部品が作り直されても（大きさの変更・前面表示）計測は続く.
+ * ストップウォッチの実行状態（保存しない。プロトタイプと同じく再読み込みで消える）. Dashboard の実行管理（`runtimeOf(d)`）に
+ * 置いた1個ごとに持つので、部品が作り直されても・見えなくても・未配置でも、経過の基準（止めていた分の合計と始めた時刻）を
+ * 持ち続ける。経過は始めた時刻から計算できるので、期限の処理（runner）は持たず、見えない間は時を刻まない.
  */
-import { reactive } from 'vue';
 import type { Dashboard } from '../../app/store/store';
+import { runtimeOf } from '../../app/runtime/runtime';
 import { SW_IDLE, type SwRun } from './stopwatch';
 
-const runtimes = new WeakMap<Dashboard, Record<string, SwRun>>();
-
-function runs(d: Dashboard): Record<string, SwRun> {
-  let r = runtimes.get(d);
-  if (!r) {
-    r = reactive<Record<string, SwRun>>({});
-    runtimes.set(d, r);
-  }
-  return r;
-}
-
 export function swOf(d: Dashboard, id: string): SwRun {
-  return runs(d)[id] ?? SW_IDLE;
+  return runtimeOf(d).state(id, SW_IDLE);
 }
 
 export function setSw(d: Dashboard, id: string, s: SwRun): void {
-  runs(d)[id] = s;
+  runtimeOf(d).set(id, s);
 }

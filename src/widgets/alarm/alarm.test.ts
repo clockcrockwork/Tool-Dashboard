@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { alarmData } from './data';
-import { ALARM_RECHECK_MS, alarmsDue, nextCheckIn, occurrence } from './alarm';
+import { alarmTimes, alarmsDue, nextAlarmAt, occurrence } from './alarm';
 
 const at = (h: number, m: number, s = 0, day = 19): number => new Date(2026, 10, day, h, m, s).getTime();
 
@@ -24,11 +24,19 @@ describe('alarm', () => {
     expect(alarmsDue(['00:00'], [true], at(23, 59, 50), at(0, 0, 0, 20))).toEqual([0]);
     expect(alarmsDue(['23:59'], [true], at(23, 58, 59), at(0, 0, 10, 20))).toEqual([]);
   });
-  it('waits until the next alarm, at most a minute; nothing to wait for when all are off', () => {
-    expect(nextCheckIn(['10:25'], [true], at(10, 24, 36))).toBe(24_000 + 20);
-    expect(nextCheckIn(['07:00', '22:30'], [true, true], at(10, 24, 36))).toBe(ALARM_RECHECK_MS);
-    expect(nextCheckIn(['07:00'], [true], at(7, 0, 0))).toBe(ALARM_RECHECK_MS);
-    expect(nextCheckIn(['07:00', '22:30'], [false, false], at(10, 24))).toBeNull();
+  it('the next deadline is the next minute an alarm that is on rings; none when all are off', () => {
+    expect(nextAlarmAt(['10:25'], [true], at(10, 24, 36))).toBe(at(10, 25));
+    expect(nextAlarmAt(['07:00', '22:30'], [true, true], at(10, 24, 36))).toBe(at(22, 30));
+    expect(nextAlarmAt(['07:00', '22:30'], [true, false], at(10, 24, 36))).toBe(at(7, 0, 0, 20));
+    // At the very minute it rang: the next one is tomorrow's.
+    expect(nextAlarmAt(['07:00'], [true], at(7, 0, 0))).toBe(at(7, 0, 0, 20));
+    expect(nextAlarmAt(['07:00', '22:30'], [false, false], at(10, 24))).toBeNull();
+    expect(nextAlarmAt(['xx'], [true], at(10, 24))).toBeNull();
+  });
+  it('times come from the settings a1・a2, with the prototype defaults', () => {
+    const cfg: Record<string, string> = { a1: '06:30' };
+    expect(alarmTimes(k => cfg[k])).toEqual(['06:30', '22:30']);
+    expect(alarmTimes(() => undefined)).toEqual(['07:00', '22:30']);
   });
   it('record: the prototype default, broken entries off, unknown fields dropped', () => {
     expect(alarmData.initial(0)).toEqual({ on: [true, false] });

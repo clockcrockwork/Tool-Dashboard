@@ -22,7 +22,7 @@ const meta = {
   args: { panel: 'global', sel: 'todo', narrow: false },
   argTypes: {
     panel: { control: 'select', options: ['global', 'help', 'devices', 'index', 'add', 'widget'], description: '開くシート（d.ui.panel）' },
-    sel: { control: 'select', options: ['clock', 'search', 'weather', 'rain', 'todo', 'links', 'memo'], description: 'ウィジェットの設定で選ぶウィジェット（d.ui.sel）' },
+    sel: { control: 'select', options: ['clock', 'search', 'weather', 'rain', 'todo', 'links', 'memo', 'alarm', 'pomo'], description: 'ウィジェットの設定で選ぶウィジェット（d.ui.sel）' },
     narrow: { description: '幅720px未満の端末（下からのシート）' },
   },
   parameters: {
@@ -56,6 +56,9 @@ export const Add: Story = { name: 'ウィジェットを追加', args: { panel: 
 export const Widget: Story = { name: 'ウィジェットの設定（TODO）', args: { panel: 'widget', sel: 'todo' } };
 /** ウィジェットの設定で全画面にできるもの（時計）。 */
 export const WidgetClock: Story = { name: 'ウィジェットの設定（時計・全画面あり）', args: { panel: 'widget', sel: 'clock' } };
+/** 通知を使う種類（`perm: ['notify']`）の設定: 固有の項目のあとに共通の一文「ダッシュボードを開いている間だけ知らせます」（実装ガイド 7.2）。 */
+export const WidgetPomo: Story = { name: 'ウィジェットの設定（ポモドーロ・通知の一文）', args: { panel: 'widget', sel: 'pomo' } };
+export const WidgetAlarm: Story = { name: 'ウィジェットの設定（アラーム・通知の一文）', args: { panel: 'widget', sel: 'alarm' } };
 /** スマホ（幅390px）では下からのシート。 */
 export const Narrow: Story = {
   name: 'スマホ（下からのシート）',

@@ -4,16 +4,23 @@ import { REGISTRY } from '../src/app/registry/registry';
 /**
  * P2a 時間のウィジェットの操作（機能・データのゲート）: 打刻→タイムログと個別の元に戻す、ポモドーロの許可のお願いと終わり、
  * アラームが鳴る、ストップウォッチは始めた時刻から計算する。時刻は page.clock で進める.
+ * 実行管理（p2a-followup.md 1章）: 未配置のアラームが鳴る、一時利用で始めたポモドーロが閉じても一度だけ終わる・開き直しても
+ * 二重に始まらない、人前では隠すの伏せた通知、設定パネルの「開いている間だけ」の一文、再読み込みで進行は消え設定は残る.
  */
 const KINDS = ['gantt', 'world', 'alarm', 'pomo', 'countdown', 'stopwatch', 'punch', 'timelog'];
+const VEILED_TOAST = '通知があります。人前では隠すがオンなので、内容はウィジェットで確認してください';
 
-async function open(page: Page, at: string, widgets: Record<string, Record<string, unknown>> = {}): Promise<void> {
+type Seed = { gs?: Record<string, unknown>; unplaced?: string[] };
+
+async function open(page: Page, at: string, widgets: Record<string, Record<string, unknown>> = {}, seed: Seed = {}): Promise<void> {
   await page.clock.install({ time: new Date(at) });
+  const placed = KINDS.filter(k => !(seed.unplaced ?? []).includes(k));
   const items: Record<string, string> = {
     'lgd.v1:global': JSON.stringify({
       v: 1, tourDone: true, groups: [{ id: 'g0', n: 'ボード 1' }], order: Object.keys(REGISTRY),
-      off: Object.fromEntries(Object.keys(REGISTRY).filter(k => !KINDS.includes(k)).map(k => [k, true])),
+      off: Object.fromEntries(Object.keys(REGISTRY).filter(k => !placed.includes(k)).map(k => [k, true])),
       place: Object.fromEntries(KINDS.map(k => [k, 'g0'])),
+      ...(seed.gs ? { gs: seed.gs } : {}),
     }),
   };
   for (const [id, sec] of Object.entries(widgets)) items['lgd.v1:w:' + id] = JSON.stringify({ v: 1, ...sec });
@@ -115,4 +122,101 @@ test('ストップウォッチ: 経過は始めた時刻から。ラップ', asy
   await expect(face).toHaveText(stopped ?? '');
   await sw.getByRole('button', { name: 'リセット' }).click();
   await expect(face).toHaveText('00:00.0');
+});
+
+async function openAdd(page: Page): Promise<void> {
+  await page.locator('.nav button[aria-label^="ウィジェット一覧"]').click();
+  await page.locator('.sheet.open[aria-label="ウィジェット一覧"]').getByRole('button', { name: 'ウィジェットを追加' }).click();
+  await expect(page.locator('.sheet.open[aria-label="ウィジェットを追加"]')).toBeVisible();
+}
+async function useWithoutPlacing(page: Page, name: string): Promise<void> {
+  await openAdd(page);
+  await page.locator('.sheet.open[aria-label="ウィジェットを追加"]').getByRole('button', { name: name + 'を置かずに使う' }).click();
+}
+const closeTemp = async (page: Page): Promise<void> => { await page.locator('.tmpbar.open').getByRole('button', { name: '戻る' }).click(); };
+
+test.describe('実行管理（Dashboard が持つ。配置・表示と分ける）', () => {
+  test('アラーム: 未配置で部品が無くても、オンの時刻に鳴る', async ({ page }) => {
+    await open(page, '2026-11-19T06:59:50+09:00', {}, { unplaced: ['alarm'] });
+    await expect(page.locator('.w[data-wid="alarm"]')).toHaveCount(0);
+    await page.clock.runFor(11_000);
+    await expect(page.locator('.toast').filter({ hasText: 'アラーム 07:00' })).toBeVisible();
+  });
+
+  test('アラーム: 人前では隠すがオンでも鳴り、伏せた文だけを出す（時刻を出さない）', async ({ page }) => {
+    await open(page, '2026-11-19T06:59:50+09:00', { alarm: { cfg: { veil: true }, dv: 1, data: { on: [true, false] } } }, { gs: { veil: true } });
+    await expect(w(page, 'alarm')).toHaveClass(/\bveil\b/);
+    await page.clock.runFor(11_000);
+    await expect(page.locator('.toast').filter({ hasText: VEILED_TOAST })).toBeVisible();
+    await expect(page.locator('.toasts')).not.toContainText('07:00');
+    await expect(page.locator('.toasts')).not.toContainText('アラーム');
+  });
+
+  test('アラーム: スイッチをオンにしたとき、通知の許否がまだなら共通の枠の許可のお願い（オンのまま）', async ({ page }) => {
+    await open(page, '2026-11-19T10:24:36+09:00');
+    const perm = await page.evaluate(() => Notification.permission);
+    test.skip(perm !== 'default', 'この環境の通知の許可が ' + perm);
+    const alarm = w(page, 'alarm');
+    await alarm.getByRole('switch', { name: 'アラーム 22:30' }).click();
+    await expect(alarm.locator('.pmw .perm')).toContainText('鳴ったら通知しますか？');
+    await alarm.getByRole('button', { name: '通知しない' }).click();
+    await expect(alarm.locator('.pmw')).toHaveCount(0);
+    await expect(alarm.getByRole('switch', { name: 'アラーム 22:30' })).toHaveAttribute('aria-checked', 'true');
+    // Not asked again for this placement in this session.
+    await alarm.getByRole('switch', { name: 'アラーム 22:30' }).click();
+    await alarm.getByRole('switch', { name: 'アラーム 22:30' }).click();
+    await expect(alarm.locator('.pmw')).toHaveCount(0);
+  });
+
+  test('ポモドーロ: 一時利用で始めて閉じても一度だけ終わる。開き直しても二重に始まらない', async ({ page, context }) => {
+    await context.grantPermissions(['notifications']);
+    await open(page, '2026-11-19T10:24:36+09:00', { pomo: { cfg: { min: 5 } } }, { unplaced: ['pomo'] });
+    await useWithoutPlacing(page, 'ポモドーロ');
+    const pomo = w(page, 'pomo');
+    await expect(pomo).toHaveClass(/\btmp\b/);
+    await pomo.getByRole('button', { name: 'スタート・一時停止' }).click();
+    await expect(pomo.getByRole('button', { name: 'スタート・一時停止' })).toHaveAttribute('aria-pressed', 'true');
+    await closeTemp(page);
+    await expect(page.locator('.w[data-wid="pomo"]')).toHaveCount(0);
+    await page.clock.runFor(2 * 60_000);
+    // Reopened: the same run goes on (not started again from 05:00).
+    await useWithoutPlacing(page, 'ポモドーロ');
+    await expect(pomo).toContainText('03:00');
+    await expect(pomo.getByRole('button', { name: 'スタート・一時停止' })).toHaveAttribute('aria-pressed', 'true');
+    await closeTemp(page);
+    const done = page.locator('.toast').filter({ hasText: 'ポモドーロ完了' });
+    await page.clock.runFor(3 * 60_000);
+    await expect(done).toHaveCount(1);
+    await page.clock.runFor(10 * 60_000);
+    await expect(done).toHaveCount(0);
+    await useWithoutPlacing(page, 'ポモドーロ');
+    await expect(pomo).toContainText('05:00');
+    await expect(pomo.getByRole('button', { name: 'スタート・一時停止' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('再読み込み: ポモドーロの進行は消え、アラームの設定とスイッチは残る', async ({ page, context }) => {
+    await context.grantPermissions(['notifications']);
+    await open(page, '2026-11-19T10:24:36+09:00', { pomo: { cfg: { min: 5 } } });
+    await w(page, 'pomo').getByRole('button', { name: 'スタート・一時停止' }).click();
+    await w(page, 'alarm').getByRole('switch', { name: 'アラーム 22:30' }).click();
+    await page.clock.runFor(61_000);
+    await expect(w(page, 'pomo')).toContainText('03:59');
+    await page.reload();
+    await expect(w(page, 'pomo')).toContainText('05:00');
+    await expect(w(page, 'pomo').getByRole('button', { name: 'スタート・一時停止' })).toHaveAttribute('aria-pressed', 'false');
+    await expect(w(page, 'alarm').getByRole('switch', { name: 'アラーム 22:30' })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  test('設定パネル: 通知を使う種類には「開いている間だけ知らせます」の一文（共通の部品）', async ({ page }) => {
+    await open(page, '2026-11-19T10:24:36+09:00');
+    await page.locator('.nav button[aria-label="ウィジェットを編集"]').click();
+    await w(page, 'pomo').click();
+    const sheet = page.locator('.sheet.open[aria-label="ウィジェットの設定"]');
+    await expect(sheet).toContainText('ダッシュボードを開いている間だけ知らせます');
+    await w(page, 'alarm').click();
+    await expect(sheet).toContainText('アラーム');
+    await expect(sheet).toContainText('ダッシュボードを開いている間だけ知らせます');
+    await w(page, 'countdown').click();
+    await expect(sheet).not.toContainText('開いている間だけ');
+  });
 });

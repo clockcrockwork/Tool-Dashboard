@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import PomoWidget from '../../widgets/pomo/PomoWidget.vue';
-import { POMO_IDLE, startPomo } from '../../widgets/pomo/pomo';
-import { setPomoAsk, setPomoRun, type PomoAsk } from '../../widgets/pomo/status';
+import { POMO_ASK, POMO_IDLE, startPomo } from '../../widgets/pomo/pomo';
+import { setPomoRun } from '../../widgets/pomo/status';
+import { setNotifyAsk } from '../../app/runtime/notify';
 import { FIXED_NOW } from '../dash';
 import { widgetLgd } from '../storybook';
 
@@ -22,7 +23,7 @@ const meta = {
     h: { control: { type: 'range', min: 1, max: 3, step: 1 }, description: '縦のマス数' },
     min: { control: { type: 'range', min: 5, max: 90, step: 5 }, description: '設定「集中する時間」（分）' },
     state: { control: 'inline-radio', options: ['idle', 'running', 'paused'], description: '止まっている／動いている（10分たった）／一時停止中（残り 12:34）' },
-    ask: { control: 'inline-radio', options: ['none', 'ask', 'no'], description: '許可のお願い（共通の枠の cover）' },
+    ask: { control: 'inline-radio', options: ['none', 'ask', 'no'], description: '許可のお願い（共通の通知が共通の枠の cover に出す）' },
     veil: { description: '「中身を隠す」がオンで、このウィジェットを人前では隠す' },
     edit: { description: '編集モード' },
   },
@@ -33,7 +34,7 @@ const meta = {
       const run = a.state === 'running' ? startPomo(POMO_IDLE, total, FIXED_NOW - 600_000)
         : a.state === 'paused' ? { on: false, endAt: null, left: 754 } : POMO_IDLE;
       setPomoRun(d, 'pomo', run);
-      setPomoAsk(d, 'pomo', a.ask === 'none' ? null : (a.ask as PomoAsk));
+      setNotifyAsk(d, 'pomo', a.ask === 'none' ? null : a.ask === 'no' ? 'no' : 'ask', POMO_ASK, () => {});
       d.g.gs.veil = !!a.veil;
       d.setCfg('pomo', 'veil', !!a.veil);
     }),

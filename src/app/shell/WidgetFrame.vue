@@ -6,6 +6,9 @@
  * comes from the registry (実装ガイド 4章「通信と許可の出し方」): the network mark for `net: 'data'` (not for `dl` / `own`),
  * the state overlay for kinds whose `states` include an overlay state. Grid placement comes from the shell.
  *
+ * 許可のお願い of a kind with `perm: ['notify']` comes from the shared notification (`notifyCover`, `runtime/notify.ts`): the
+ * widget only starts the request from an explicit operation (`askNotify`); a `cover` passed by the widget wins.
+ *
  * 人前では隠す comes first (仕様書 3章): while hidden, the overlay and the replacing card are not created at all, and the
  * content is hidden from view and from screen readers (`overrides.css`, also over the 1×1 rule of the prototype CSS).
  */
@@ -16,6 +19,7 @@ import { IC } from '../parts/icons';
 import Icon from '../parts/LineIcon.vue';
 import CoverCard from './CoverCard.vue';
 import type { WidgetCover } from './cover';
+import { notifyCover } from '../runtime/notify';
 
 const props = withDefaults(defineProps<{
   /** Placement ID. Omit inside a widget: the frame then uses the widget's own context (`useWidget()`). */
@@ -51,6 +55,7 @@ const veiled = computed(() => d.veiled(wid));
 /** 接続の点: only for kinds that fetch content (`net: 'data'`). */
 const net = computed(() => w.def.net === 'data');
 const overlay = computed(() => w.def.states.some(s => OVERLAY_STATES.includes(s)));
+const card = computed<WidgetCover | null>(() => props.cover ?? (w.def.perm.includes('notify') ? notifyCover(d, wid) : null));
 /** State classes are dropped while hidden, so nothing about the content (empty, failed…) shows or is announced. */
 const stCls = computed(() => (veiled.value ? '' : props.stateClass));
 </script>
@@ -67,7 +72,7 @@ const stCls = computed(() => (veiled.value ? '' : props.stateClass));
   >
     <h2 :id="'wh-' + wid" class="vh">{{ name }}</h2>
     <slot name="before" />
-    <CoverCard v-if="cover && !veiled" :cover="cover" :label-id="'pm-' + wid" />
+    <CoverCard v-if="card && !veiled" :cover="card" :label-id="'pm-' + wid" />
     <div class="veilc">
       <Icon :d="IC.eyeOff" />
       <button class="chip sm" :aria-label="name + 'を表示する'" @click="d.ui.peek = { ...d.ui.peek, [wid]: true }">表示する</button>

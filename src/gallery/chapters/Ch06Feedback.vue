@@ -14,6 +14,7 @@ import DialogLayer from '../../app/shell/overlays/DialogLayer.vue';
 import TourCard from '../../app/shell/overlays/TourCard.vue';
 import { DIALOG_SAMPLES, showNotice } from '../../app/store/overlays';
 import type { Toast } from '../../app/store/types';
+import { VEILED_TOAST } from '../../app/runtime/notify';
 import { GIC } from '../icons';
 import { solo, type DashSetup } from '../dash';
 import DashScope from '../parts/DashScope.vue';
@@ -28,6 +29,8 @@ const TOASTS = [
   ['完了', toast('ファイルに保存しました', 'ok')],
   ['注意', toast('保存できませんでした', 'warn')],
   ['操作つき', toast('「メモ」を削除しました', 'info', true)],
+  // 人前では隠している配置の知らせ（共通の通知、p2a-followup.md 2章）: どの種類でも同じ文で、名前・時刻・内容を出さない.
+  ['伏せた通知', toast(VEILED_TOAST, 'info')],
 ] as const;
 const upd: DashSetup = d => { d.ui.upd = true; };
 const received: DashSetup = d => {
